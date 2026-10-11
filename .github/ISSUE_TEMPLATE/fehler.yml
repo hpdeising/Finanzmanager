@@ -1,0 +1,50 @@
+name: Fehler
+description: Etwas funktioniert nicht wie beschrieben.
+title: "[Fehler] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bitte keine echten Namen, Anschriften, Aktenzeichen oder IBANs eintragen.
+        Rechenfehler bei Zinsen, Anrechnung, Fristen oder Verjährung bitte über die Vorlage „Rechenfehler“ melden.
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Was ist passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: erwartung
+    attributes:
+      label: Was hast du erwartet?
+    validations:
+      required: true
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte zum Nachvollziehen
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version oder Commit
+  - type: dropdown
+    id: system
+    attributes:
+      label: Betriebssystem
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Sonstiges
+  - type: textarea
+    id: log
+    attributes:
+      label: Fehlermeldung oder Log-Auszug
+      description: Vorher auf personenbezogene Daten prüfen.
+      render: text

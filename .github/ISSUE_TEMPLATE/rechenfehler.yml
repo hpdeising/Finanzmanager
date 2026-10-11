@@ -1,0 +1,62 @@
+name: Rechenfehler
+description: Zinsen, Anrechnung, Fristen oder Verjährung weichen von Titel oder Forderungsaufstellung ab.
+title: "[Rechenfehler] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bitte **alle** personenbezogenen Daten entfernen: Namen, Anschriften, Aktenzeichen, IBANs. Beträge und Daten dürfen bleiben, sie werden zum Nachrechnen gebraucht.
+        Der Finanzmanager leistet keine Rechtsberatung. Diese Vorlage dient der Prüfung der Berechnung, nicht der Bewertung deines Falls.
+  - type: dropdown
+    id: bereich
+    attributes:
+      label: Bereich
+      options:
+        - Zinsen
+        - Anrechnung von Zahlungen
+        - Fristen
+        - Verjährung
+        - Sonstiges
+    validations:
+      required: true
+  - type: dropdown
+    id: titelart
+    attributes:
+      label: Titelart
+      options:
+        - Vollstreckungsbescheid
+        - Urteil / Versäumnisurteil
+        - Notarielle Urkunde / Vergleich
+        - Nicht tituliert
+    validations:
+      required: true
+  - type: textarea
+    id: eingaben
+    attributes:
+      label: Eingaben
+      description: Bestandteile mit Betrag, Zinsregel und Zinsbeginn; Zahlungen mit Datum und Betrag; Aktenparameter (Anrechnung, Tageszählung, Rundung).
+    validations:
+      required: true
+  - type: textarea
+    id: ergebnis
+    attributes:
+      label: Ergebnis des Finanzmanagers
+      description: Stichtag und Werte je Bestandteil.
+    validations:
+      required: true
+  - type: textarea
+    id: erwartung
+    attributes:
+      label: Erwartetes Ergebnis und Quelle
+      description: Werte aus der Forderungsaufstellung des Gläubigers oder eigene Nachrechnung mit Rechenweg.
+    validations:
+      required: true
+  - type: checkboxes
+    id: datenschutz
+    attributes:
+      label: Datenschutz
+      options:
+        - label: Ich habe alle personenbezogenen Daten entfernt.
+          required: true
+        - label: Der Fall darf anonymisiert als Testfall (Golden File) übernommen werden.

@@ -1,0 +1,29 @@
+name: Vorschlag
+description: Idee für eine neue Funktion oder Verbesserung.
+title: "[Vorschlag] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem soll gelöst werden?
+    validations:
+      required: true
+  - type: textarea
+    id: loesung
+    attributes:
+      label: Wie stellst du dir die Lösung vor?
+  - type: dropdown
+    id: modul
+    attributes:
+      label: Betroffenes Modul
+      options:
+        - Kern
+        - Verbindlichkeiten
+        - Neues Modul
+        - Weiß ich nicht
+  - type: textarea
+    id: rechtsgrundlage
+    attributes:
+      label: Rechtsgrundlage (falls relevant)
+      description: Norm mit Paragraf und Absatz, z. B. § 367 Abs. 1 BGB.
