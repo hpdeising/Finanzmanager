@@ -60,7 +60,7 @@ allowed-confusables = ["–", "„", "“", "‘", "’"]
 # --- Pyright ------------------------------------------------------------------
 
 [tool.pyright]
-include = ["app", "tests"]
+include = ["app", "tests", "migrations"]
 typeCheckingMode = "strict"
 pythonVersion = "3.12"
 venvPath = "."

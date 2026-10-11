@@ -75,5 +75,29 @@ jobs:
       - name: Modulgrenzen (import-linter)
         run: uv run --locked lint-imports
 
+      # Derselbe Weg wie beim Installer: Rollen per Bootstrap, Migration als Eigentümerrolle,
+      # Anmeldung als Laufzeitrolle, alles über scram-sha-256. Die Passwörter entstehen
+      # zur Laufzeit und gelten nur für diesen Schritt.
+      - name: Datenbank einrichten (Bootstrap, Migration, Anmeldung)
+        run: |
+          owner_passwort="$(openssl rand -hex 24)"
+          app_passwort="$(openssl rand -hex 24)"
+          echo "::add-mask::${owner_passwort}"
+          echo "::add-mask::${app_passwort}"
+          export FINANZMANAGER_ADMIN_DATABASE_URL="${FINANZMANAGER_TEST_ADMIN_DATABASE_URL}"
+          export FINANZMANAGER_MIGRATION_DATABASE_URL="postgresql+psycopg://finanzmanager_owner:${owner_passwort}@127.0.0.1:5432/finanzmanager"
+          export FINANZMANAGER_DATABASE_URL="postgresql+psycopg://finanzmanager_app:${app_passwort}@127.0.0.1:5432/finanzmanager"
+          uv run --locked python -m app.kern.db.bootstrap
+          uv run --locked alembic upgrade head
+          uv run --locked python - <<'EOF'
+          from sqlalchemy import text
+
+          from app.kern.db import erzeuge_engine
+
+          with erzeuge_engine().connect() as verbindung:
+              rolle = verbindung.execute(text("SELECT current_user")).scalar_one()
+          assert rolle == "finanzmanager_app", rolle
+          EOF
+
       - name: Tests
         run: uv run --locked pytest
