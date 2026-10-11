@@ -1,6 +1,6 @@
 # Mitwirken am Finanzmanager
 
-Das Projekt steht in der Konzeptphase. Fachliche Grundlage ist [docs/fachkonzept.md](docs/fachkonzept.md). Die Arbeitsregeln in [CLAUDE.md](CLAUDE.md) gelten für Menschen genauso wie für KI.
+Das Projekt steht in der Konzeptphase. Fachliche Grundlage ist [docs/fachkonzept.md](docs/fachkonzept.md). Die Arbeitsregeln in [CLAUDE.md](CLAUDE.md) gelten für Menschen genauso wie für KI. Für den Umgang miteinander gilt der [Verhaltenskodex](CODE_OF_CONDUCT.md).
 
 ## Bevor du loslegst
 

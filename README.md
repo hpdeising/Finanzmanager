@@ -23,7 +23,7 @@ Weitere Module (Forderungen, Konten, Depot, Sachwerte) sind geplant bzw. noch of
 - Selbst gehostet, Betrieb nur im eigenen Netz, keine Cloud
 - Keine Bankanbindung im ersten Release; Zahlungen kommen per CSV- oder CAMT.053-Import
 - Doppelte Buchführung als Fundament
-- Barrierearme Oberfläche auf Basis von KERN-UX
+- Barrierearme Oberfläche auf Basis von KERN-UX ([Erklärung zur Barrierefreiheit](ACCESSIBILITY.md))
 
 ## Wichtiger Hinweis
 
@@ -36,7 +36,7 @@ Der Finanzmanager rechnet, erinnert und erstellt Entwürfe. Er leistet **keine R
 
 ## Mitwirken
 
-Siehe [CONTRIBUTING.md](CONTRIBUTING.md). Jeder Commit braucht einen DCO-Sign-off.
+Siehe [CONTRIBUTING.md](CONTRIBUTING.md). Jeder Commit braucht einen DCO-Sign-off. Für alle Beteiligten gilt der [Verhaltenskodex](CODE_OF_CONDUCT.md).
 
 ## Sicherheit
 
