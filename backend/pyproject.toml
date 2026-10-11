@@ -6,8 +6,11 @@ version = "0.0.0"
 description = "Selbst gehostete, modulare Finanzverwaltung für Privatpersonen"
 license = "AGPL-3.0-or-later"
 requires-python = ">=3.12"
-# Laufzeitabhängigkeiten (FastAPI, SQLAlchemy, Alembic …) kommen mit dem ersten Code, der sie braucht.
-dependencies = []
+dependencies = [
+    "alembic>=1.20.0",
+    "psycopg[binary]>=3.3.6",
+    "sqlalchemy>=2.1.4",
+]
 
 [dependency-groups]
 dev = [
@@ -57,7 +60,7 @@ allowed-confusables = ["–", "„", "“", "‘", "’"]
 # --- Pyright ------------------------------------------------------------------
 
 [tool.pyright]
-include = ["app", "tests"]
+include = ["app", "tests", "migrations"]
 typeCheckingMode = "strict"
 pythonVersion = "3.12"
 venvPath = "."

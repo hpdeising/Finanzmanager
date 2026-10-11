@@ -26,6 +26,26 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        # PostgreSQL 16 für die Datenbanktests. Der Digest wird von Hand aktualisiert;
+        # Dependabot erfasst Images von Service-Containern nicht.
+        image: postgres:16.15@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d
+        env:
+          # Kein Geheimnis: Wegwerf-Passwort eines Containers, der nur für diesen Job lebt
+          # und nur an 127.0.0.1 lauscht. Ein Passwort statt „trust“, damit die Anmeldung
+          # wie beim Installer über scram-sha-256 läuft.
+          POSTGRES_PASSWORD: ci-wegwerf-kein-geheimnis
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      FINANZMANAGER_TEST_ADMIN_DATABASE_URL: postgresql+psycopg://postgres:ci-wegwerf-kein-geheimnis@127.0.0.1:5432/postgres
+      FINANZMANAGER_HYPOTHESIS_DB_PROFIL: db-ci
     steps:
       - name: Code auschecken
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -57,3 +77,30 @@ jobs:
 
       - name: Tests
         run: uv run --locked pytest
+
+      # Derselbe Weg wie beim Installer: Rollen per Bootstrap, Migration als Eigentümerrolle,
+      # Anmeldung als Laufzeitrolle, alles über scram-sha-256. Die Passwörter entstehen
+      # zur Laufzeit und gelten nur für diesen Schritt. Er läuft nach den Tests, weil die
+      # Tests einen Cluster mit einer Finanzmanager-Datenbank ablehnen (CONTRIBUTING.md).
+      - name: Datenbank einrichten (Bootstrap, Migration, Anmeldung)
+        # Auch bei roten Tests: Dieser Weg liefert bei der Fehlersuche ein eigenes Ergebnis.
+        if: ${{ !cancelled() }}
+        run: |
+          owner_passwort="$(openssl rand -hex 24)"
+          app_passwort="$(openssl rand -hex 24)"
+          echo "::add-mask::${owner_passwort}"
+          echo "::add-mask::${app_passwort}"
+          export FINANZMANAGER_ADMIN_DATABASE_URL="${FINANZMANAGER_TEST_ADMIN_DATABASE_URL}"
+          export FINANZMANAGER_MIGRATION_DATABASE_URL="postgresql+psycopg://finanzmanager_owner:${owner_passwort}@127.0.0.1:5432/finanzmanager"
+          export FINANZMANAGER_DATABASE_URL="postgresql+psycopg://finanzmanager_app:${app_passwort}@127.0.0.1:5432/finanzmanager"
+          uv run --locked python -m app.kern.db.bootstrap
+          uv run --locked alembic upgrade head
+          uv run --locked python - <<'EOF'
+          from sqlalchemy import text
+
+          from app.kern.db import erzeuge_engine
+
+          with erzeuge_engine().connect() as verbindung:
+              rolle = verbindung.execute(text("SELECT current_user")).scalar_one()
+          assert rolle == "finanzmanager_app", rolle
+          EOF

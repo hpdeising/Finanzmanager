@@ -28,7 +28,7 @@ Release 1 enthält das Modul **Verbindlichkeiten**. Damit verwalten Privatperson
 ### 1.2 Nicht-Ziele Release 1
 
 - Bankanbindung (FinTS, PSD2) und Zahlungsauslösung
-- Gläubigersicht (eigene Forderungen gegen Dritte); das Datenmodell ist dafür vorbereitet
+- Gläubigersicht (eigene Forderungen gegen Dritte); Zuschnitt offen, siehe P-11.
 - Depot, Sachwerte, Unterkonten
 - Mandantenfähigkeit, Fernzugriff
 - Insolvenzverfahren und Restschuldbefreiung
@@ -168,6 +168,7 @@ CREATE TABLE buchung (
   art          text NOT NULL CHECK (art ~ '^[a-z_]+\.[a-z_]+$'),  -- <modul>.<name>, Kap. 4.3
   wertstellung date NOT NULL,
   erfasst_am   timestamptz NOT NULL DEFAULT now(),  -- setzt ein Trigger, siehe unten
+  erfasst_txid xid8 NOT NULL,                       -- setzt ein Trigger, siehe unten
   -- erfasst_von uuid REFERENCES benutzer: Spalte und Fremdschlüssel folgen mit der Tabelle benutzer
   storno_von   uuid UNIQUE REFERENCES buchung,      -- höchstens ein Storno je Buchung
   -- beleg_id uuid REFERENCES dokument: Spalte und Fremdschlüssel folgen mit der Tabelle dokument
@@ -187,9 +188,13 @@ CREATE TABLE posting (
 --   alle Konten gehören zum Haushalt der Buchung;
 --   ein Storno besteht genau aus den negierten Postings der Ursprungsbuchung.
 -- Sofort beim Einfügen (Trigger):
---   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion; ein Wert vom Client
---   wird überschrieben.
---   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht.
+--   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion, und erfasst_txid auf
+--   pg_current_xact_id(), die Nummer der Transaktion; Werte vom Client werden überschrieben.
+--   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht: Ein Posting
+--   wird nur angenommen, wenn erfasst_txid seiner Buchung gleich pg_current_xact_id() ist.
+--   Geprüft wird die Transaktionsnummer, nicht erfasst_am, weil now() nicht je Transaktion
+--   eindeutig ist: Alle Transaktionen einer Client-Nachricht haben denselben Zeitstempel. Die
+--   Nummer ist eindeutig, gilt auch in Savepoints und wird nie wiederverwendet.
 --   Storno: Die Ursprungsbuchung existiert, ist selbst kein Storno, gehört zum selben
 --   Haushalt und hat dieselbe Wertstellung (E-18).
 -- UPDATE, DELETE und TRUNCATE auf buchung und posting sind per Trigger verboten.
@@ -598,5 +603,6 @@ toleranz: "0.00"
 | P-09 | Wortlaut von Disclaimer und Abgrenzung zur Rechtsdienstleistung | Haftung |
 | P-10 | Löschkonzept: Wie werden eine irrtümlich angelegte Akte oder ein ganzer Haushalt endgültig gelöscht, obwohl Buchungen unveränderlich sind? Entscheidung spätestens mit M8 | Unveränderlichkeit der Buchungen, Datenschutz |
 | P-11 | Gläubigersicht: eigenes Modul mit eigenen Tabellen, oder Teil des Moduls Verbindlichkeiten (dann mit `akte.richtung`)? Wie wird die gemeinsame Rechenlogik (Zinsen, Anrechnung) genutzt, ohne E-17 zu verletzen? Entscheidung vor Beginn der Gläubigersicht | Zuschnitt der Module, Tabelle `akte` |
+| P-12 | Folgebuchungen nach rückwirkendem Storno: Wird eine Buchung storniert (Wertstellung wie die Ursprungsbuchung, E-18), können später gebuchte Zinsläufe und Anrechnungen auf ihr aufbauen und sind dann falsch. Varianten: (a) Folgebuchungen ab der Wertstellung werden automatisch storniert und neu berechnet; (b) Zinsläufe und Anrechnung werden nicht gebucht, sondern stets aus Ereignissen berechnet und nur bei Bedarf festgeschrieben. Entscheidung spätestens mit M2. | Zinsen, Anrechnung, Kap. 5.2 Schritt 7; E-18 bleibt unberührt. |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
 | T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |
