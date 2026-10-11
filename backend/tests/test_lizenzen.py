@@ -24,6 +24,8 @@ SPDX_FAMILIE: dict[str, str] = {
     "MPL-2.0": "MPL-2.0",
     "PSF-2.0": "PSF-2.0",
     "Python-2.0": "PSF-2.0",
+    "PostgreSQL": "PostgreSQL",
+    "OLDAP-2.8": "OLDAP-2.8",
     "LGPL-2.1-only": "LGPL",
     "LGPL-2.1-or-later": "LGPL",
     "LGPL-3.0-only": "LGPL",
@@ -44,6 +46,7 @@ KLASSIFIKATOR_FAMILIE: dict[str, str] = {
     "Apache Software License": "Apache-2.0",
     "Mozilla Public License 2.0 (MPL 2.0)": "MPL-2.0",
     "Python Software Foundation License": "PSF-2.0",
+    "Public Domain": "Public Domain",
     "GNU Lesser General Public License v2 (LGPLv2)": "LGPL",
     "GNU Lesser General Public License v2 or later (LGPLv2+)": "LGPL",
     "GNU Lesser General Public License v3 (LGPLv3)": "LGPL",
@@ -114,12 +117,30 @@ def erlaubt() -> frozenset[str]:
 
 # --- Selbsttests ---------------------------------------------------------------
 
-BEISPIEL_ERLAUBT = frozenset({"MIT", "BSD", "Apache-2.0", "PSF-2.0", "LGPL", "GPL-3.0"})
+BEISPIEL_ERLAUBT = frozenset(
+    {
+        "MIT",
+        "BSD",
+        "Apache-2.0",
+        "PSF-2.0",
+        "PostgreSQL",
+        "OLDAP-2.8",
+        "Public Domain",
+        "LGPL",
+        "GPL-3.0",
+    }
+)
 
 
 def test_liste_wird_aus_claude_md_gelesen() -> None:
     text = "- Erlaubte Lizenzen für Abhängigkeiten: MIT, BSD, PSF-2.0. KERN-UX nur unverändert.\n"
     assert erlaubte_familien(text) == {"MIT", "BSD", "PSF-2.0"}
+
+
+def test_liste_mit_punkt_und_leerzeichen_im_namen() -> None:
+    """„OLDAP-2.8“ enthält einen Punkt, „Public Domain“ ein Leerzeichen."""
+    text = "- Erlaubte Lizenzen für Abhängigkeiten: MIT, OLDAP-2.8, Public Domain. KERN-UX …\n"
+    assert erlaubte_familien(text) == {"MIT", "OLDAP-2.8", "Public Domain"}
 
 
 def test_fehlende_liste_ist_ein_fehler() -> None:
@@ -132,6 +153,9 @@ def test_fehlende_liste_ist_ein_fehler() -> None:
     [
         ("MIT", True),
         ("PSF-2.0", True),
+        ("PostgreSQL", True),
+        ("OLDAP-2.8", True),
+        ("MIT AND OLDAP-2.8", True),
         ("Apache-2.0 OR BSD-2-Clause", True),
         ("BUSL-1.1 OR MIT", True),
         ("MIT AND BUSL-1.1", False),
@@ -151,6 +175,7 @@ def test_spdx_pruefung(ausdruck: str, erwartet: bool) -> None:
     [
         (["MIT License"], True),
         (["Python Software Foundation License"], True),
+        (["Public Domain"], True),
         (["Other/Proprietary License"], False),
         (["OSI Approved"], False),
         (["Other/Proprietary License", "BSD License"], True),
