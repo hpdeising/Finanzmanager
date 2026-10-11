@@ -13,6 +13,7 @@ import pytest
 
 from app.kern.ledger import (
     BuchungUngueltigError,
+    Kontoart,
     KontoUngueltigError,
     PostingEingabe,
     pruefe_buchungsentwurf,
@@ -80,9 +81,11 @@ def test_betraege_muessen_speicherbar_sein(entwurf: list[PostingEingabe]) -> Non
         pruefe_buchungsentwurf("test.buchung", TAG, entwurf)
 
 
-def test_float_betrag_ist_ein_typfehler() -> None:
-    entwurf = [PostingEingabe(A, 1.5), PostingEingabe(B, -1.5)]  # pyright: ignore[reportArgumentType]
-    with pytest.raises(TypeError):
+@pytest.mark.parametrize(("soll", "haben"), [(1.5, -1.5), ("1.00", "-1.00"), (1, -1)])
+def test_betraege_sind_decimal(soll: object, haben: object) -> None:
+    """Beträge ausschließlich als Decimal (CLAUDE.md, Geld); Text und int übersetzt der Aufrufer."""
+    entwurf = [PostingEingabe(A, soll), PostingEingabe(B, haben)]  # pyright: ignore[reportArgumentType]
+    with pytest.raises(TypeError, match="Decimal"):
         pruefe_buchungsentwurf("test.buchung", TAG, entwurf)
 
 
@@ -110,19 +113,59 @@ def test_storno_nur_ueber_storniere() -> None:
         pruefe_buchungsentwurf("kern.storno", TAG, postings((A, "1"), (B, "-1")))
 
 
-def test_meldungen_nennen_keine_betraege() -> None:
-    """Fehlermeldungen können in Logs landen (CLAUDE.md, Sicherheit)."""
-    with pytest.raises(BuchungUngueltigError) as fehler:
-        pruefe_buchungsentwurf("test.buchung", TAG, postings((A, "4711.0815"), (B, "-4711.08")))
-    assert "4711" not in str(fehler.value)
+@pytest.mark.parametrize("art", ["kern.zahlung", "kern.externe_mittel"])
+def test_kern_kennt_nur_die_art_storno(art: str) -> None:
+    """E-17: Der Kern kennt nur ``kern.storno``; alle anderen Arten meldet ein Modul an."""
+    with pytest.raises(BuchungUngueltigError, match="kern"):
+        pruefe_buchungsentwurf(art, TAG, postings((A, "1"), (B, "-1")))
 
 
 @pytest.mark.parametrize(
-    "rolle",
-    ["verbindlichkeiten.hauptforderung", "kern.externe_mittel", "test.konto"],
+    ("entwurf", "verboten"),
+    [
+        (postings((A, "4711.0815"), (B, "-4711.08")), ["4711", "0.0015", "15"]),
+        (postings((A, "4711.00005"), (B, "-4711.00005")), ["4711", "00005"]),
+        (postings((A, "4711000000000000"), (B, "-4711000000000000")), ["4711"]),
+        (postings((A, "0"), (B, "4711")), ["4711"]),
+    ],
+    ids=["summe", "nachkommastellen", "zu-gross", "null"],
 )
-def test_gueltige_rollen(rolle: str) -> None:
-    pruefe_konto("passiv", rolle)
+def test_meldungen_nennen_keine_betraege(
+    entwurf: list[PostingEingabe], verboten: list[str]
+) -> None:
+    """Fehlermeldungen können in Logs landen (CLAUDE.md, Sicherheit); auch keine Summen."""
+    with pytest.raises(BuchungUngueltigError) as fehler:
+        pruefe_buchungsentwurf("test.buchung", TAG, entwurf)
+    for teil in verboten:
+        assert teil not in str(fehler.value)
+        assert teil not in str(fehler.value.__cause__ or "")
+
+
+@pytest.mark.parametrize(
+    ("kontoart", "rolle"),
+    [
+        ("passiv", "verbindlichkeiten.hauptforderung"),
+        ("aufwand", "verbindlichkeiten.zinsaufwand"),
+        ("passiv", "test.konto"),
+        ("eigenkapital", "kern.externe_mittel"),
+    ],
+)
+def test_gueltige_rollen(kontoart: Kontoart, rolle: str) -> None:
+    pruefe_konto(kontoart, rolle)
+
+
+@pytest.mark.parametrize("kontoart", ["aktiv", "passiv", "aufwand", "ertrag"])
+def test_externe_mittel_sind_eigenkapital(kontoart: Kontoart) -> None:
+    """Kap. 4.2: Das Konto „Externe Mittel“ hat die Kontoart Eigenkapital."""
+    with pytest.raises(KontoUngueltigError, match="Eigenkapital"):
+        pruefe_konto(kontoart, "kern.externe_mittel")
+
+
+@pytest.mark.parametrize("rolle", ["kern.bankkonto", "kern.storno"])
+def test_kern_kennt_nur_die_rolle_externe_mittel(rolle: str) -> None:
+    """E-17: Von den Rollen kennt der Kern nur ``kern.externe_mittel``."""
+    with pytest.raises(KontoUngueltigError, match="kern"):
+        pruefe_konto("eigenkapital", rolle)
 
 
 @pytest.mark.parametrize(

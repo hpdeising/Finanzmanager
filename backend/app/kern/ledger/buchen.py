@@ -27,6 +27,8 @@ from app.kern.ledger.fehler import (
     StornoNichtMoeglichError,
 )
 from app.kern.ledger.modelle import (
+    EXTERNE_MITTEL,
+    KERN_PRAEFIX,
     KONTOARTEN,
     NAMENSMUSTER,
     STORNO,
@@ -52,13 +54,28 @@ def _ist_name(wert: str) -> bool:
     return _NAME.fullmatch(wert) is not None
 
 
+def _ist_decimal(wert: object) -> bool:
+    """Laufzeitprüfung trotz Typannotation: Aufrufer ohne Typprüfung übergeben auch Text."""
+    return isinstance(wert, Decimal)
+
+
 def pruefe_konto(kontoart: Kontoart, rolle: str) -> None:
-    """Kontoart ist eine der fünf Grundarten, die Rolle folgt dem Schema (Kap. 4.2)."""
+    """Kontoart ist eine der fünf Grundarten, die Rolle folgt dem Schema (Kap. 4.2, E-17).
+
+    Von den Rollen des Kerns gibt es nur ``kern.externe_mittel``; dieses Konto ist
+    Eigenkapital (Kap. 4.2).
+    """
     if kontoart not in KONTOARTEN:
         msg = f"Unbekannte Kontoart; zulässig sind {', '.join(KONTOARTEN)}."
         raise KontoUngueltigError(msg)
     if not _ist_name(rolle):
         msg = "Rolle muss die Form <modul>.<name> haben (Kleinbuchstaben, Unterstrich)."
+        raise KontoUngueltigError(msg)
+    if rolle.startswith(KERN_PRAEFIX) and rolle != EXTERNE_MITTEL:
+        msg = f"Der Kern kennt nur die Rolle {EXTERNE_MITTEL}; andere Rollen meldet ein Modul an."
+        raise KontoUngueltigError(msg)
+    if rolle == EXTERNE_MITTEL and kontoart != "eigenkapital":
+        msg = f"Das Konto {EXTERNE_MITTEL} hat die Kontoart Eigenkapital."
         raise KontoUngueltigError(msg)
 
 
@@ -77,6 +94,9 @@ def pruefe_buchungsentwurf(
     if art == STORNO:
         msg = f"Die Art {STORNO} entsteht nur über storniere()."
         raise BuchungUngueltigError(msg)
+    if art.startswith(KERN_PRAEFIX):
+        msg = f"Der Kern kennt nur die Art {STORNO}; andere Arten meldet ein Modul an."
+        raise BuchungUngueltigError(msg)
     # datetime ist eine Unterklasse von date, aber kein fachliches Datum (CLAUDE.md).
     if type(wertstellung) is not date:
         msg = "Wertstellung muss ein datetime.date sein."
@@ -89,6 +109,9 @@ def pruefe_buchungsentwurf(
         raise BuchungUngueltigError(msg)
     summe = Decimal(0)
     for posting in postings:
+        if not _ist_decimal(posting.betrag):
+            msg = "Beträge sind Decimal (CLAUDE.md, Geld); Text oder Zahl übersetzt der Aufrufer."
+            raise TypeError(msg)
         try:
             betrag = speicherbar(posting.betrag)
         except ValueError as fehler:

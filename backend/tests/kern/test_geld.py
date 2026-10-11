@@ -174,9 +174,70 @@ def test_speicherbar_lehnt_andere_typen_ab(eingabe: object) -> None:
         speicherbar(eingabe)
 
 
-@pytest.mark.parametrize("eingabe", ["1.00005", "1000000000000000"])
+# Sehr große und sehr kleine Exponenten: abs() und % rechnen im Decimal-Kontext (28 Stellen,
+# Emax 999999) und liefen über oder unter. speicherbar() muss exakt prüfen.
+RIESIG = "1" + "0" * 1_000_000
+WINZIG = "0." + "0" * 1_000_029 + "1"
+FAST_FUENF = "5." + "0" * 1_000_029 + "1"
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [Decimal("1E+1000000"), Decimal("-1E+1000000"), RIESIG],
+    ids=["exponent", "exponent-negativ", "festkomma"],
+)
+def test_speicherbar_lehnt_riesige_betraege_ohne_ueberlauf_ab(eingabe: object) -> None:
+    """``decimal.Overflow`` ist kein ValueError und liefe an jeder Fehlerbehandlung vorbei."""
+    with pytest.raises(ValueError, match="zu groß"):
+        speicherbar(eingabe)
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [Decimal("1E-1000030"), WINZIG, FAST_FUENF, Decimal("999999999999999.99999999999999")],
+    ids=["exponent", "festkomma", "fuenf-und-winzig", "knapp-unter-grenze"],
+)
+def test_speicherbar_lehnt_winzige_nachkommastellen_ohne_unterlauf_ab(eingabe: object) -> None:
+    """Der Rest von ``%`` liefe auf null unter; ``abs()`` rundete auf 28 Stellen auf 10^15."""
+    with pytest.raises(ValueError, match="Nachkommastellen"):
+        speicherbar(eingabe)
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [Decimal("0E-1000030"), Decimal("1." + "0" * 40), Decimal("123.4500000000000000000000000000")],
+    ids=["null-mit-kleinem-exponenten", "viele-nullen", "nullen-ueber-28-stellen"],
+)
+def test_speicherbar_wertet_abschliessende_nullen_nicht_als_nachkommastellen(
+    eingabe: Decimal,
+) -> None:
+    assert speicherbar(eingabe) is eingabe
+
+
+def meldungen(fehler: BaseException) -> str:
+    """Alle Meldungen, die ein Traceback zeigen würde: der Fehler und seine Ursachen."""
+    texte: list[str] = []
+    aktuell: BaseException | None = fehler
+    while aktuell is not None:
+        texte.append(str(aktuell))
+        aktuell = aktuell.__cause__ or (
+            None if aktuell.__suppress_context__ else aktuell.__context__
+        )
+    return "\n".join(texte)
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    ["4711.00005", "4711000000000000", "4711,08", "1.234,56", "4711.08 ", "+4711.08", "47.11\n"],
+)
 def test_speicherbar_nennt_den_betrag_nicht_in_der_meldung(eingabe: str) -> None:
-    """Meldungen landen in Logs; Beträge mit Personenbezug gehören dort nicht hin (CLAUDE.md)."""
+    """Meldungen landen in Logs; Beträge mit Personenbezug gehören dort nicht hin (CLAUDE.md).
+
+    Das gilt auch für nicht kanonischen Text und für verkettete Ausnahmen.
+    """
     with pytest.raises(ValueError, match="Betrag") as fehler:
         speicherbar(eingabe)
-    assert eingabe not in str(fehler.value)
+    text = meldungen(fehler.value)
+    assert "4711" not in text
+    assert "234" not in text
+    assert "47.11" not in text

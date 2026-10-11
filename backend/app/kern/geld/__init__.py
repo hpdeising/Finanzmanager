@@ -3,8 +3,8 @@
 
 from app.kern.geld.betrag import (
     CENT,
-    SPEICHER_EINHEIT,
     SPEICHER_GRENZE,
+    SPEICHER_NACHKOMMASTELLEN,
     als_text,
     betrag,
     runde_auf_cent,
@@ -13,8 +13,8 @@ from app.kern.geld.betrag import (
 
 __all__ = [
     "CENT",
-    "SPEICHER_EINHEIT",
     "SPEICHER_GRENZE",
+    "SPEICHER_NACHKOMMASTELLEN",
     "als_text",
     "betrag",
     "runde_auf_cent",

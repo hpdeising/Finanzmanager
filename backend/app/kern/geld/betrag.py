@@ -17,7 +17,7 @@ from decimal import ROUND_HALF_UP, Decimal
 CENT = Decimal("0.01")
 
 # NUMERIC(19,4): vier Nachkommastellen, also höchstens 15 Stellen vor dem Komma.
-SPEICHER_EINHEIT = Decimal("0.0001")
+SPEICHER_NACHKOMMASTELLEN = 4
 SPEICHER_GRENZE = Decimal("1E15")
 
 # Kanonische Textform: optionales Minus, Ziffern, optional Punkt und Ziffern.
@@ -80,23 +80,46 @@ def speicherbar(wert: object) -> Decimal:
 
     PostgreSQL rundet zusätzliche Nachkommastellen beim Speichern still, und kein Trigger
     sieht den ursprünglichen Wert. Deshalb prüft die Anwendung vorher. Geprüft wird
-    wertbezogen: ``1.00000`` ist zulässig, ``1.00005`` nicht. Die Meldungen nennen den
-    Betrag nicht, weil sie in Logs landen können.
+    wertbezogen: ``1.00000`` ist zulässig, ``1.00005`` nicht.
+
+    Geprüft wird ohne Decimal-Kontext: ``copy_abs()``, Vergleiche und ``as_tuple()`` sind
+    exakt, ``abs()`` und ``%`` dagegen runden auf die Genauigkeit des Kontexts und laufen bei
+    extremen Exponenten über oder unter.
+
+    Die Meldungen nennen den Betrag nicht, auch nicht in einer verketteten Ausnahme, weil
+    sie in Logs landen können.
 
     Raises:
         TypeError: wie ``betrag()``.
-        ValueError: wie ``betrag()``; außerdem bei Beträgen ab 10^15 und bei mehr als vier
-            Nachkommastellen.
+        ValueError: bei ungültigem Text oder nicht endlichen Werten, bei Beträgen ab 10^15
+            und bei mehr als vier Nachkommastellen.
     """
-    ergebnis = betrag(wert)
-    # Erst die Größe prüfen: Der Rest unten bleibt so im Rahmen der Decimal-Genauigkeit.
-    if abs(ergebnis) >= SPEICHER_GRENZE:
+    try:
+        ergebnis = betrag(wert)
+    except ValueError:
+        msg = "Betrag muss eine endliche Zahl in der Form '-123.45' sein."
+        raise ValueError(msg) from None
+    if ergebnis.copy_abs() >= SPEICHER_GRENZE:
         msg = "Betrag ist für NUMERIC(19,4) zu groß (höchstens 15 Stellen vor dem Komma)."
         raise ValueError(msg)
-    if ergebnis % SPEICHER_EINHEIT != 0:
+    if _nachkommastellen(ergebnis) > SPEICHER_NACHKOMMASTELLEN:
         msg = "Betrag hat mehr als vier Nachkommastellen; NUMERIC(19,4) würde ihn runden."
         raise ValueError(msg)
     return ergebnis
+
+
+def _nachkommastellen(wert: Decimal) -> int:
+    """Zahl der Nachkommastellen ohne abschließende Nullen: ``1.2300`` hat zwei, ``0E-9`` keine."""
+    _, ziffern, exponent = wert.as_tuple()
+    if not isinstance(exponent, int):  # nur bei nicht endlichen Werten, die betrag() ablehnt
+        msg = "Betrag muss endlich sein."
+        raise ValueError(msg)
+    signifikant = len(ziffern)
+    while signifikant and ziffern[signifikant - 1] == 0:
+        signifikant -= 1
+    if not signifikant:
+        return 0
+    return max(0, -(exponent + len(ziffern) - signifikant))
 
 
 def _pruefe_endlich(wert: Decimal) -> None:

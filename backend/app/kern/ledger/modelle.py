@@ -24,7 +24,8 @@ KONTOARTEN: Final[tuple[Kontoart, ...]] = get_args(Kontoart)
 # Rollen und Buchungsarten: <modul>.<name> (E-17). In M1 prüft die Datenbank nur das Format.
 NAMENSMUSTER: Final = r"^[a-z_]+\.[a-z_]+$"
 
-# Die einzigen Namen, die der Kern selbst kennt (E-17).
+# Die einzigen Namen, die der Kern selbst kennt (E-17); alle anderen meldet ein Modul an.
+KERN_PRAEFIX: Final = "kern."
 STORNO: Final = "kern.storno"
 EXTERNE_MITTEL: Final = "kern.externe_mittel"
 
