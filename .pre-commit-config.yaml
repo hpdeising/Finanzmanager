@@ -1,0 +1,35 @@
+# Lokale Prüfungen vor jedem Commit. Einrichtung: siehe CONTRIBUTING.md.
+# Die Werkzeuge kommen aus backend/uv.lock, damit lokal dieselben Versionen laufen wie in der CI.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Ruff (Lint)
+        entry: uv run --directory backend --locked ruff check --fix
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: ruff-format
+        name: Ruff (Format)
+        entry: uv run --directory backend --locked ruff format
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: pyright
+        name: Pyright (strict)
+        entry: uv run --directory backend --locked pyright
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: import-linter
+        name: Modulgrenzen (import-linter)
+        entry: uv run --directory backend --locked lint-imports
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: pytest
+        name: Tests
+        entry: uv run --directory backend --locked pytest -q
+        language: system
+        types: [python]
+        pass_filenames: false

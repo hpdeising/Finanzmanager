@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Node (Frontend)
+node_modules/
+frontend/dist/
+
+# Konfiguration und Geheimnisse – nur die Vorlage gehört ins Repository
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Echte Daten gehören nie ins Repository
+/daten/
+/backup/
+*.dump
+
+# Editor und Betriebssystem
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

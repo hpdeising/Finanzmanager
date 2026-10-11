@@ -79,8 +79,9 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 ### Lizenzen
 
 - Jede Quelldatei beginnt mit `SPDX-License-Identifier: AGPL-3.0-or-later`.
-- Erlaubte Lizenzen für Abhängigkeiten: MIT, BSD, ISC, Apache-2.0, MPL-2.0, LGPL, GPL-3.0, AGPL-3.0. KERN-UX (EUPL-1.2) nur unverändert.
+- Erlaubte Lizenzen für Abhängigkeiten: MIT, BSD, ISC, Apache-2.0, MPL-2.0, PSF-2.0, LGPL, GPL-3.0, AGPL-3.0. KERN-UX (EUPL-1.2) nur unverändert.
 - Verbotene Lizenzen für Abhängigkeiten: proprietär, SSPL, BUSL, Commons Clause, Creative Commons mit NC, GPL-2.0-only, unklare Lizenz.
+- Die CI prüft die Lizenzen aller Python-Abhängigkeiten gegen diese Liste (`tests/test_lizenzen.py`). Neue Lizenzen kommen nur durch eine Änderung dieser Liste dazu, nie durch eine Ausnahme im Test.
 - AGPL § 13: Die Oberfläche verlinkt auf den Quellcode der laufenden Version. Dieser Link wird nicht entfernt.
 
 ## Arbeitsweise
