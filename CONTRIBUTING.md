@@ -32,11 +32,27 @@ Danach den eigenen Branch mit `git push --force-with-lease` aktualisieren.
 1. Repository forken, Branch von `main` anlegen.
 2. Ein Thema pro Pull Request.
 3. Commit-Nachrichten nach [Conventional Commits](https://www.conventionalcommits.org/), z. B. `fix(kern): …`, `docs: …`.
-4. Vor dem Push müssen grün sein, sobald es Code gibt: `ruff check`, `ruff format --check`, `pyright`, `pytest`.
+4. Vor dem Push müssen alle Prüfungen grün sein (siehe unten).
 5. Pull Request mit ausgefüllter Vorlage öffnen.
-6. Gemergt wird per Squash, nachdem alle Review-Kommentare erledigt sind.
+6. Gemergt wird per Squash, nachdem die CI grün ist und alle Review-Kommentare erledigt sind.
 
 Workflows aus Forks laufen erst nach Freigabe durch den Maintainer.
+
+## Entwicklungsumgebung
+
+Voraussetzung ist [uv](https://docs.astral.sh/uv/). Es installiert die passende Python-Version und alle Werkzeuge in den Versionen aus `backend/uv.lock`.
+
+```bash
+cd backend
+uv sync
+uv run ruff check          # Lint
+uv run ruff format --check # Formatierung
+uv run pyright             # Typprüfung (strict)
+uv run lint-imports        # Modulgrenzen
+uv run pytest              # Tests, einschließlich der Regeln aus CLAUDE.md
+```
+
+Optional führt [pre-commit](https://pre-commit.com/) dieselben Prüfungen vor jedem Commit aus: `uv tool install pre-commit`, dann im Repository `pre-commit install`.
 
 ## Testfälle (Golden Files)
 

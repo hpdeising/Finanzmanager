@@ -13,11 +13,18 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  # Mit M0 aktivieren, sobald backend/ und frontend/ existieren:
-  # - package-ecosystem: "uv"        # bzw. "pip", je nach Paketverwaltung
-  #   directory: "/backend"
-  #   schedule:
-  #     interval: "weekly"
+  - package-ecosystem: "uv"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      entwicklungswerkzeuge:
+        dependency-type: "development"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Aktivieren, sobald frontend/ bzw. Docker-Dateien existieren (M5, M9):
   # - package-ecosystem: "npm"
   #   directory: "/frontend"
   #   schedule:

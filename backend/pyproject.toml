@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+[project]
+name = "finanzmanager"
+version = "0.0.0"
+description = "Selbst gehostete, modulare Finanzverwaltung für Privatpersonen"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.12"
+# Laufzeitabhängigkeiten (FastAPI, SQLAlchemy, Alembic …) kommen mit dem ersten Code, der sie braucht.
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.169.0",
+    "import-linter>=2.15",
+    "pyright[nodejs]>=1.1.414",
+    "pytest>=9.1.1",
+    "ruff>=0.17.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# --- Ruff ---------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",  # pycodestyle, Pyflakes
+    "I",            # Importsortierung
+    "N",            # Namenskonventionen
+    "UP",           # aktuelle Python-Syntax
+    "B",            # typische Fehlerquellen
+    "A",            # keine Builtins überschreiben
+    "C4",           # Comprehensions
+    "SIM",          # Vereinfachungen
+    "DTZ",          # datetime nur mit Zeitzone (CLAUDE.md: Zeitstempel in UTC)
+    "T20",          # kein print(); Ausgaben nur über Logging
+    "S",            # Sicherheitsprüfungen (bandit)
+    "PT",           # pytest-Stil
+    "ERA",          # kein auskommentierter Code
+    "RUF",          # Ruff-eigene Regeln
+]
+# Deutsche Typografie in Texten und Docstrings ist erlaubt.
+allowed-confusables = ["–", "„", "“", "‘", "’"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert ist in Tests der Normalfall
+
+# --- Pyright ------------------------------------------------------------------
+
+[tool.pyright]
+include = ["app", "tests"]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+venvPath = "."
+venv = ".venv"
+
+# --- pytest -------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config", "-ra"]
+xfail_strict = true
+
+# --- import-linter (Modulgrenzen, CLAUDE.md) -----------------------------------
+
+[tool.importlinter]
+root_package = "app"
+
+[[tool.importlinter.contracts]]
+name = "Schichten: API über Modulen über Kern"
+type = "layers"
+layers = ["app.api", "app.module", "app.kern"]
+
+[[tool.importlinter.contracts]]
+name = "Module importieren sich nicht gegenseitig"
+type = "independence"
+modules = ["app.module.*"]
