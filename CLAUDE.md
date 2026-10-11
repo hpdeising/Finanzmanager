@@ -31,7 +31,7 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 - Der Kern (`backend/app/kern/`) enthält keine Fachlogik eines Moduls.
 - Module (`backend/app/module/<name>/`) hängen vom Kern ab, nie umgekehrt.
 - Module importieren sich nicht gegenseitig. Austausch nur über Kern-Schnittstellen und Ereignisse.
-- Ein Modul meldet seine Kontoarten, Rollen, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets beim Kern an.
+- Ein Modul meldet seine Kontoarten, Rollen, Buchungsarten, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets beim Kern an.
 - Die CI prüft diese Grenzen mit import-linter. Die Regeln dort werden nicht gelockert, um einen Build grün zu bekommen.
 
 ### Geld

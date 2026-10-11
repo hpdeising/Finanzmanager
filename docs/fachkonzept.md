@@ -70,7 +70,7 @@ Alle Entscheidungen vom 11.10.2026.
 | E-15 | Name und Aufbau | Projektname „Finanzmanager“; modularer Aufbau aus Kern und Fachmodulen; erstes Modul „Verbindlichkeiten“ |
 | E-16 | Lizenzen Dritter | PSF-2.0 zusätzlich erlaubt; die CI prüft Lizenzen bei jedem PR; Lizenzhinweise und SBOM entstehen automatisch je Release (Kap. 11.3) |
 | E-17 | Kern und Module im Datenmodell | Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf Kern-Tabellen verweisen, nie umgekehrt. Einzige Ausnahme ist `audit_log`: Es verweist allgemein über `entitaet_typ` und `entitaet_id`, ohne Fremdschlüssel, weil es jede Tabelle protokollieren muss. `konto` und `buchung` haben deshalb keine Spalte `akte_id`. Das Modul Verbindlichkeiten verknüpft Akten über eigene Tabellen (`akte_konto`, `akte_dokument`); die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten. Kontorollen und Buchungsarten folgen dem Schema `<modul>.<name>`, z. B. `verbindlichkeiten.hauptforderung`, `kern.externe_mittel`, `kern.storno`. Der Kern kennt nur `kern.externe_mittel` und `kern.storno`; die übrigen Rollen und Arten meldet das Modul an (Kap. 4.2, 4.4, 4.5) |
-| E-18 | Storno | Eine Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; der Zeitpunkt der Korrektur steht in `erfasst_am`. Zinsen, Anrechnung und Fristen werden aus der Historie berechnet. Eine falsch erfasste Zahlung, die erst ab dem Korrekturtag storniert wäre, würde alle Zinsperioden davor weiter verfälschen. Über `erfasst_am` bleibt nachvollziehbar, was zu welchem Zeitpunkt bekannt war |
+| E-18 | Storno-Wertstellung | Eine Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; der Zeitpunkt der Korrektur steht in `erfasst_am`. Zinsen, Anrechnung und Fristen werden aus der Historie berechnet. Eine falsch erfasste Zahlung, die erst ab dem Korrekturtag storniert wäre, würde alle Zinsperioden davor weiter verfälschen. Über `erfasst_am` bleibt nachvollziehbar, was zu welchem Zeitpunkt bekannt war |
 | E-19 | Datenbankrollen | Die Eigentümerrolle führt nur die Migrationen aus. Die Anwendung verbindet sich mit einer Laufzeitrolle, die auf `buchung` und `posting` nur lesen und einfügen darf. Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration (Kap. 11.1) |
 | E-20 | Lizenzen nativer Bibliotheken | Die Lizenzliste in `CLAUDE.md` gilt auch für native Bibliotheken, die ein Paket mitbringt; zusätzlich erlaubt sind PostgreSQL, OLDAP-2.8 und Public Domain. Für das Betriebssystem des Docker-Basis-Images gelten dessen eigene Lizenzhinweise (Kap. 11.3) |
 
@@ -87,7 +87,7 @@ Alle Entscheidungen vom 11.10.2026.
 | Bestandteil | Teil der Forderung mit eigener Rechtslogik: Hauptforderung, Zinsen, vorgerichtliche Kosten, Verfahrenskosten, Vollstreckungskosten |
 | Zinsregel | Berechnungsvorschrift für die Zinsen eines Bestandteils |
 | Ereignis | Datiertes, rechtlich relevantes Geschehen (Zustellung, Rechtskraft, Zahlung, Vollstreckungsantrag …). Fristen werden aus Ereignissen abgeleitet |
-| Buchung | Unveränderlicher Geschäftsvorfall aus mindestens zwei Postings auf mindestens zwei verschiedenen Konten mit der Summe null |
+| Buchung | Unveränderlicher Geschäftsvorfall aus mindestens zwei Postings, deren Summe null ist; sie betreffen mindestens zwei verschiedene Konten |
 | Stichtag | Datum, zu dem Salden und Zinsen berechnet werden |
 
 ---
@@ -132,13 +132,15 @@ Vorbereitet, nicht implementiert: Bankkonto (Aktiv), Depot (Aktiv), Sachwert (Ak
 
 ### 4.3 Buchungsarten
 
-| Vorgang | Soll | Haben |
-|---|---|---|
-| Erfassung einer Altlast | Eröffnung Altlasten | Hauptforderung (und ggf. Kosten, aufgelaufene Zinsen) |
-| Zinslauf bis Stichtag | Zinsaufwand | Zinsen |
-| Neue Kosten (z. B. Vollstreckung) | Kostenaufwand | Kosten Vollstreckung |
-| Zahlung | Bestandteile laut Anrechnung (Kap. 5.3) | Externe Mittel bzw. später Bankkonto |
-| Korrektur | Storno der Ursprungsbuchung | + Neubuchung |
+| Vorgang | Art | Soll | Haben |
+|---|---|---|---|
+| Erfassung einer Altlast | `verbindlichkeiten.entstehung` | Eröffnung Altlasten | Hauptforderung (und ggf. Kosten, aufgelaufene Zinsen) |
+| Zinslauf bis Stichtag | `verbindlichkeiten.zinslauf` | Zinsaufwand | Zinsen |
+| Neue Kosten (z. B. Vollstreckung) | `verbindlichkeiten.kosten` | Kostenaufwand | Kosten Vollstreckung |
+| Zahlung | `verbindlichkeiten.zahlung` | Bestandteile laut Anrechnung (Kap. 5.3) | Externe Mittel bzw. später Bankkonto |
+| Korrektur | `kern.storno` | Storno der Ursprungsbuchung | + Neubuchung |
+
+Buchungsarten folgen dem Schema `<modul>.<name>` (E-17). Der Kern kennt nur `kern.storno`; die übrigen Arten meldet das Modul mit seiner Umsetzung beim Kern an. In M1 prüft die Datenbank nur das Format, keine Liste.
 
 ### 4.4 Buchungskern (Skizze, nicht ausführbar)
 
@@ -163,12 +165,12 @@ CREATE TABLE konto (
 CREATE TABLE buchung (
   id           uuid PRIMARY KEY,
   haushalt_id  uuid NOT NULL REFERENCES haushalt,
-  art          text NOT NULL CHECK (art ~ '^[a-z_]+\.[a-z_]+$'),  -- z. B. verbindlichkeiten.zahlung
+  art          text NOT NULL CHECK (art ~ '^[a-z_]+\.[a-z_]+$'),  -- <modul>.<name>, Kap. 4.3
   wertstellung date NOT NULL,
-  erfasst_am   timestamptz NOT NULL DEFAULT now(),  -- setzt die Datenbank; ein Wert vom Client wird ignoriert
-  erfasst_von  uuid REFERENCES benutzer,            -- folgt mit der Tabelle benutzer
+  erfasst_am   timestamptz NOT NULL DEFAULT now(),  -- setzt ein Trigger, siehe unten
+  -- erfasst_von uuid REFERENCES benutzer: Spalte und Fremdschlüssel folgen mit der Tabelle benutzer
   storno_von   uuid UNIQUE REFERENCES buchung,      -- höchstens ein Storno je Buchung
-  beleg_id     uuid REFERENCES dokument,            -- folgt mit der Tabelle dokument
+  -- beleg_id uuid REFERENCES dokument: Spalte und Fremdschlüssel folgen mit der Tabelle dokument
   text         text,
   CHECK ((art = 'kern.storno') = (storno_von IS NOT NULL)),
   CHECK (storno_von <> id)
@@ -185,6 +187,8 @@ CREATE TABLE posting (
 --   alle Konten gehören zum Haushalt der Buchung;
 --   ein Storno besteht genau aus den negierten Postings der Ursprungsbuchung.
 -- Sofort beim Einfügen (Trigger):
+--   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion; ein Wert vom Client
+--   wird überschrieben.
 --   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht.
 --   Storno: Die Ursprungsbuchung existiert, ist selbst kein Storno, gehört zum selben
 --   Haushalt und hat dieselbe Wertstellung (E-18).
@@ -193,15 +197,16 @@ CREATE TABLE posting (
 -- Die Trigger feuern immer, auch bei session_replication_role = replica.
 -- Rechte (E-19): Die Laufzeitrolle darf auf buchung und posting nur lesen und einfügen;
 --   in M1 gilt das auch für haushalt und konto.
--- Beträge: höchstens vier Nachkommastellen und betragsmäßig kleiner als 10^15. NUMERIC(19,4)
---   rundet weitere Nachkommastellen still, und die Datenbank kann das nicht erkennen. Deshalb
---   lehnt die Anwendung solche Beträge vor dem Speichern ab (kern/geld). Der Buchungskern rundet
---   nie; Module runden vorher über kern/geld.
+-- Beträge: NUMERIC(19,4) rundet eine fünfte und jede weitere Nachkommastelle still, und kein
+--   Trigger sieht den ursprünglichen Wert. Deshalb lehnt die Anwendung solche Beträge vor dem
+--   Speichern ab (kern/geld). Beträge ab 10^15 weist schon die Datenbank zurück (Überlauf); die
+--   Anwendung prüft auch das vorher, um einen verständlichen Fehler zu liefern. Der Buchungskern
+--   rundet nie; Module runden vorher über kern/geld.
 ```
 
 ### 4.5 Fachtabellen
 
-Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf Kern-Tabellen verweisen, nie umgekehrt (E-17).
+Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf Kern-Tabellen verweisen, nie umgekehrt. Einzige Ausnahme ist `audit_log`, ohne Fremdschlüssel (E-17).
 
 **Kern-Tabellen**
 
@@ -234,7 +239,7 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 
 ### 4.6 Erweiterbarkeit
 
-- Neue Module (Forderungen, Konten, Depot, Sachwerte) bringen eigene Kontoarten, Rollen, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets mit und melden sie beim Kern an. Eine eigene Buchungslogik bringen sie nicht mit.
+- Neue Module (Forderungen, Konten, Depot, Sachwerte) bringen eigene Kontoarten, Rollen, Buchungsarten, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets mit und melden sie beim Kern an. Eine eigene Buchungslogik bringen sie nicht mit.
 - Das Modul Forderungen (Gläubigersicht) nutzt dieselben Tabellen mit `richtung = forderung` und Aktivkonten.
 - Mandantenfähigkeit ist nicht vorgesehen; jede Instanz ist ein Haushalt. Spätere Mandanten wären eine Spalte über `haushalt`, kein Umbau.
 
@@ -465,6 +470,7 @@ Architektur: Widgets sind registrierte Komponenten mit eigener API-Abfrage. Spä
   - Die Eigentümerrolle besitzt die Tabellen und führt nur die Migrationen aus.
   - Die Anwendung verbindet sich mit der Laufzeitrolle. Sie darf auf `buchung` und `posting` nur lesen und einfügen, also kein UPDATE, DELETE oder TRUNCATE, und kann keine Trigger abschalten.
   - Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration, weil Rollen für den ganzen Datenbank-Cluster gelten. CI, Tests und Installer nutzen dasselbe Skript.
+  - Die Tests laufen als Laufzeitrolle; ein Test weist nach, dass sie Trigger nicht abschalten kann.
   - Das schützt gegen eigenen Code, auch KI-generierten, der Buchungen ändern will. Gegen den Superuser der Datenbank schützt es nicht und soll es nicht.
 - **Backups:** Täglich, bestehend aus Datenbank-Dump und Dokumenten, verschlüsselt. Das Ziel ist frei wählbar (externe Platte, NAS). Der Installer führt eine Wiederherstellungsprobe durch.
 - **Protokolle:** Keine personenbezogenen Inhalte, also keine Namen, IBANs oder Aktenzeichen.
