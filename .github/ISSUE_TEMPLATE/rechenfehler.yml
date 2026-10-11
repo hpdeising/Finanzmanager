@@ -35,7 +35,7 @@ body:
     id: eingaben
     attributes:
       label: Eingaben
-      description: Bestandteile mit Betrag, Zinsregel und Zinsbeginn; Zahlungen mit Datum und Betrag; Aktenparameter (Anrechnung, Tageszählung, Rundung).
+      description: Bestandteile mit Betrag, Zinsregel und Zinsbeginn; Zahlungen mit Datum und Betrag; Aktenparameter (Anrechnung, Tageszählung, Rundung, Zinsbeginn).
     validations:
       required: true
   - type: textarea
