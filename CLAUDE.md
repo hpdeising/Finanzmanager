@@ -82,6 +82,7 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 - Erlaubte Lizenzen für Abhängigkeiten: MIT, BSD, ISC, Apache-2.0, MPL-2.0, PSF-2.0, PostgreSQL, OLDAP-2.8, Public Domain, LGPL, GPL-3.0, AGPL-3.0. KERN-UX (EUPL-1.2) nur unverändert.
 - Die Liste gilt für alle Abhängigkeiten des Projekts, einschließlich der nativen Bibliotheken, die ein Paket mitbringt (z. B. libpq in `psycopg-binary`). Sie gilt nicht für das Betriebssystem des Docker-Basis-Images; dafür gelten dessen eigene Lizenzhinweise (Debian: `/usr/share/doc/*/copyright`), die mit dem Image ausgeliefert und nicht gegen die Liste geprüft werden.
 - Bringt ein Paket native Bibliotheken mit, nennt der Pull Request deren Lizenzen, weil der Lizenztest nur die Python-Metadaten liest. Die Bibliotheken gehören in die `THIRD-PARTY-LICENSES` (Fachkonzept 11.3).
+- Für gebündelte native Bibliotheken gilt die Lizenz, die das Ursprungsprojekt für die Bibliothek erklärt. Lizenzen einzelner Dateien darin werden nicht gegen diese Liste geprüft; ihre Lizenz- und Hinweistexte werden vollständig in `THIRD-PARTY-LICENSES` übernommen.
 - Verbotene Lizenzen für Abhängigkeiten: proprietär, SSPL, BUSL, Commons Clause, Creative Commons mit NC, GPL-2.0-only, unklare Lizenz.
 - Die CI prüft die Lizenzen aller Python-Abhängigkeiten gegen diese Liste (`tests/test_lizenzen.py`). Neue Lizenzen kommen nur durch eine Änderung dieser Liste dazu, nie durch eine Ausnahme im Test.
 - AGPL § 13: Die Oberfläche verlinkt auf den Quellcode der laufenden Version. Dieser Link wird nicht entfernt.
