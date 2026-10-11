@@ -2,7 +2,7 @@
 """Buchen über die Python-API (Fachkonzept 4.1, 4.3, 4.4)."""
 
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -22,6 +22,7 @@ from app.kern.ledger import (
     buche,
     lege_konto_an,
     saldo,
+    storniere,
 )
 from tests.datenbank import pruefe_aufgeschobene, roh_buchung, roh_haushalt, roh_konto, roh_postings
 from tests.kern.ledger.conftest import Konten, lege_konten_an
@@ -114,13 +115,40 @@ def test_erfasst_am_vom_client_wird_ueberschrieben(session: Session) -> None:
     assert erfasst_am == jetzt
 
 
-def test_buche_committet_nicht(app_engine: Engine, session: Session, konten: Konten) -> None:
-    buchung = erfasse_altlast(session, konten)
-    with app_engine.connect() as andere:
-        sichtbar = andere.execute(
-            text("SELECT count(*) FROM buchung WHERE id = :id"), {"id": buchung.id}
-        ).scalar_one()
-    assert sichtbar == 0
+def test_keine_funktion_committet(app_engine: Engine) -> None:
+    """Den Commit entscheidet der Aufrufer (buchen.py).
+
+    Eigene Sitzung ohne äußere Transaktion: In der Fixture ``session`` gäbe ein Commit nur
+    einen Savepoint frei, und der Test könnte nicht fehlschlagen.
+    """
+    with Session(app_engine) as sitzung:
+        transaktion = sitzung.begin()
+        konten = lege_konten_an(sitzung)  # lege_haushalt_an, lege_konto_an
+        assert sitzung.get_transaction() is transaktion
+        buchung = erfasse_altlast(sitzung, konten)
+        assert sitzung.get_transaction() is transaktion
+        storniere(sitzung, buchung_id=buchung.id)
+        assert sitzung.get_transaction() is transaktion
+        assert transaktion.is_active
+        with app_engine.connect() as andere:
+            sichtbar = andere.execute(
+                text("SELECT count(*) FROM haushalt WHERE id = :id"), {"id": konten.haushalt_id}
+            ).scalar_one()
+        assert sichtbar == 0
+        transaktion.rollback()
+
+
+@pytest.mark.parametrize(
+    ("feld", "wert"),
+    [("erfasst_am", datetime(2000, 1, 1, tzinfo=UTC)), ("erfasst_txid", "1")],
+)
+def test_erfassungsfelder_setzt_nur_die_datenbank(feld: str, wert: object) -> None:
+    """Der Trigger ersetzt einen Wert vom Client; das ORM zeigte sonst weiter den falschen."""
+    with pytest.raises(BuchungUngueltigError, match=feld):
+        Buchung(haushalt_id=uuid.uuid4(), art="test.buchung", wertstellung=TAG, **{feld: wert})
+    buchung = Buchung(haushalt_id=uuid.uuid4(), art="test.buchung", wertstellung=TAG)
+    with pytest.raises(BuchungUngueltigError, match=feld):
+        setattr(buchung, feld, wert)
 
 
 def test_echter_commit(app_engine: Engine) -> None:

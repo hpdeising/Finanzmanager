@@ -65,19 +65,31 @@ def test_ungueltige_rolle_wird_vor_der_datenbank_abgelehnt(session: Session) -> 
 # --- Dieselben Regeln in der Datenbank (Roh-SQL am API vorbei) -------------------------
 
 
+UNGUELTIGE_KONTOARTEN = ["Passiv", "bank", "", "passiv "]
+UNGUELTIGE_ROLLEN = [
+    "hauptforderung",
+    "Kern.x",
+    "kern.",
+    ".x",
+    "a.b.c",
+    "kern.externe-mittel",
+    "kern.x1",
+    "kern.gläubiger",
+    "kern.x\n",
+]
+
+
 @pytest.mark.parametrize(
     ("spalten", "constraint"),
     [
-        ({"kontoart": "Passiv", "rolle": "test.konto", "waehrung": "EUR"}, "ck_konto_kontoart"),
-        (
-            {"kontoart": "passiv", "rolle": "hauptforderung", "waehrung": "EUR"},
-            "ck_konto_rolle_format",
-        ),
-        (
-            {"kontoart": "passiv", "rolle": "kern.gläubiger", "waehrung": "EUR"},
-            "ck_konto_rolle_format",
-        ),
-        ({"kontoart": "passiv", "rolle": "kern.x\n", "waehrung": "EUR"}, "ck_konto_rolle_format"),
+        *[
+            ({"kontoart": kontoart, "rolle": "test.konto", "waehrung": "EUR"}, "ck_konto_kontoart")
+            for kontoart in UNGUELTIGE_KONTOARTEN
+        ],
+        *[
+            ({"kontoart": "passiv", "rolle": rolle, "waehrung": "EUR"}, "ck_konto_rolle_format")
+            for rolle in UNGUELTIGE_ROLLEN
+        ],
         ({"kontoart": "passiv", "rolle": "test.konto", "waehrung": "USD"}, "ck_konto_nur_eur"),
     ],
 )

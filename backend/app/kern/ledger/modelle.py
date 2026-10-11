@@ -9,13 +9,14 @@ die deklarativen CHECKs, mit denselben Namen.
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Final, Literal, get_args
+from typing import Final, Literal, NoReturn, get_args
 
 from sqlalchemy import CHAR, CheckConstraint, Date, DateTime, ForeignKey, Text, func
 from sqlalchemy import text as sql_text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.kern.db import Basis, BetragTyp, Xid8
+from app.kern.ledger.fehler import BuchungUngueltigError
 
 # Eine der fünf Grundarten des Kerns (Fachkonzept 4.2).
 Kontoart = Literal["aktiv", "passiv", "aufwand", "ertrag", "eigenkapital"]
@@ -72,6 +73,15 @@ class Buchung(Basis):
     erfasst_txid: Mapped[str] = mapped_column(Xid8(), deferred=True)
     storno_von: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("buchung.id"), unique=True)
     text: Mapped[str | None] = mapped_column(Text)
+
+    @validates("erfasst_am", "erfasst_txid")
+    def _setzt_nur_die_datenbank(self, feld: str, wert: object) -> NoReturn:
+        """Ein Wert vom Client würde vom Trigger ersetzt, das ORM zeigte aber weiter ihn.
+
+        Werte aus der Datenbank laufen nicht durch diese Prüfung.
+        """
+        msg = f"{feld} setzt die Datenbank (Fachkonzept 4.4), nicht der Aufrufer."
+        raise BuchungUngueltigError(msg)
 
 
 class Posting(Basis):
