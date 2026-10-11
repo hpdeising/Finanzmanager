@@ -68,6 +68,7 @@ Alle Entscheidungen vom 11.10.2026.
 | E-13 | Dashboard | Ab Release 1, Widget-Architektur für spätere Module |
 | E-14 | Zeitrahmen | Kein fester Zeitrahmen |
 | E-15 | Name und Aufbau | Projektname „Finanzmanager“; modularer Aufbau aus Kern und Fachmodulen; erstes Modul „Verbindlichkeiten“ |
+| E-16 | Lizenzen Dritter | PSF-2.0 zusätzlich erlaubt; die CI prüft Lizenzen bei jedem PR; Lizenzhinweise und SBOM entstehen automatisch je Release (Kap. 11.3) |
 
 ---
 
@@ -419,7 +420,7 @@ Architektur: Widgets sind registrierte Komponenten mit eigener API-Abfrage. Spä
 - **Backups:** Täglich, bestehend aus Datenbank-Dump und Dokumenten, verschlüsselt. Das Ziel ist frei wählbar (externe Platte, NAS). Der Installer führt eine Wiederherstellungsprobe durch.
 - **Protokolle:** Keine personenbezogenen Inhalte, also keine Namen, IBANs oder Aktenzeichen.
 - **Audit-Log:** Nur anhängend. Es hält fest, wer wann welche Entität geändert hat.
-- **AGPL § 13:** Die Fußzeile verlinkt auf den Quellcode der laufenden Version.
+- **AGPL § 13:** Die Fußzeile verlinkt auf den Quellcode der laufenden Version und auf die Lizenzhinweise der verwendeten Fremdkomponenten.
 
 ### 11.2 Installer
 
@@ -445,6 +446,17 @@ Architektur: Widgets sind registrierte Komponenten mit eigener API-Abfrage. Spä
 3. Migrationen ausführen.
 4. Funktionsprüfung.
 5. Bei Fehler Rückkehr zur Vorversion.
+
+### 11.3 Lizenzhinweise Dritter
+
+Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-Vermerke mitgeliefert werden, sobald ihr Code weitergegeben wird. Das Repository selbst gibt keinen fremden Code weiter; ausgelieferte Pakete schon.
+
+- **Automatisch erzeugt, nie von Hand gepflegt:** Bei jedem Build entsteht eine Datei `THIRD-PARTY-LICENSES` mit den vollständigen Lizenztexten und den Inhalten von `NOTICE`-Dateien (Apache-2.0).
+- **Docker-Images:** enthalten die Datei für alle Python-Abhängigkeiten.
+- **Frontend-Bundle:** enthält die Datei für alle npm-Abhängigkeiten, weil das Bündeln die Lizenzkommentare im Code entfernt.
+- **Oberfläche:** eine Seite „Lizenzen“, verlinkt neben dem Quellcode-Link.
+- **Release:** Zu jedem Release gehört eine SBOM (CycloneDX oder SPDX).
+- **Prüfung:** Erlaubte Lizenzen stehen in `CLAUDE.md`; die CI prüft sie bei jedem Pull Request.
 
 ---
 
@@ -506,12 +518,12 @@ toleranz: "0.00"
 | M2 | Stammdaten und Zinsen | Basiszinsreihe, Zins-Engine, erste Golden Files |
 | M3 | Anrechnung | Regeln nach § 367 und § 497 BGB, Abgleich mit der Forderungsaufstellung |
 | M4 | Fristen und Status | Fristenkatalog, Verjährung, Statusmodell, Nachwirkungs-Aufgaben |
-| M5 | Oberfläche | API, KERN-Grundgerüst, Akten, Dashboard |
+| M5 | Oberfläche | API, KERN-Grundgerüst, Akten, Dashboard, Seite „Lizenzen“, Lizenzhinweise im Frontend-Bundle |
 | M6 | Import | CSV-Profile, CAMT.053, Zuordnung |
 | M7 | Schreiben | V-01 bis V-06, PDF |
 | M8 | Dokumente und Backup | Verschlüsselung, Recovery-Key, Backup und Restore |
-| M9 | Installer | Linux, dann macOS, dann Windows |
-| M10 | Release 0.1 | Öffentliche Beta |
+| M9 | Installer | Linux, dann macOS, dann Windows; Docker-Images mit `THIRD-PARTY-LICENSES` |
+| M10 | Release 0.1 | Öffentliche Beta mit SBOM |
 
 ---
 
