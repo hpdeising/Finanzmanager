@@ -83,6 +83,8 @@ jobs:
       # zur Laufzeit und gelten nur für diesen Schritt. Er läuft nach den Tests, weil die
       # Tests einen Cluster mit einer Finanzmanager-Datenbank ablehnen (CONTRIBUTING.md).
       - name: Datenbank einrichten (Bootstrap, Migration, Anmeldung)
+        # Auch bei roten Tests: Dieser Weg liefert bei der Fehlersuche ein eigenes Ergebnis.
+        if: ${{ !cancelled() }}
         run: |
           owner_passwort="$(openssl rand -hex 24)"
           app_passwort="$(openssl rand -hex 24)"

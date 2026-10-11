@@ -9,9 +9,9 @@ die deklarativen CHECKs, mit denselben Namen.
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Final, Literal, NoReturn, get_args
+from typing import Final, Literal, get_args
 
-from sqlalchemy import CHAR, CheckConstraint, Date, DateTime, ForeignKey, Text, func
+from sqlalchemy import CHAR, CheckConstraint, Date, DateTime, ForeignKey, Text, func, inspect
 from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
@@ -69,17 +69,22 @@ class Buchung(Basis):
     # Setzt die Datenbank auf den Beginn der Transaktion; ein Wert vom Client wird ersetzt.
     erfasst_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # Setzt die Datenbank auf die Nummer der Transaktion, in der die Buchung entsteht. Nur in
-    # dieser Transaktion nimmt sie Postings an (Fachkonzept 4.4). Wird erst bei Bedarf geladen.
-    erfasst_txid: Mapped[str] = mapped_column(Xid8(), deferred=True)
+    # dieser Transaktion nimmt sie Postings an (Fachkonzept 4.4). Nicht verzögert geladen:
+    # Session.merge() sähe sonst keinen alten Wert und schickte ein UPDATE.
+    erfasst_txid: Mapped[str] = mapped_column(Xid8())
     storno_von: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("buchung.id"), unique=True)
     text: Mapped[str | None] = mapped_column(Text)
 
     @validates("erfasst_am", "erfasst_txid")
-    def _setzt_nur_die_datenbank(self, feld: str, wert: object) -> NoReturn:
-        """Ein Wert vom Client würde vom Trigger ersetzt, das ORM zeigte aber weiter ihn.
+    def _setzt_nur_die_datenbank(self, feld: str, wert: object) -> object:
+        """Bei einer neuen Buchung setzt beides die Datenbank (Fachkonzept 4.4).
 
-        Werte aus der Datenbank laufen nicht durch diese Prüfung.
+        Ein Wert vom Client würde vom Trigger ersetzt, das ORM zeigte aber weiter ihn. Hat
+        die Buchung schon eine Identität, etwa bei ``Session.merge()``, stammen die Werte aus
+        der Datenbank; ändern ließen sie sich ohnehin nicht (kein UPDATE auf buchung).
         """
+        if inspect(self).has_identity:
+            return wert
         msg = f"{feld} setzt die Datenbank (Fachkonzept 4.4), nicht der Aufrufer."
         raise BuchungUngueltigError(msg)
 

@@ -138,6 +138,24 @@ def test_keine_funktion_committet(app_engine: Engine) -> None:
         transaktion.rollback()
 
 
+def test_merge_einer_geladenen_buchung(app_engine: Engine) -> None:
+    """Der Schutz von erfasst_am greift nur bei neuen Buchungen, nicht bei Werten aus der DB."""
+    with Session(app_engine) as sitzung:
+        konten = lege_konten_an(sitzung)
+        buchung_id = erfasse_altlast(sitzung, konten).id
+        sitzung.commit()
+    with Session(app_engine) as erste:
+        geladen = erste.get(Buchung, buchung_id)
+        assert geladen is not None
+        txid = geladen.erfasst_txid
+    with Session(app_engine) as zweite:
+        uebernommen = zweite.merge(geladen)
+        assert uebernommen.erfasst_am == geladen.erfasst_am
+        assert uebernommen.erfasst_txid == txid
+        assert not zweite.is_modified(uebernommen)
+        zweite.flush()  # ein UPDATE scheiterte an den Rechten der Laufzeitrolle
+
+
 @pytest.mark.parametrize(
     ("feld", "wert"),
     [("erfasst_am", datetime(2000, 1, 1, tzinfo=UTC)), ("erfasst_txid", "1")],

@@ -28,9 +28,9 @@ import psycopg
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 from psycopg.rows import TupleRow
-from sqlalchemy import URL, make_url
+from sqlalchemy import URL
 
-from app.kern.db.engine import URL_VARIABLE
+from app.kern.db.engine import URL_VARIABLE, lies_adresse
 
 OWNER_ROLE: Final = "finanzmanager_owner"
 APP_ROLE: Final = "finanzmanager_app"
@@ -49,7 +49,7 @@ def psycopg_verbindung(url: str | URL, *, autocommit: bool = True) -> psycopg.Co
     Die Teile gehen einzeln an libpq, nicht als URI. So braucht ein Passwort mit Leerzeichen
     oder Sonderzeichen keine Kodierung, und keine Meldung beim Zerlegen kann es enthalten.
     """
-    adresse = make_url(url)
+    adresse = lies_adresse(url)
     zusatz: dict[str, str] = {}
     for schluessel, wert in adresse.query.items():
         if not isinstance(wert, str):
@@ -144,9 +144,12 @@ def _umgebung(variable: str) -> str:
 
 def main() -> None:
     """Einstieg für CI und Installer; Meldungen nennen nie Passwörter."""
-    admin_url = _umgebung(ADMIN_URL_VARIABLE)
-    app_url = make_url(_umgebung(URL_VARIABLE))
-    owner_url = make_url(_umgebung(MIGRATION_URL_VARIABLE))
+    try:
+        admin_url = lies_adresse(_umgebung(ADMIN_URL_VARIABLE), quelle=ADMIN_URL_VARIABLE)
+        app_url = lies_adresse(_umgebung(URL_VARIABLE), quelle=URL_VARIABLE)
+        owner_url = lies_adresse(_umgebung(MIGRATION_URL_VARIABLE), quelle=MIGRATION_URL_VARIABLE)
+    except ValueError as fehler:
+        raise SystemExit(str(fehler)) from None
     if app_url.username != APP_ROLE:
         msg = f"{URL_VARIABLE} muss die Rolle {APP_ROLE} verwenden."
         raise SystemExit(msg)

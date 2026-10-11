@@ -672,6 +672,20 @@ def test_numeric_lehnt_zu_grosse_betraege_ab(session: Session, k: RohKonten) -> 
     assert sqlstate(fehler.value) == "22003"
 
 
+@pytest.mark.parametrize(("nullen", "zustand"), [(16383, None), (16384, "22003")])
+def test_numeric_liest_hoechstens_16383_nachkommastellen(
+    session: Session, nullen: int, zustand: str | None
+) -> None:
+    """Charakterisierung der Grenze, die kern/geld.speicherbar() übernimmt."""
+    anweisung = text("SELECT CAST('1.' || repeat('0', :nullen) AS numeric) = 1")
+    if zustand is None:
+        assert session.execute(anweisung, {"nullen": nullen}).scalar_one() is True
+        return
+    with pytest.raises(DBAPIError) as fehler:
+        session.execute(anweisung, {"nullen": nullen})
+    assert sqlstate(fehler.value) == zustand
+
+
 def test_wertstellung_bleibt_ein_datum(session: Session, k: RohKonten) -> None:
     buchung_id = roh_buchung(session, k.haushalt_id)
     wertstellung = session.execute(

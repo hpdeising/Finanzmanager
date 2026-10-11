@@ -40,10 +40,26 @@ def test_betrag_lehnt_andere_typen_ab(eingabe: object) -> None:
 
 @pytest.mark.parametrize(
     "eingabe",
-    ["", " 1.50", "1.50 ", "1,50", "1.", ".5", "+1.50", "1e5", "1_000", "NaN", "Infinity", "abc"],
+    [
+        "",
+        " 1.50",
+        "1.50 ",
+        "1,50",
+        "1.",
+        ".5",
+        "+1.50",
+        "1e5",
+        "1_000",
+        "NaN",
+        "Infinity",
+        "abc",
+        "\u0661\u0662\u0663.\u0664\u0665",  # arabisch-indische Ziffern 123.45
+        "\uff11\uff12\uff13",  # Ziffern in voller Breite 123
+        "12\u00b3",  # hochgestellte Drei
+    ],
 )
 def test_betrag_lehnt_nicht_kanonischen_text_ab(eingabe: str) -> None:
-    """Kanonisch ist nur ``-?Ziffern(.Ziffern)?``.
+    """Kanonisch ist nur ``-?Ziffern(.Ziffern)?``, mit den ASCII-Ziffern 0 bis 9.
 
     Die deutsche Schreibweise mit Komma übersetzt die Oberfläche, nicht der Kern.
     """
@@ -205,13 +221,37 @@ def test_speicherbar_lehnt_winzige_nachkommastellen_ohne_unterlauf_ab(eingabe: o
 
 @pytest.mark.parametrize(
     "eingabe",
-    [Decimal("0E-1000030"), Decimal("1." + "0" * 40), Decimal("123.4500000000000000000000000000")],
-    ids=["null-mit-kleinem-exponenten", "viele-nullen", "nullen-ueber-28-stellen"],
+    [
+        Decimal("0E-20"),
+        Decimal("1." + "0" * 40),
+        Decimal("123.4500000000000000000000000000"),
+        Decimal("1." + "0" * 16383),
+    ],
+    ids=["null-mit-kleinem-exponenten", "viele-nullen", "nullen-ueber-28-stellen", "grenze"],
 )
 def test_speicherbar_wertet_abschliessende_nullen_nicht_als_nachkommastellen(
     eingabe: Decimal,
 ) -> None:
     assert speicherbar(eingabe) is eingabe
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [
+        "1." + "0" * 16384,
+        Decimal("0E-16384"),
+        Decimal("0E-1000030"),
+        Decimal("-1." + "0" * 10_000_000),
+    ],
+    ids=["nullen", "null-mit-exponent", "null-mit-kleinstem-exponent", "zehn-millionen-nullen"],
+)
+def test_speicherbar_lehnt_mehr_als_16383_stellen_nach_dem_komma_ab(eingabe: object) -> None:
+    """PostgreSQL liest höchstens 16383 Stellen nach dem Komma, auch wenn es nur Nullen sind.
+
+    Die Grenze hält zugleich die Prüfung der Nachkommastellen kurz.
+    """
+    with pytest.raises(ValueError, match="Nachkommastellen"):
+        speicherbar(eingabe)
 
 
 def meldungen(fehler: BaseException) -> str:

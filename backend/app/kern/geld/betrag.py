@@ -19,9 +19,13 @@ CENT = Decimal("0.01")
 # NUMERIC(19,4): vier Nachkommastellen, also höchstens 15 Stellen vor dem Komma.
 SPEICHER_NACHKOMMASTELLEN = 4
 SPEICHER_GRENZE = Decimal("1E15")
+# PostgreSQL liest für numeric höchstens 16383 Stellen nach dem Komma, auch wenn es nur Nullen
+# sind (PostgreSQL-Doku, Kapitel 8.1, Tabelle 8.2); darüber hinaus 22003.
+NUMERIC_STELLEN_NACH_KOMMA = 16383
 
-# Kanonische Textform: optionales Minus, Ziffern, optional Punkt und Ziffern.
-_KANONISCH = re.compile(r"-?\d+(?:\.\d+)?")
+# Kanonische Textform: optionales Minus, Ziffern, optional Punkt und Ziffern. Nur ASCII-Ziffern;
+# \d passte auch auf andere Schriften, und Decimal() läse sie.
+_KANONISCH = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
 
 
 def betrag(wert: object) -> Decimal:
@@ -91,8 +95,9 @@ def speicherbar(wert: object) -> Decimal:
 
     Raises:
         TypeError: wie ``betrag()``.
-        ValueError: bei ungültigem Text oder nicht endlichen Werten, bei Beträgen ab 10^15
-            und bei mehr als vier Nachkommastellen.
+        ValueError: bei ungültigem Text oder nicht endlichen Werten, bei Beträgen ab 10^15,
+            bei mehr als vier Nachkommastellen und bei mehr als 16383 Stellen nach dem Komma,
+            auch wenn es Nullen sind.
     """
     try:
         ergebnis = betrag(wert)
@@ -101,6 +106,11 @@ def speicherbar(wert: object) -> Decimal:
         raise ValueError(msg) from None
     if ergebnis.copy_abs() >= SPEICHER_GRENZE:
         msg = "Betrag ist für NUMERIC(19,4) zu groß (höchstens 15 Stellen vor dem Komma)."
+        raise ValueError(msg)
+    # Danach hat der Wert höchstens 15 + 16383 Ziffern; das begrenzt auch die Prüfung unten.
+    exponent = ergebnis.as_tuple().exponent
+    if isinstance(exponent, int) and exponent < -NUMERIC_STELLEN_NACH_KOMMA:
+        msg = "Betrag hat mehr Nachkommastellen, als PostgreSQL liest (16383, auch Nullen)."
         raise ValueError(msg)
     if _nachkommastellen(ergebnis) > SPEICHER_NACHKOMMASTELLEN:
         msg = "Betrag hat mehr als vier Nachkommastellen; NUMERIC(19,4) würde ihn runden."

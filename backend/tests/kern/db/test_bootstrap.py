@@ -21,6 +21,7 @@ from app.kern.db.bootstrap import (
     MIGRATION_URL_VARIABLE,
     OWNER_ROLE,
     main,
+    psycopg_verbindung,
     richte_datenbank_ein,
 )
 from app.kern.db.engine import URL_VARIABLE
@@ -289,3 +290,31 @@ def test_tests_verweigern_einen_cluster_mit_einer_instanz(
 
 def test_tests_akzeptieren_einen_cluster_ohne_instanz(admin_url: URL) -> None:
     pruefe_cluster(admin_url)
+
+
+@pytest.mark.parametrize("variable", [ADMIN_URL_VARIABLE, URL_VARIABLE, MIGRATION_URL_VARIABLE])
+def test_kommandozeile_nennt_bei_kaputter_adresse_kein_passwort(
+    monkeypatch: pytest.MonkeyPatch, testdatenbank: Sitzungsdatenbank, variable: str
+) -> None:
+    """Ein nicht kodiertes ``@`` im Passwort: SQLAlchemy zitierte den Rest der Adresse."""
+    gueltig = {
+        ADMIN_URL_VARIABLE: "postgresql+psycopg://postgres:geheim@127.0.0.1/postgres",
+        URL_VARIABLE: testdatenbank.app_url.render_as_string(hide_password=False),
+        MIGRATION_URL_VARIABLE: testdatenbank.owner_url.render_as_string(hide_password=False),
+    }
+    rolle = {ADMIN_URL_VARIABLE: "postgres", URL_VARIABLE: APP_ROLE}.get(variable, OWNER_ROLE)
+    for name, wert in gueltig.items():
+        monkeypatch.setenv(name, wert)
+    monkeypatch.setenv(variable, f"postgresql+psycopg://{rolle}:ab@cd:GEHEIMTEIL@127.0.0.1/fm")
+    with pytest.raises(SystemExit, match=variable) as fehler:
+        main()
+    assert "GEHEIMTEIL" not in str(fehler.value)
+    assert fehler.value.__cause__ is None
+    assert fehler.value.__suppress_context__
+
+
+def test_verbindung_aus_kaputter_adresse_nennt_kein_passwort() -> None:
+    with pytest.raises(ValueError, match="Adresse") as fehler:
+        psycopg_verbindung("postgresql+psycopg://postgres:ab@cd:GEHEIMTEIL@127.0.0.1/postgres")
+    assert "GEHEIMTEIL" not in str(fehler.value)
+    assert fehler.value.__suppress_context__

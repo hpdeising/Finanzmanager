@@ -89,7 +89,36 @@ def test_adresse_hat_vorrang_vor_pgoptions(
 def test_zeitzone_bleibt_utc(
     monkeypatch: pytest.MonkeyPatch, testdatenbank: Sitzungsdatenbank
 ) -> None:
-    """UTC ist Pflicht (CLAUDE.md, Datum und Fristen); weder Adresse noch PGOPTIONS ändern das."""
+    """UTC ist Pflicht (CLAUDE.md, Datum und Fristen); weder Adresse noch Umgebung ändern das.
+
+    PGTZ schickt libpq als eigenen Parameter, den der Server nach ``options`` auswertet.
+    """
     monkeypatch.setenv("PGOPTIONS", "-c TimeZone=Europe/Berlin")
-    url = testdatenbank.app_url.update_query_dict({"options": "-c TimeZone=America/New_York"})
-    assert zeige(erzeuge_engine(url), "TimeZone") == ["UTC"]
+    monkeypatch.setenv("PGTZ", "America/New_York")
+    url = testdatenbank.app_url.update_query_dict({"options": "-c TimeZone=Asia/Tokyo"})
+    engine = erzeuge_engine(url)
+    try:
+        with engine.connect() as verbindung:
+            assert verbindung.execute(text("SHOW TimeZone")).scalar_one() == "UTC"
+            # Auch nach einem Rollback bleibt es dabei.
+            verbindung.rollback()
+            jetzt = verbindung.execute(text("SELECT now()")).scalar_one()
+    finally:
+        engine.dispose()
+    assert jetzt.utcoffset() == timedelta(0)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "postgresql+psycopg://postgres:ab@cd:GEHEIMTEIL@127.0.0.1:5433/postgres",
+        "postgresql+psycopg://postgres:GEHEIM TEIL@[::1/postgres",
+    ],
+)
+def test_kaputte_adresse_nennt_kein_passwort(url: str) -> None:
+    """SQLAlchemy zitiert bei einer kaputten Adresse Teile davon, auch das Passwort."""
+    with pytest.raises(ValueError, match="Adresse") as fehler:
+        erzeuge_engine(url)
+    assert "GEHEIM" not in str(fehler.value)
+    assert fehler.value.__cause__ is None
+    assert fehler.value.__suppress_context__
