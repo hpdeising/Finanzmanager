@@ -1,0 +1,28 @@
+# Versionsupdates durch Dependabot.
+# Sicherheitsupdates sind unabhängig davon in den Repository-Einstellungen aktiviert.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Mit M0 aktivieren, sobald backend/ und frontend/ existieren:
+  # - package-ecosystem: "uv"        # bzw. "pip", je nach Paketverwaltung
+  #   directory: "/backend"
+  #   schedule:
+  #     interval: "weekly"
+  # - package-ecosystem: "npm"
+  #   directory: "/frontend"
+  #   schedule:
+  #     interval: "weekly"
+  # - package-ecosystem: "docker"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
