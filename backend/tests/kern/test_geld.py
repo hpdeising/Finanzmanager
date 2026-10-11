@@ -8,7 +8,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.kern.geld import als_text, betrag, runde_auf_cent
+from app.kern.geld import als_text, betrag, runde_auf_cent, speicherbar
 
 # --- betrag(): Beträge nur aus Text, ganzen Zahlen oder Decimal ----------------
 
@@ -116,3 +116,67 @@ def test_als_text_festkomma_mit_mindestens_zwei_nachkommastellen(
 def test_als_text_lehnt_nicht_endliche_werte_ab() -> None:
     with pytest.raises(ValueError, match="Betrag"):
         als_text(Decimal("NaN"))
+
+
+# --- speicherbar(): Beträge, die NUMERIC(19,4) exakt aufnimmt --------------------
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [
+        "0.0001",
+        "-0.0001",
+        "999999999999999.9999",
+        "-999999999999999.9999",
+        "1.00000",
+        Decimal("1E+2"),
+        Decimal("-0"),
+        Decimal("0E+20"),
+        7,
+    ],
+)
+def test_speicherbar_gibt_den_wert_unveraendert_zurueck(eingabe: object) -> None:
+    """Wertbezogen: ``1.00000`` hat fünf Stellen, aber keine fünfte Nachkommastelle ≠ 0."""
+    ergebnis = speicherbar(eingabe)
+    assert isinstance(ergebnis, Decimal)
+    assert ergebnis == betrag(eingabe)
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    [
+        "1.00005",
+        "-1.00005",
+        "0.00001",
+        Decimal("1E-30"),
+        "999999999999999.99995",
+    ],
+)
+def test_speicherbar_lehnt_mehr_als_vier_nachkommastellen_ab(eingabe: object) -> None:
+    """NUMERIC(19,4) würde still runden; ``1.00005`` würde zu ``1.0001``."""
+    with pytest.raises(ValueError, match="Nachkommastellen"):
+        speicherbar(eingabe)
+
+
+@pytest.mark.parametrize(
+    "eingabe",
+    ["1000000000000000", "-1000000000000000", Decimal("1E+15"), Decimal("1E+30")],
+)
+def test_speicherbar_lehnt_zu_grosse_betraege_ab(eingabe: object) -> None:
+    """Höchstens 15 Stellen vor dem Komma; ``1E+30`` ergibt ValueError, nicht InvalidOperation."""
+    with pytest.raises(ValueError, match="zu groß"):
+        speicherbar(eingabe)
+
+
+@pytest.mark.parametrize("eingabe", [1.5, True, None])
+def test_speicherbar_lehnt_andere_typen_ab(eingabe: object) -> None:
+    with pytest.raises(TypeError, match="Betrag"):
+        speicherbar(eingabe)
+
+
+@pytest.mark.parametrize("eingabe", ["1.00005", "1000000000000000"])
+def test_speicherbar_nennt_den_betrag_nicht_in_der_meldung(eingabe: str) -> None:
+    """Meldungen landen in Logs; Beträge mit Personenbezug gehören dort nicht hin (CLAUDE.md)."""
+    with pytest.raises(ValueError, match="Betrag") as fehler:
+        speicherbar(eingabe)
+    assert eingabe not in str(fehler.value)

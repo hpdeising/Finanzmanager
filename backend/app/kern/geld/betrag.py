@@ -7,12 +7,18 @@ Grundlage: CLAUDE.md (Abschnitt Geld) und Fachkonzept Kapitel 5.1.
   weil sie Dezimalbeträge wie 0,10 € nicht exakt darstellen können.
 - Gerundet wird nur hier, kaufmännisch auf Cent.
 - In JSON stehen Beträge als Text in Festkommaschreibweise.
+- Gespeichert wird als ``NUMERIC(19,4)``. Was diese Spalte nicht exakt aufnimmt, lehnt
+  ``speicherbar()`` ab, statt es der Datenbank zum stillen Runden zu überlassen.
 """
 
 import re
 from decimal import ROUND_HALF_UP, Decimal
 
 CENT = Decimal("0.01")
+
+# NUMERIC(19,4): vier Nachkommastellen, also höchstens 15 Stellen vor dem Komma.
+SPEICHER_EINHEIT = Decimal("0.0001")
+SPEICHER_GRENZE = Decimal("1E15")
 
 # Kanonische Textform: optionales Minus, Ziffern, optional Punkt und Ziffern.
 _KANONISCH = re.compile(r"-?\d+(?:\.\d+)?")
@@ -67,6 +73,30 @@ def als_text(wert: Decimal) -> str:
         # Nur Nullen anhängen; Quantisieren auf mehr Stellen rundet nie.
         wert = wert.quantize(CENT)
     return format(wert, "f")
+
+
+def speicherbar(wert: object) -> Decimal:
+    """Betrag, den eine Spalte ``NUMERIC(19,4)`` exakt aufnimmt; nichts wird gerundet.
+
+    PostgreSQL rundet zusätzliche Nachkommastellen beim Speichern still, und kein Trigger
+    sieht den ursprünglichen Wert. Deshalb prüft die Anwendung vorher. Geprüft wird
+    wertbezogen: ``1.00000`` ist zulässig, ``1.00005`` nicht. Die Meldungen nennen den
+    Betrag nicht, weil sie in Logs landen können.
+
+    Raises:
+        TypeError: wie ``betrag()``.
+        ValueError: wie ``betrag()``; außerdem bei Beträgen ab 10^15 und bei mehr als vier
+            Nachkommastellen.
+    """
+    ergebnis = betrag(wert)
+    # Erst die Größe prüfen: Der Rest unten bleibt so im Rahmen der Decimal-Genauigkeit.
+    if abs(ergebnis) >= SPEICHER_GRENZE:
+        msg = "Betrag ist für NUMERIC(19,4) zu groß (höchstens 15 Stellen vor dem Komma)."
+        raise ValueError(msg)
+    if ergebnis % SPEICHER_EINHEIT != 0:
+        msg = "Betrag hat mehr als vier Nachkommastellen; NUMERIC(19,4) würde ihn runden."
+        raise ValueError(msg)
+    return ergebnis
 
 
 def _pruefe_endlich(wert: Decimal) -> None:
