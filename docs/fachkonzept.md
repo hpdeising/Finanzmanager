@@ -73,13 +73,13 @@ Alle Entscheidungen vom 11.10.2026.
 | E-18 | Storno-Wertstellung | Eine Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; der Zeitpunkt der Korrektur steht in `erfasst_am`. Zinsen, Anrechnung und Fristen werden aus der Historie berechnet. Eine falsch erfasste Zahlung, die erst ab dem Korrekturtag storniert wäre, würde alle Zinsperioden davor weiter verfälschen. Über `erfasst_am` bleibt nachvollziehbar, was zu welchem Zeitpunkt bekannt war. Ergänzt durch E-26: Liegt die Wertstellung der Ursprungsbuchung in einem festgeschriebenen Zeitraum, bekommt das Storno den Tag der Erfassung als Buchungsdatum; seine Wertstellung bleibt die der Ursprungsbuchung |
 | E-19 | Datenbankrollen | Die Eigentümerrolle führt nur die Migrationen aus. Die Anwendung verbindet sich mit einer Laufzeitrolle, die auf `buchung` und `posting` nur lesen und einfügen darf. Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration (Kap. 11.1) |
 | E-20 | Lizenzen nativer Bibliotheken | Die Lizenzliste in `CLAUDE.md` gilt auch für native Bibliotheken, die ein Paket mitbringt; zusätzlich erlaubt sind PostgreSQL, OLDAP-2.8 und Public Domain. Maßgeblich ist die Lizenz, die das Ursprungsprojekt für die Bibliothek erklärt; einzelne Dateien darin werden nicht gegen die Liste geprüft, ihre Lizenz- und Hinweistexte kommen vollständig in `THIRD-PARTY-LICENSES`. Für das Betriebssystem des Docker-Basis-Images gelten dessen eigene Lizenzhinweise (Kap. 11.3) |
-| E-21 | Zinsen und Anrechnung berechnet statt gebucht | Zinsen und die Anrechnung von Zahlungen werden nicht laufend gebucht, sondern bei jeder Abfrage zum Stichtag neu berechnet, aus Titel, Zahlungen, Ereignissen, Aktenparametern und Stammdaten. Eine Zahlung wird ungeteilt auf das Zahlungskonto der Akte gebucht (Rolle `verbindlichkeiten.zahlungen`, passiv), die Gegenbuchung geht auf Externe Mittel. Gebucht werden Zinsen und Anrechnung nur bei einer Festschreibung (E-25). Ein rückwirkendes Storno (E-18) wirkt damit ohne Folgebuchungen. Schließt P-12 (Folgebuchungen nach rückwirkendem Storno): Statt Folgebuchungen automatisch zu stornieren und neu zu buchen, wird berechnet und nur bei Bedarf festgeschrieben (Kap. 4.3, 5.2, 5.3) |
+| E-21 | Zinsen und Anrechnung berechnet statt gebucht | Zinsen und die Anrechnung von Zahlungen werden nicht laufend gebucht, sondern bei jeder Abfrage zum Stichtag neu berechnet, aus Titel, Zahlungen, Ereignissen, Aktenparametern und Stammdaten. Eine Zahlung wird ungeteilt auf das Zahlungskonto der Akte gebucht (Rolle `verbindlichkeiten.zahlungen`, passiv), die Gegenbuchung geht auf Externe Mittel. Gebucht werden Zinsen und Anrechnung nur bei einer Festschreibung (E-25). Ein rückwirkendes Storno (E-18) wirkt damit automatisch richtig, ohne dass Folgebuchungen storniert und neu gebucht werden; betrifft es einen festgeschriebenen Zeitraum, bucht die nächste Festschreibung die Differenz als Korrekturbuchung (E-25). Schließt P-12 (Folgebuchungen nach rückwirkendem Storno): Statt Folgebuchungen automatisch zu stornieren und neu zu buchen, wird berechnet und nur bei Bedarf festgeschrieben (Kap. 4.3, 5.2, 5.3) |
 | E-22 | Tageszählung | Voreinstellung `act_365`: Zinstage taggenau, Tagesbasis immer 365 Tage, auch im Schaltjahr. Je Akte umstellbar auf `act_360` oder `30_360`. Schließt P-04 (Kap. 5.1) |
 | E-23 | Rundung | Voreinstellung `je_periode`: kaufmännisch auf Cent je Zinsperiode (Kap. 5.2 Schritt 2). Je Akte umstellbar auf `am_ende`. Schließt P-05 (Kap. 5.1) |
 | E-24 | Zinsbeginn | Voreinstellung `genannter_tag`: Der als Zinsbeginn genannte Tag („seit dem …“) ist der erste Zinstag. Je Akte umstellbar auf `folgetag`: Erster Zinstag ist der Tag danach. Der Parameter gilt nur für den Beginn der Verzinsung; wechselt die Zinsregel, schließt die neue lückenlos an. Schließt P-06 (Kap. 5.1, 5.2) |
-| E-25 | Festschreibung | Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Anforderung. Die Festschreibung bucht die bis zum Stichtag berechneten Zinsen und die Anrechnung, soweit sie noch nicht gebucht sind. Ein festgeschriebener Zeitraum ist abgeschlossen: Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung. Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Ändert sich nachträglich die Berechnung für einen festgeschriebenen Zeitraum, fällt die Differenz in den offenen Teil; die nächste Festschreibung bucht sie als Korrekturbuchung mit maschinenlesbarem Bezug auf den korrigierten Zeitraum. Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung, keine Rechtsregel (Kap. 5.2 Schritt 7) |
-| E-26 | Buchungsdatum und Wertstellung | Jede Buchung hat zwei Daten. Das Buchungsdatum ordnet sie einem Zeitraum zu und bestimmt die Salden, die Wertstellung bestimmt, ab wann sie fachlich wirkt (Zinsen, Anrechnung, Fristen). Im offenen Zeitraum sind beide gleich. Liegt die Wertstellung einer Buchung in einem festgeschriebenen Zeitraum der Akte, wird sie im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum. Das gilt für ein Storno wie für jede neue Buchung (Neubuchung einer Korrektur, nachträglich erfasste Zahlung oder Kosten). Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den Vorgang hat es so nie gegeben. Für Zinsen, Anrechnung und Fristen gilt die stornierte Buchung deshalb ab ihrer ursprünglichen Wertstellung als nie geschehen. Eine Rücklastschrift ist kein Storno, sondern ein tatsächliches Ereignis. Ergänzt E-18 (Kap. 4.1, 4.4, 5.2 Schritt 7) |
-| E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4) |
+| E-25 | Festschreibung | Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung in der Zeitzone der Installation. Die Festschreibung bucht die bis zum Stichtag berechneten Zinsen und die Anrechnung, soweit sie noch nicht gebucht sind. Ein festgeschriebener Zeitraum ist abgeschlossen: Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Ändert sich nachträglich die Berechnung für einen festgeschriebenen Zeitraum, fällt die Differenz in den offenen Zeitraum; die nächste Festschreibung bucht sie als Korrekturbuchung mit maschinenlesbarem Bezug auf den korrigierten Zeitraum. Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung, keine Rechtsregel (Kap. 5.2 Schritt 7) |
+| E-26 | Buchungsdatum und Wertstellung | Jede Buchung hat zwei Daten. Das Buchungsdatum ordnet sie einem Zeitraum zu und bestimmt die Salden, die Wertstellung bestimmt, ab wann sie fachlich wirkt (Zinsen, Anrechnung, Fristen). Liegt die Wertstellung im offenen Zeitraum der Akte, sind beide gleich. Liegt sie in einem festgeschriebenen Zeitraum der Akte, wird die Buchung im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum. Das gilt für ein Storno wie für jede neue Buchung (Neubuchung einer Korrektur, nachträglich erfasste Zahlung oder Kosten), nicht aber für die Buchungen einer Festschreibung selbst (E-25). Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den gebuchten Vorgang, etwa die Zahlung, hat es nie gegeben. Für Zinsen, Anrechnung und Fristen gilt die stornierte Buchung deshalb ab ihrer ursprünglichen Wertstellung als nie geschehen. Eine Rücklastschrift ist kein Storno, sondern ein tatsächliches Ereignis. Ergänzt E-18 (Kap. 4.1, 4.4, 5.2 Schritt 7) |
+| E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten (die Konten je Haushalt, Kap. 4.2) werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4) |
 
 ---
 
@@ -99,7 +99,8 @@ Alle Entscheidungen vom 11.10.2026.
 | Wertstellung | Tag, ab dem eine Buchung fachlich wirkt; nach ihr richten sich Zinsen, Anrechnung und Fristen (Kap. 4.1) |
 | Stichtag | Datum, zu dem Salden und Zinsen berechnet werden |
 | Restschuld | Summe der berechneten offenen Beträge der Bestandteile einer Akte zu einem Stichtag (Kap. 4.1) |
-| Festschreibung | Buchung der bis zu einem Stichtag berechneten Zinsen und Anrechnung einer Akte. Der Zeitraum bis zum Stichtag ist danach abgeschlossen (Kap. 5.2 Schritt 7) |
+| Festschreibung | Abschluss einer Akte zu einem Stichtag, auf ausdrückliche Anforderung. Sie bucht die bis dahin berechneten, noch nicht gebuchten Zinsen und die Anrechnung sowie Korrekturbuchungen und sperrt die Konten der Akte bis zum Stichtag. Der Zeitraum bis einschließlich Stichtag ist danach abgeschlossen (Kap. 5.2 Schritt 7) |
+| Korrekturbuchung | Buchung einer Festschreibung, die eine nachträgliche Differenz zwischen Berechnung und gebuchten Beträgen eines früheren festgeschriebenen Zeitraums ausgleicht; sie ist kein Storno und wird nie storniert (Kap. 5.2 Schritt 7) |
 
 ---
 
@@ -108,9 +109,9 @@ Alle Entscheidungen vom 11.10.2026.
 ### 4.1 Grundprinzipien
 
 - Kein Saldo wird als Wahrheit gespeichert. Jeder Saldo ist die Summe der Postings eines Kontos mit Buchungsdatum bis einschließlich Stichtag. Saldo-Snapshots sind als Cache zulässig.
-- Jede Buchung hat zwei Daten (E-26). Das **Buchungsdatum** ordnet sie einem Zeitraum zu und bestimmt die Salden. Die **Wertstellung** bestimmt, ab wann sie fachlich wirkt; nach ihr rechnen Zinsen, Anrechnung und Fristen. Im offenen Zeitraum sind beide gleich. Liegt die Wertstellung in einem festgeschriebenen Zeitraum der Akte (Kap. 5.2 Schritt 7), ist das Buchungsdatum der Tag der Erfassung: der Kalendertag von `erfasst_am` in der Zeitzone der Installation, nicht der UTC-Tag. Das Buchungsdatum liegt nie vor der Wertstellung.
-- Buchungen und Postings sind unveränderlich. Eine Korrektur besteht aus Stornobuchung und Neubuchung. Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den Vorgang hat es so nie gegeben. Eine Rücklastschrift ist deshalb kein Storno, sondern ein tatsächliches Ereignis. Die Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung (E-18). Liegt diese Wertstellung im offenen Zeitraum, übernimmt das Storno das Buchungsdatum der Ursprungsbuchung, sonst ist es der Tag der Erfassung (E-26). Wann korrigiert wurde, steht in `erfasst_am`.
-- Zinsen und die Anrechnung von Zahlungen sind keine Salden, sondern werden bei jeder Abfrage berechnet (E-21). Gebucht werden sie nur bei einer Festschreibung (Kap. 5.2 Schritt 7). Die **Restschuld** einer Akte ist die Summe der berechneten offenen Beträge ihrer Bestandteile zum Stichtag; sie wird nie negativ. Ein Betrag, der sich nicht mehr anrechnen lässt, bleibt als Überzahlung auf dem Zahlungskonto und wird angezeigt.
+- Jede Buchung hat zwei Daten (E-26). Das **Buchungsdatum** ordnet sie einem Zeitraum zu und bestimmt die Salden. Die **Wertstellung** bestimmt, ab wann sie fachlich wirkt; nach ihr rechnen Zinsen, Anrechnung und Fristen. Liegt die Wertstellung im offenen Zeitraum der Akte, sind beide gleich. Liegt sie in einem festgeschriebenen Zeitraum der Akte (Kap. 5.2 Schritt 7), ist das Buchungsdatum der Tag der Erfassung: der Kalendertag von `erfasst_am` in der Zeitzone der Installation, nicht der UTC-Tag. Ausgenommen sind die Buchungen einer Festschreibung selbst; sie haben Buchungsdatum und Wertstellung an deren Stichtag. Das Buchungsdatum liegt nie vor der Wertstellung.
+- Buchungen und Postings sind unveränderlich. Ein Erfassungsfehler wird durch Stornobuchung und Neubuchung korrigiert. Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den gebuchten Vorgang, etwa die Zahlung, hat es nie gegeben. Eine Rücklastschrift ist deshalb kein Storno, sondern ein tatsächliches Ereignis. Die Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung (E-18). Liegt diese Wertstellung im offenen Zeitraum, übernimmt das Storno das Buchungsdatum der Ursprungsbuchung, sonst ist es der Tag der Erfassung (E-26). Wann korrigiert wurde, steht in `erfasst_am`. Differenzen der Berechnung für festgeschriebene Zeiträume gleicht dagegen eine Korrekturbuchung aus (Kap. 5.2 Schritt 7); sie ist kein Storno.
+- Zinsen und die Anrechnung von Zahlungen werden nicht aus Salden abgelesen, sondern bei jeder Abfrage berechnet (E-21). Gebucht werden sie nur bei einer Festschreibung (Kap. 5.2 Schritt 7). Die **Restschuld** einer Akte ist die Summe der berechneten offenen Beträge ihrer Bestandteile zum Stichtag; sie wird nie negativ. Ein Betrag, der sich nicht mehr anrechnen lässt, bleibt als Überzahlung auf dem Zahlungskonto und wird angezeigt.
 - Vorzeichen: Soll positiv, Haben negativ. Die Summe der Postings jeder Buchung ist null; die Datenbank erzwingt das am Ende jeder Transaktion.
 - Beträge: `NUMERIC(19,4)`. Währung je Konto; Release 1 kennt nur EUR.
 
@@ -118,7 +119,7 @@ Alle Entscheidungen vom 11.10.2026.
 
 Die Kontoart ist eine der fünf Grundarten des Kerns: `aktiv`, `passiv`, `aufwand`, `ertrag`, `eigenkapital`. Wofür ein Konto dient, sagt seine Rolle. Rollen folgen dem Schema `<modul>.<name>` (E-17); Rollen des Kerns beginnen mit `kern.`.
 
-Beim Anlegen einer Akte legt das Modul Verbindlichkeiten je Bestandteil ein Passivkonto und dazu ein Zahlungskonto an und verknüpft sie über seine Tabelle `akte_konto` mit der Akte (Kap. 4.5):
+Beim Anlegen einer Akte legt das Modul Verbindlichkeiten je Bestandteil ein Passivkonto und für die Akte ein Zahlungskonto an und verknüpft sie über seine Tabelle `akte_konto` mit der Akte (Kap. 4.5):
 
 | Konto | Kontoart | Rolle |
 |---|---|---|
@@ -127,7 +128,7 @@ Beim Anlegen einer Akte legt das Modul Verbindlichkeiten je Bestandteil ein Pass
 | Vorgerichtliche Kosten | Passiv | `verbindlichkeiten.kosten_vorgerichtlich` |
 | Verfahrenskosten | Passiv | `verbindlichkeiten.kosten_verfahren` |
 | Vollstreckungskosten | Passiv | `verbindlichkeiten.kosten_vollstreckung` |
-| Zahlungen | Passiv | `verbindlichkeiten.zahlungen` |
+| Zahlungen (eines je Akte) | Passiv | `verbindlichkeiten.zahlungen` |
 
 Auf das Zahlungskonto gehen Zahlungen ungeteilt (E-21). Die Anrechnung auf die Bestandteile wird berechnet und erst mit einer Festschreibung vom Zahlungskonto auf die Bestandteile umgebucht (Kap. 5.2 Schritt 7). Bei jeder Festschreibung sperrt das Modul die Konten der Akte bis zum Stichtag (E-27).
 
@@ -140,7 +141,7 @@ Je Haushalt existieren:
 | Kostenaufwand | Aufwand | `verbindlichkeiten.kostenaufwand` | Modul Verbindlichkeiten, bei der ersten Akte |
 | Externe Mittel | Eigenkapital | `kern.externe_mittel` | Kern |
 
-Die drei Konten des Moduls existieren je Haushalt, gehören aber fachlich zum Modul. Von den Rollen kennt der Kern nur `kern.externe_mittel`. Die Konten je Haushalt werden nie gesperrt (E-27).
+Die drei Konten des Moduls existieren je Haushalt, gehören aber fachlich zum Modul. Von den Rollen kennt der Kern nur `kern.externe_mittel`. Die Konten je Haushalt sperrt eine Festschreibung nicht (E-27).
 
 „Externe Mittel“ steht für Geld, das aus nicht erfassten Konten gezahlt wird. Sobald Bankkonten als Aktivkonten hinzukommen, bucht eine Zahlung gegen das jeweilige Bankkonto statt gegen „Externe Mittel“. Am übrigen Modell ändert sich nichts.
 
@@ -157,7 +158,7 @@ Vorbereitet, nicht implementiert: Bankkonto (Aktiv), Depot (Aktiv), Sachwert (Ak
 | Festschreibung der Anrechnung bis Stichtag | `verbindlichkeiten.anrechnung` | Bestandteile laut Anrechnung (Kap. 5.3) | Zahlungen |
 | Korrektur eines Erfassungsfehlers | `kern.storno` | Storno der Ursprungsbuchung | + Neubuchung |
 
-- Zinsen und Anrechnung werden nicht laufend gebucht, sondern nur bei einer Festschreibung (E-21, Kap. 5.2 Schritt 7). Eine Korrekturbuchung für einen festgeschriebenen Zeitraum hat die Art der Buchung, die sie korrigiert; Soll und Haben richten sich nach dem Vorzeichen der Differenz.
+- Zinsen und Anrechnung werden nicht laufend gebucht, sondern nur bei einer Festschreibung (E-21, Kap. 5.2 Schritt 7). Eine Korrekturbuchung für einen festgeschriebenen Zeitraum hat die Art der Buchung, die sie korrigiert (`verbindlichkeiten.zinslauf` oder `verbindlichkeiten.anrechnung`); Soll und Haben richten sich je Konto nach dem Vorzeichen der Differenz.
 - Aufgelaufene Zinsen bei der Erfassung einer Altlast sind nur feste Beträge, die Titel oder Aufstellung ausweisen, und nur für Zeiträume, für die keine Zinsregel rechnet. Laufende Zinsen werden nie mit der Entstehung gebucht.
 - Verteilt der Schuldner eine Zahlung auf mehrere Akten, entsteht je Akte eine eigene Buchung auf deren Zahlungskonto.
 
@@ -210,7 +211,7 @@ CREATE TABLE posting (
 CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
   konto_id     uuid NOT NULL REFERENCES konto,
   gesperrt_bis date NOT NULL,                       -- gesperrt bis einschließlich dieses Tags
-  erfasst_am   timestamptz NOT NULL DEFAULT now(),
+  erfasst_am   timestamptz NOT NULL DEFAULT now(),  -- setzt ein Trigger, wie bei buchung
   PRIMARY KEY (konto_id, gesperrt_bis)
 );
 -- Sperrdatum eines Kontos ist das größte gesperrt_bis seiner Zeilen; ohne Zeile ist es nicht gesperrt.
@@ -231,18 +232,22 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 --   Kontosperre (E-27): Ein Posting wird abgelehnt, wenn das Buchungsdatum seiner Buchung am
 --   oder vor dem Sperrdatum seines Kontos liegt. Das gilt auch für ein Storno.
 --   Eine neue Zeile in konto_sperre wird nur angenommen, wenn gesperrt_bis größer ist als
---   das bisherige Sperrdatum des Kontos.
---   Auch bei gleichzeitigen Transaktionen gilt: Ist eine Sperre committet, ändert sich die
---   Menge der Postings des Kontos mit Buchungsdatum bis zum Sperrdatum nicht mehr, auch nicht
---   durch Transaktionen, die schon vorher liefen.
+--   das bisherige Sperrdatum des Kontos; ihr erfasst_am setzt ein Trigger auf now().
+-- Nebenläufigkeit (Kap. 5.2 Schritt 7): Ist eine Sperre committet, ändert sich die Menge der
+--   Postings des Kontos mit Buchungsdatum bis zum Sperrdatum nicht mehr, auch nicht durch
+--   Transaktionen, die schon vorher liefen. Fügt eine Transaktion, die gleichzeitig mit der
+--   sperrenden läuft, Postings mit Buchungsdatum bis zum neuen Sperrdatum auf das Konto ein,
+--   scheitert eine der beiden. So rechnet eine Festschreibung auf genau den Postings, die ihre
+--   Sperre einfriert.
 -- Buchungsdatum (E-26, E-27): Welches Buchungsdatum eine Buchung bekommt, entscheidet das
---   Modul; der Kern übernimmt es und prüft nur, dass es nicht vor der Wertstellung liegt. Die
---   Sperre kennt keine Akte und keine Festschreibung, nur Konto und Datum (E-17).
+--   Modul; der Kern übernimmt es und prüft es gegen die Wertstellung (CHECK oben) und gegen
+--   die Kontosperre. Die Sperre kennt keine Akte und keine Festschreibung, nur Konto und
+--   Datum (E-17).
 -- UPDATE, DELETE und TRUNCATE auf buchung, posting und konto_sperre sind per Trigger verboten.
 -- An konto sind id, haushalt_id, kontoart, rolle und waehrung unveränderlich.
 -- Die Trigger feuern immer, auch bei session_replication_role = replica.
--- Rechte (E-19): Die Laufzeitrolle darf auf buchung, posting und konto_sperre nur lesen und
---   einfügen; in M1 gilt das auch für haushalt und konto.
+-- Rechte (E-19; für konto_sperre diese Skizze): Die Laufzeitrolle darf auf buchung, posting
+--   und konto_sperre nur lesen und einfügen; in M1 gilt das auch für haushalt und konto.
 -- Buchungsdatum und Kontosperre (E-26, E-27) folgen mit einer eigenen Migration nach M1.
 -- Beträge: NUMERIC(19,4) rundet eine fünfte und jede weitere Nachkommastelle still, und kein
 --   Trigger sieht den ursprünglichen Wert. Deshalb lehnt die Anwendung solche Beträge vor dem
@@ -262,9 +267,9 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | `haushalt` | Betriebsart (`einzel`, `haushalt_gemeinsam`, `haushalt_getrennt`), Bundesland (für Feiertage) |
 | `benutzer` | Haushalt, Anmeldename, Passwort-Hash, umschlossener Dokumentschlüssel |
 | `konto`, `buchung`, `posting` | siehe Kap. 4.4 |
-| `konto_sperre` | Konto, gesperrt bis, erfasst am; nur anhängend (E-27, Kap. 4.4) |
+| `konto_sperre` | Konto, gesperrt bis, erfasst am; nur anhängend (Kap. 4.4). Umsetzung der Kontosperre (E-27) |
 | `dokument` | Art, Dateiname, SHA-256, Größe, Schlüsselversion |
-| `import_zeile` | Quelle, Datum, Betrag, Gegen-IBAN, Verwendungszweck, Status; nach der Verarbeitung die erzeugte Buchung. Die Zuordnung zur Akte macht das Modul |
+| `import_zeile` | Quelle, Datum, Betrag, Gegen-IBAN, Verwendungszweck, Status; nach der Verarbeitung die erzeugten Buchungen (je Akte eine, Kap. 4.3). Die Zuordnung zur Akte macht das Modul |
 | `audit_log` | Wer, wann, welche Entität (`entitaet_typ`, `entitaet_id`, ohne Fremdschlüssel), welche Aktion – ohne Inhaltsdaten; nur anhängend |
 
 **Tabellen des Moduls Verbindlichkeiten**
@@ -280,7 +285,7 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | `zinsregel` | Bestandteil, Typ, Aufschlag in Prozentpunkten, fester Satz, ab, bis, Quelle (Titel/Vertrag) |
 | `ereignis` | Akte, Typ, Datum, Details (JSON), Beleg; bei `zahlung` die zugehörige Buchung |
 | `aufgabe` | Akte, Typ, fällig am, erledigt am |
-| `festschreibung` | Akte, Stichtag, erfasst am; nur anhängend. Die Stichtage einer Akte steigen streng. Der Zeitraum einer Festschreibung reicht vom Tag nach dem vorigen Stichtag bis einschließlich ihres Stichtags. Sie wird auch gespeichert, wenn nichts zu buchen ist (Kap. 5.2 Schritt 7) |
+| `festschreibung` | Akte, Stichtag, erfasst am; nur anhängend. Die Stichtage einer Akte steigen streng. Der Zeitraum einer Festschreibung reicht vom Tag nach dem vorigen Stichtag bis einschließlich ihres Stichtags; bei der ersten Festschreibung umfasst er alles bis einschließlich ihres Stichtags. Der offene Zeitraum einer Akte beginnt am Tag nach ihrem letzten Stichtag; ohne Festschreibung ist alles offen. Sie wird auch gespeichert, wenn nichts zu buchen ist (Kap. 5.2 Schritt 7) |
 | `festschreibung_buchung` | Festschreibung, Buchung, korrigierter Zeitraum (Verweis auf die Festschreibung, deren Zeitraum die Buchung korrigiert; leer bei den Buchungen des eigenen Zeitraums); nur anhängend |
 
 In Meilenstein M1 entstehen davon nur `haushalt`, `konto`, `buchung` und `posting`.
@@ -302,7 +307,7 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 - Intern wird mit `Decimal` ohne Zwischenrundung gerechnet. Gerundet wird kaufmännisch auf Cent, laut Aktenparameter `rundung`: `je_periode` (Default, je Zinsperiode nach Kap. 5.2 Schritt 2) oder `am_ende` (E-23).
 - Tageszählung laut Aktenparameter `tageszaehlung`: `act_365` (Default; taggenau, Tagesbasis immer 365, auch im Schaltjahr), `act_360` oder `30_360` (E-22).
 - Zinsbeginn laut Aktenparameter `zinsbeginn`: `genannter_tag` (Default; der als Zinsbeginn genannte Tag „seit dem …“ ist der erste Zinstag) oder `folgetag` (erster Zinstag ist der Tag danach) (E-24).
-- Zinsen und Anrechnung werden bei jeder Abfrage neu berechnet (E-21). Eingaben sind die Buchungen der Akte mit ihrer Wertstellung, ohne stornierte Buchungen samt ihren Stornos und ohne die Buchungen von Festschreibungen, dazu Ereignisse, Aktenparameter und Stammdaten.
+- Zinsen und Anrechnung werden bei jeder Abfrage neu berechnet (E-21). Eingaben sind Titel, Bestandteile und ihre Zinsregeln, die Buchungen der Akte mit ihrer Wertstellung (ohne stornierte Buchungen samt ihren Stornos und ohne die Buchungen, die eine Festschreibung erzeugt), dazu Ereignisse, Aktenparameter und Stammdaten.
 - Die Berechnung ist deterministisch: gleiche Eingaben ergeben dasselbe Ergebnis. Eine Festschreibung ändert kein Rechenergebnis.
 
 ### 5.2 Zinsen
@@ -325,12 +330,12 @@ Ablauf:
 5. Keine Zinsen auf Zinsen (§ 289 S. 1 BGB). Zinskonten sind nie verzinslich.
 6. Der Satz ist Basiszinssatz plus Aufschlag, auch bei negativem Basiszinssatz. Beispiel: vom 01.07.2016 bis 31.12.2022 lag der Basiszinssatz bei −0,88 %, der Verzugszins nach § 288 Abs. 1 BGB also bei 4,12 %. Altlasten reichen oft in diesen Zeitraum.
 7. Zinsen und Anrechnung werden bei jeder Abfrage zum Stichtag neu berechnet, nicht laufend gebucht (E-21). Gebucht wird nur bei einer Festschreibung (E-25):
-   - **Anforderung:** Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Anforderung; ein Abschluss zum 31.12. wird also frühestens am 01.01. angefordert.
+   - **Anforderung:** Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung wie in Kap. 4.1 (Zeitzone der Installation); ein Abschluss zum 31.12. wird also frühestens am 01.01. angefordert.
    - **Zinsen und Anrechnung eines Zeitraums** sind die Berechnung zu seinem Stichtag abzüglich der Berechnung zum vorigen Stichtag. Für eine angebrochene Zinsperiode zählt der bis zum Stichtag berechnete und gerundete Betrag; die Rundungsdifferenz zur ganzen Periode fällt in den nächsten Zeitraum und ist keine Korrektur.
-   - **Buchungen:** Die Festschreibung bucht mit Buchungsdatum und Wertstellung am Stichtag die Zinsen des Zeitraums (`verbindlichkeiten.zinslauf`) und seine Anrechnung als Umbuchung vom Zahlungskonto auf die Bestandteile (`verbindlichkeiten.anrechnung`). Danach setzt das Modul in derselben Transaktion die Sperre der Konten der Akte auf den Stichtag (E-27). Legt das Modul später ein neues Konto für die Akte an, sperrt es dieses sofort bis zum letzten Stichtag der Akte. Die Festschreibung wird auch gespeichert, wenn nichts zu buchen ist; jede ihrer Buchungen steht in `festschreibung_buchung` (Kap. 4.5).
-   - **Abschluss:** Ein festgeschriebener Zeitraum ist abgeschlossen. Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung. Zahlung, Kosten und Entstehung bleiben stornierbar.
+   - **Buchungen:** Die Festschreibung bucht mit Buchungsdatum und Wertstellung an ihrem Stichtag die Zinsen des Zeitraums (`verbindlichkeiten.zinslauf`), seine Anrechnung als Umbuchung vom Zahlungskonto auf die Bestandteile (`verbindlichkeiten.anrechnung`) und die Korrekturbuchungen für frühere Zeiträume. Die Regel für nachträgliche Buchungen (E-26) gilt für diese Buchungen nicht. Danach setzt das Modul in derselben Transaktion die Sperre der Konten der Akte auf den Stichtag (E-27). Legt das Modul später ein neues Konto für die Akte an, sperrt es dieses in derselben Transaktion bis zum letzten Stichtag der Akte. Die Festschreibung wird auch gespeichert, wenn nichts zu buchen ist; jede ihrer Buchungen steht in `festschreibung_buchung` (Kap. 4.5).
+   - **Abschluss:** Ein festgeschriebener Zeitraum ist abgeschlossen. Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Zahlung, Kosten und Entstehung bleiben stornierbar.
    - **Nachträgliche Buchungen:** Eine Buchung, deren Wertstellung in einem festgeschriebenen Zeitraum liegt, wird im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum (E-26). Das gilt für ein Storno, für die Neubuchung einer Korrektur und für nachträglich erfasste Zahlungen oder Kosten. Für Zinsen, Anrechnung und Fristen zählt ihre Wertstellung; eine stornierte Buchung gilt ab ihrer ursprünglichen Wertstellung als nie geschehen.
-   - **Korrekturbuchung:** Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Gebucht sind hier die Buchungen von Festschreibungen, je Konto und Zeitraum. Ändert sich die Berechnung für einen festgeschriebenen Zeitraum nachträglich, etwa durch ein Storno, eine nachträgliche Buchung, ein nachgetragenes Ereignis, eine geänderte Zinsregel, einen umgestellten Aktenparameter oder korrigierte Stammdaten, fällt die Differenz in den offenen Teil. Die nächste Festschreibung bucht sie als eigene Korrekturbuchung je betroffenem Zeitraum. Der Buchungstext nennt den Zeitraum; maschinenlesbar ist der Bezug über `festschreibung_buchung`, sodass sich auch eine zweite Korrektur desselben Zeitraums zuordnen lässt.
+   - **Korrekturbuchung:** Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Als gebuchte Beträge zählen nur die Buchungen, die Festschreibungen erzeugt haben, je Konto und Zeitraum; eine Korrekturbuchung zählt zu dem Zeitraum, den sie korrigiert. Ändert sich die Berechnung für einen festgeschriebenen Zeitraum nachträglich, etwa durch ein Storno, eine nachträgliche Buchung, ein nachgetragenes Ereignis, eine geänderte Zinsregel, einen umgestellten Aktenparameter oder korrigierte Stammdaten, fällt die Differenz in den offenen Zeitraum. Die nächste Festschreibung bucht sie als eigene Korrekturbuchung je betroffenem Zeitraum und Buchungsart (Kap. 4.3). Der Buchungstext nennt den Zeitraum; maschinenlesbar ist der Bezug über `festschreibung_buchung`, sodass sich auch eine zweite Korrektur desselben Zeitraums zuordnen lässt.
    - **Begründung:** Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung: Was festgeschrieben ist, bleibt stehen, Fehler werden im offenen Zeitraum berichtigt. Es ist keine Rechtsregel.
 
 ### 5.3 Anrechnung von Zahlungen
@@ -388,7 +393,7 @@ Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Ta
 - **Neubeginn:**
   - durch Anerkenntnis, ausdrücklich auch durch Abschlagszahlung, Zinszahlung oder Sicherheitsleistung (§ 212 Abs. 1 Nr. 1 BGB);
   - durch Vornahme oder Beantragung einer Vollstreckungshandlung (§ 212 Abs. 1 Nr. 2 BGB).
-- **Umsetzung Release 1:** Jede erfasste Zahlung, deren Buchung nicht storniert ist (E-26), und jede erfasste Vollstreckungshandlung löst den Neubeginn für alle Bestandteile der Akte aus. Abweichungen klärt Prüfpunkt P-02.
+- **Umsetzung Release 1:** Jede erfasste Zahlung, deren Buchung nicht storniert ist (E-26), und jede erfasste Vollstreckungshandlung löst den Neubeginn für alle Bestandteile der Akte aus. Abweichungen klärt Prüfpunkt P-02. Ob das auch für eine Zahlung gilt, die per Rücklastschrift zurückgegeben wurde, legt dieses Dokument nicht fest.
 
 **Pflichthinweis in der Oberfläche:** „Verjährung tritt nicht von selbst ein, sie muss als Einrede erhoben werden (§ 214 Abs. 1 BGB). Die Berechnung ist eine Näherung auf Grundlage der erfassten Ereignisse. Fehlt ein Ereignis, ist das Ergebnis falsch.“
 
@@ -476,7 +481,7 @@ Die Pfändungsfreigrenzen dienen in Release 1 nur der Information auf dem Dashbo
   3. Duplikate werden über einen Hash aus Datum, Betrag, Gegen-IBAN und Verwendungszweck erkannt.
   4. Das System macht einen Zuordnungsvorschlag.
   5. Der Nutzer bestätigt.
-  6. Erst dann entstehen Buchung und Ereignis `zahlung`.
+  6. Erst dann entstehen je Akte eine Buchung und ein Ereignis `zahlung`.
 - **Zuordnungsregeln:** Gegen-IBAN des Gläubigers, Aktenzeichen im Verwendungszweck, Betrag entspricht der vereinbarten Rate.
 - **Ohne Bestätigung wird nichts gebucht.**
 - **Datenminimierung:** Nicht zugeordnete Zeilen werden nach dem Import verworfen. Die Importdatei wird nicht aufbewahrt.
@@ -529,7 +534,7 @@ Architektur: Widgets sind registrierte Komponenten mit eigener API-Abfrage. Spä
 - **Datenbank:** Nicht feldverschlüsselt. Geschützt wird sie über Systemverschlüsselung (BitLocker, FileVault, LUKS). Der Installer prüft das und warnt, wenn sie fehlt.
 - **Datenbankrollen (E-19):**
   - Die Eigentümerrolle besitzt die Tabellen und führt nur die Migrationen aus.
-  - Die Anwendung verbindet sich mit der Laufzeitrolle. Sie darf auf `buchung`, `posting` und `konto_sperre` (E-27) nur lesen und einfügen, also kein UPDATE, DELETE oder TRUNCATE, und kann keine Trigger abschalten.
+  - Die Anwendung verbindet sich mit der Laufzeitrolle. Sie darf auf `buchung`, `posting` und `konto_sperre` (Kap. 4.4) nur lesen und einfügen, also kein UPDATE, DELETE oder TRUNCATE, und kann keine Trigger abschalten.
   - Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration, weil Rollen für den ganzen Datenbank-Cluster gelten. CI, Tests und Installer nutzen dasselbe Skript.
   - Die Tests laufen als Laufzeitrolle; ein Test weist nach, dass sie Trigger nicht abschalten kann.
   - Das schützt gegen eigenen Code, auch KI-generierten, der Buchungen ändern will. Gegen den Superuser der Datenbank schützt es nicht und soll es nicht.
@@ -584,8 +589,8 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
   - Summe der Postings je Buchung = 0
   - Die Anrechnung verteilt exakt den Zahlbetrag, höchstens bis zur Restschuld; der Rest bleibt als Überzahlung auf dem Zahlungskonto
   - Zinskonten erzeugen keine Zinsen
-  - Storno plus Neubuchung ergibt denselben Saldo wie die korrigierte Buchung
-  - Eine stornierte Zahlung ergibt dieselben Zinsen und dieselbe Anrechnung wie ein Fall, in dem es die Zahlung nie gab
+  - Storno plus Neubuchung ergibt denselben Saldo wie die korrigierte Buchung: bei Wertstellung im offenen Zeitraum zu jedem Stichtag, bei Wertstellung in einem festgeschriebenen Zeitraum zu jedem Stichtag ab dem Tag der Erfassung. Zinsen, Anrechnung und Fristen ergeben zu jedem Stichtag dasselbe wie mit der korrigierten Buchung
+  - Eine stornierte Zahlung ergibt dieselben Zinsen, dieselbe Anrechnung und dieselben Fristen einschließlich Verjährung wie ein Fall, in dem es die Zahlung nie gab
   - Eine Festschreibung ändert kein Rechenergebnis
   - Nach dem Setzen einer Kontosperre ändert sich der Saldo des Kontos bis zum Sperrdatum nicht mehr
 - **Statische Prüfung:** Ruff, Pyright im Strict-Modus, Verbot von `float` in Fachmodulen.
