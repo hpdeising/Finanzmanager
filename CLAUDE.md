@@ -89,6 +89,7 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 - Ein Thema pro Pull Request. Keine Umbauten nebenbei.
 - Vor jedem Commit müssen diese Prüfungen grün sein: `ruff check`, `ruff format --check`, `pyright`, `pytest`.
 - Commits nach Conventional Commits, mit DCO-Sign-off (`git commit -s`).
+- KI-Beteiligung wird über `Co-Authored-By` angegeben. Commit-Nachrichten und PR-Beschreibungen enthalten keine Sitzungslinks (z. B. `Claude-Session: …`).
 - Bezeichner: Fachbegriffe deutsch wie im Fachkonzept (`Akte`, `Bestandteil`, `Anrechnung`, `Zinsregel`), technische Begriffe englisch. Keine Umlaute in Bezeichnern (`glaeubiger`).
 - Datenbankänderungen nur über Alembic-Migrationen. Gemergte Migrationen werden nie geändert.
 - Bei Unklarheit fragen statt raten. Annahmen im Pull Request ausdrücklich nennen.
