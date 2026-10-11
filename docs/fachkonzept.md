@@ -28,7 +28,7 @@ Release 1 enthält das Modul **Verbindlichkeiten**. Damit verwalten Privatperson
 ### 1.2 Nicht-Ziele Release 1
 
 - Bankanbindung (FinTS, PSD2) und Zahlungsauslösung
-- Gläubigersicht (eigene Forderungen gegen Dritte); das Datenmodell ist dafür vorbereitet
+- Gläubigersicht (eigene Forderungen gegen Dritte); Zuschnitt offen, siehe P-11.
 - Depot, Sachwerte, Unterkonten
 - Mandantenfähigkeit, Fernzugriff
 - Insolvenzverfahren und Restschuldbefreiung
