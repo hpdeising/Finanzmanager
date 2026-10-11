@@ -25,6 +25,7 @@ import psycopg
 from alembic import command
 from alembic.config import Config
 from hypothesis import settings
+from psycopg.rows import TupleRow
 from sqlalchemy import URL, Connection, Engine, create_engine, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
@@ -142,6 +143,22 @@ def pruefe_aufgeschobene(sitzung: Session) -> None:
     sitzung.flush()
     sitzung.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
     sitzung.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+
+
+def psycopg_verbindung(url: URL, *, autocommit: bool = False) -> psycopg.Connection[TupleRow]:
+    """Direkte psycopg-Verbindung, etwa für mehrere Anweisungen in einer Client-Nachricht.
+
+    Ohne Parameter schickt psycopg eine Anfrage über das einfache Protokoll; dann darf sie
+    mehrere Anweisungen und Transaktionen enthalten.
+    """
+    return psycopg.connect(
+        host=url.host,
+        port=url.port,
+        user=url.username,
+        password=url.password,
+        dbname=url.database,
+        autocommit=autocommit,
+    )
 
 
 def sqlstate(fehler: BaseException) -> str | None:

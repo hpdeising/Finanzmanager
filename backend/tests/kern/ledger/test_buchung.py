@@ -91,6 +91,15 @@ def test_erfasst_am_ist_der_beginn_der_transaktion(session: Session, konten: Kon
     assert buchung.erfasst_am.utcoffset() == timedelta(0)
 
 
+def test_erfasst_txid_ist_die_laufende_transaktion(session: Session, konten: Konten) -> None:
+    """Daran erkennt die Datenbank, ob Postings in der Transaktion ihrer Buchung entstehen."""
+    buchung = erfasse_altlast(session, konten)
+    gleich = session.execute(
+        select(Buchung.erfasst_txid == func.pg_current_xact_id()).where(Buchung.id == buchung.id)
+    ).scalar_one()
+    assert gleich is True
+
+
 def test_erfasst_am_vom_client_wird_ueberschrieben(session: Session) -> None:
     """Fachkonzept 4.4: Die Datenbank setzt erfasst_am selbst."""
     haushalt_id = roh_haushalt(session)

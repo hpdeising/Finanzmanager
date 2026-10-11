@@ -11,15 +11,19 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
+import psycopg
 import pytest
+from psycopg import sql
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session
 
 from tests.datenbank import (
     WERTSTELLUNG,
+    Sitzungsdatenbank,
     constraint_name,
     pruefe_aufgeschobene,
+    psycopg_verbindung,
     roh_buchung,
     roh_haushalt,
     roh_konto,
@@ -62,7 +66,7 @@ def committete_buchung(engine: Engine) -> tuple[RohKonten, uuid.UUID]:
     return konten, buchung_id
 
 
-def erwarte(fehler: pytest.ExceptionInfo[DBAPIError], zustand: str, regel: str) -> None:
+def erwarte(fehler: pytest.ExceptionInfo[BaseException], zustand: str, regel: str) -> None:
     assert (sqlstate(fehler.value), constraint_name(fehler.value)) == (zustand, regel)
 
 
@@ -142,6 +146,28 @@ def test_posting_ueber_null_scheitert_sofort(session: Session, k: RohKonten) -> 
     erwarte(fehler, "23514", "ck_posting_betrag_ungleich_null")
 
 
+def test_posting_nach_vorgezogener_pruefung(session: Session, k: RohKonten) -> None:
+    """Jedes Posting stößt die Prüfung seiner Buchung erneut an, nicht nur deren INSERT."""
+    buchung_id = roh_buchung(session, k.haushalt_id)
+    roh_postings(session, buchung_id, [(k.a, "10"), (k.b, "-10")])
+    pruefe_aufgeschobene(session)
+    roh_postings(session, buchung_id, [(k.c, "5")])
+    with pytest.raises(IntegrityError) as fehler:
+        pruefe_aufgeschobene(session)
+    erwarte(fehler, "23514", "buchung_summe_null")
+
+
+def test_fremdes_konto_nach_vorgezogener_pruefung(session: Session, k: RohKonten) -> None:
+    fremd = roh_konten(session)
+    buchung_id = roh_buchung(session, k.haushalt_id)
+    roh_postings(session, buchung_id, [(k.a, "10"), (k.b, "-10")])
+    pruefe_aufgeschobene(session)
+    roh_postings(session, buchung_id, [(fremd.a, "5"), (k.a, "-5")])
+    with pytest.raises(IntegrityError) as fehler:
+        pruefe_aufgeschobene(session)
+    erwarte(fehler, "23514", "buchung_ein_haushalt")
+
+
 def test_commit_einer_unausgeglichenen_buchung(app_engine: Engine) -> None:
     """Beim echten COMMIT scheitert die ganze Transaktion, auch die gültige Buchung darin."""
     with Session(app_engine) as sitzung:
@@ -162,13 +188,14 @@ def test_commit_einer_unausgeglichenen_buchung(app_engine: Engine) -> None:
 
 
 # --- Postings nur in der Transaktion ihrer Buchung --------------------------------------
+# Die Datenbank vergleicht buchung.erfasst_txid mit pg_current_xact_id() (Fachkonzept 4.4).
 
 
 def test_postings_an_eine_abgeschlossene_buchung(app_engine: Engine) -> None:
     """Ein ausgeglichenes Paar ließe Summe und Anzahl unberührt und änderte doch die Buchung."""
     konten, buchung_id = committete_buchung(app_engine)
     with Session(app_engine) as sitzung, pytest.raises(IntegrityError) as fehler:
-        roh_postings(sitzung, buchung_id, [(konten.c, "5")])
+        roh_postings(sitzung, buchung_id, [(konten.c, "5"), (konten.a, "-5")])
     erwarte(fehler, "23001", "buchung_abgeschlossen")
 
 
@@ -179,30 +206,168 @@ def test_postings_an_ein_storniertes_original(app_engine: Engine) -> None:
         roh_postings(sitzung, storno, [(konten.a, "-10.00"), (konten.b, "10.00")])
         sitzung.commit()
     with Session(app_engine) as sitzung, pytest.raises(IntegrityError) as fehler:
-        roh_postings(sitzung, original, [(konten.c, "5")])
+        roh_postings(sitzung, original, [(konten.c, "700"), (konten.b, "-700")])
     erwarte(fehler, "23001", "buchung_abgeschlossen")
 
 
-def test_gefaelschte_liste_hilft_nicht(app_engine: Engine) -> None:
-    """Die Laufzeitrolle kann set_config selbst aufrufen; erfasst_am verrät die alte Buchung."""
-    konten, buchung_id = committete_buchung(app_engine)
+def test_mehrere_transaktionen_in_einer_nachricht(
+    app_engine: Engine, testdatenbank: Sitzungsdatenbank
+) -> None:
+    """Fund der Code-Prüfung, nachgestellt: buchen, stornieren, Postings an das Original hängen.
+
+    Alle drei Transaktionen stehen in einer Client-Nachricht und haben deshalb denselben
+    now(). Die frühere Sperre (Liste per set_config und erfasst_am = now()) ließ die dritte
+    durch, weil die Laufzeitrolle die Liste selbst setzen kann. Die Transaktionsnummer
+    unterscheidet die drei Transaktionen.
+    """
     with Session(app_engine) as sitzung:
-        sitzung.execute(
-            text("SELECT set_config('finanzmanager.neue_buchungen', :liste, true)"),
-            {"liste": f",{buchung_id},"},
-        )
+        konten = roh_konten(sitzung)
+        sitzung.commit()
+    original, storno = uuid.uuid4(), uuid.uuid4()
+    neue_buchung = sql.SQL(
+        "INSERT INTO buchung (id, haushalt_id, art, wertstellung, storno_von)"
+        " VALUES ({}, {}, {}, DATE '2024-01-15', {})"
+    )
+    paar = sql.SQL(
+        "INSERT INTO posting (buchung_id, konto_id, betrag) VALUES ({}, {}, {}), ({}, {}, {})"
+    )
+
+    def postings(
+        buchung_id: uuid.UUID, soll: uuid.UUID, haben: uuid.UUID, wert: int
+    ) -> sql.Composed:
+        return paar.format(*map(sql.Literal, (buchung_id, soll, wert, buchung_id, haben, -wert)))
+
+    h = sql.Literal(konten.haushalt_id)
+    nachricht = sql.SQL("; ").join(
+        [
+            sql.SQL("BEGIN"),
+            neue_buchung.format(sql.Literal(original), h, sql.Literal("test.buchung"), sql.NULL),
+            postings(original, konten.a, konten.b, 10),
+            sql.SQL("COMMIT"),
+            sql.SQL("BEGIN"),
+            neue_buchung.format(
+                sql.Literal(storno), h, sql.Literal("kern.storno"), sql.Literal(original)
+            ),
+            postings(storno, konten.b, konten.a, 10),
+            sql.SQL("COMMIT"),
+            sql.SQL("BEGIN"),
+            sql.SQL("SELECT set_config('finanzmanager.neue_buchungen', {}, true)").format(
+                sql.Literal(f",{original},")
+            ),
+            postings(original, konten.c, konten.b, 700),
+            sql.SQL("COMMIT"),
+        ]
+    )
+    with (
+        psycopg_verbindung(testdatenbank.app_url, autocommit=True) as verbindung,
+        pytest.raises(psycopg.IntegrityError) as fehler,
+    ):
+        verbindung.execute(nachricht)
+    erwarte(fehler, "23001", "buchung_abgeschlossen")
+    with Session(app_engine) as sitzung:
+        anzahl = sitzung.execute(
+            text("SELECT count(*) FROM posting WHERE buchung_id IN (:original, :storno)"),
+            {"original": original, "storno": storno},
+        ).scalar_one()
+    assert anzahl == 4
+
+
+def test_postings_an_die_offene_buchung_einer_anderen_transaktion(app_engine: Engine) -> None:
+    """Fund der Code-Prüfung: Eine noch unsichtbare Buchung darf nicht durchrutschen.
+
+    Vorher ließ der Trigger ein Posting durch, wenn er die Buchung nicht fand, und verließ
+    sich auf den Fremdschlüssel. Der prüft nur, dass die Buchung am Ende der Anweisung
+    existiert; committet die andere Transaktion rechtzeitig, hinge das Posting an ihr.
+    """
+    with Session(app_engine) as sitzung:
+        konten = roh_konten(sitzung)
+        sitzung.commit()
+    with Session(app_engine) as erste, Session(app_engine) as zweite:
+        buchung_id = roh_buchung(erste, konten.haushalt_id)
+        roh_postings(erste, buchung_id, [(konten.a, "10"), (konten.b, "-10")])
+        zweite.execute(text("SET LOCAL lock_timeout = '2s'"))
         with pytest.raises(IntegrityError) as fehler:
-            roh_postings(sitzung, buchung_id, [(konten.c, "5")])
+            roh_postings(zweite, buchung_id, [(konten.c, "5"), (konten.a, "-5")])
+        erste.rollback()
     erwarte(fehler, "23001", "buchung_abgeschlossen")
 
 
 def test_postings_nach_einem_savepoint(session: Session, k: RohKonten) -> None:
-    """Savepoints (z. B. begin_nested) stören nicht."""
+    """Savepoints (z. B. begin_nested) stören nicht; es zählt die Transaktion."""
     with session.begin_nested():
         buchung_id = roh_buchung(session, k.haushalt_id)
     with session.begin_nested():
         roh_postings(session, buchung_id, [(k.a, "3"), (k.b, "-3")])
     pruefe_aufgeschobene(session)
+
+
+def test_postings_nach_savepoint_mit_roh_sql(session: Session, k: RohKonten) -> None:
+    session.execute(text("SAVEPOINT erster"))
+    buchung_id = roh_buchung(session, k.haushalt_id)
+    session.execute(text("RELEASE SAVEPOINT erster"))
+    session.execute(text("SAVEPOINT zweiter"))
+    roh_postings(session, buchung_id, [(k.a, "3"), (k.b, "-3")])
+    session.execute(text("RELEASE SAVEPOINT zweiter"))
+    pruefe_aufgeschobene(session)
+
+
+def test_postings_an_eine_zurueckgerollte_buchung(session: Session, k: RohKonten) -> None:
+    session.execute(text("SAVEPOINT vorher"))
+    buchung_id = roh_buchung(session, k.haushalt_id)
+    session.execute(text("ROLLBACK TO SAVEPOINT vorher"))
+    with pytest.raises(IntegrityError) as fehler:
+        roh_postings(session, buchung_id, [(k.a, "3"), (k.b, "-3")])
+    erwarte(fehler, "23001", "buchung_abgeschlossen")
+
+
+def test_buchung_und_postings_in_einer_anweisung(session: Session, k: RohKonten) -> None:
+    """Eine Anweisung gehört zu einer Transaktion; die Buchung entsteht vor ihren Postings."""
+    buchung_id = (
+        session.execute(
+            text(
+                "WITH b AS (INSERT INTO buchung (haushalt_id, art, wertstellung)"
+                " VALUES (:h, 'test.buchung', DATE '2024-01-15') RETURNING id)"
+                " INSERT INTO posting (buchung_id, konto_id, betrag)"
+                " SELECT b.id, p.konto_id, p.betrag FROM b,"
+                " (VALUES (CAST(:a AS uuid), 10), (CAST(:b AS uuid), -10)) AS p (konto_id, betrag)"
+                " RETURNING buchung_id"
+            ),
+            {"h": k.haushalt_id, "a": k.a, "b": k.b},
+        )
+        .scalars()
+        .first()
+    )
+    assert buchung_id is not None
+    pruefe_aufgeschobene(session)
+
+
+def test_postings_vor_ihrer_buchung_in_einer_anweisung(session: Session, k: RohKonten) -> None:
+    """Das Posting findet seine Buchung noch nicht und wird abgelehnt."""
+    with pytest.raises(IntegrityError) as fehler:
+        session.execute(
+            text(
+                "WITH p AS (INSERT INTO posting (buchung_id, konto_id, betrag)"
+                " VALUES (:id, :a, 10), (:id, :b, -10) RETURNING buchung_id)"
+                " INSERT INTO buchung (id, haushalt_id, art, wertstellung)"
+                " SELECT DISTINCT p.buchung_id, CAST(:h AS uuid), 'test.buchung',"
+                " DATE '2024-01-15' FROM p"
+            ),
+            {"id": uuid.uuid4(), "h": k.haushalt_id, "a": k.a, "b": k.b},
+        )
+    erwarte(fehler, "23001", "buchung_abgeschlossen")
+
+
+def test_erfasst_txid_vom_client_wird_ueberschrieben(session: Session, k: RohKonten) -> None:
+    """Die Datenbank setzt die Transaktionsnummer selbst (Fachkonzept 4.4)."""
+    eigene = session.execute(
+        text(
+            "INSERT INTO buchung (haushalt_id, art, wertstellung, erfasst_txid)"
+            " VALUES (:h, 'test.buchung', DATE '2024-01-15', '1')"
+            " RETURNING erfasst_txid = pg_current_xact_id()"
+        ),
+        {"h": k.haushalt_id},
+    ).scalar_one()
+    assert eigene is True
 
 
 # --- Storno ----------------------------------------------------------------------------
@@ -302,11 +467,62 @@ def test_storno_muss_genau_spiegeln(
 
 
 @pytest.mark.parametrize(
+    ("original", "gegenbuchung"),
+    [
+        ([("a", "10"), ("b", "-10"), ("c", "5"), ("a", "-5")], [("a", "-10"), ("b", "10")]),
+        ([("a", "5"), ("a", "5"), ("b", "-5"), ("b", "-5")], [("a", "-5"), ("b", "5")]),
+    ],
+    ids=["teilstorno", "doppelte-postings"],
+)
+def test_storno_negiert_alle_postings_des_originals(
+    session: Session,
+    k: RohKonten,
+    original: list[tuple[str, str]],
+    gegenbuchung: list[tuple[str, str]],
+) -> None:
+    """Auch die Gegenrichtung zählt: Jedes Posting des Originals braucht sein Gegenstück."""
+    konto = {"a": k.a, "b": k.b, "c": k.c}
+    original_id = roh_buchung(session, k.haushalt_id)
+    roh_postings(session, original_id, [(konto[name], betrag) for name, betrag in original])
+    storno = roh_buchung(session, k.haushalt_id, art="kern.storno", storno_von=original_id)
+    roh_postings(session, storno, [(konto[name], betrag) for name, betrag in gegenbuchung])
+    with pytest.raises(IntegrityError) as fehler:
+        pruefe_aufgeschobene(session)
+    erwarte(fehler, "23514", "storno_spiegelbildlich")
+
+
+def test_postings_am_original_nach_geprueftem_storno(session: Session, k: RohKonten) -> None:
+    """Fund der Code-Prüfung: Auch neue Postings am Original prüfen die Spiegelung."""
+    original = roh_buchung(session, k.haushalt_id)
+    roh_postings(session, original, [(k.a, "10"), (k.b, "-10")])
+    storno = roh_buchung(session, k.haushalt_id, art="kern.storno", storno_von=original)
+    roh_postings(session, storno, [(k.a, "-10"), (k.b, "10")])
+    pruefe_aufgeschobene(session)
+    roh_postings(session, original, [(k.c, "990"), (k.b, "-990")])
+    with pytest.raises(IntegrityError) as fehler:
+        pruefe_aufgeschobene(session)
+    erwarte(fehler, "23514", "storno_spiegelbildlich")
+
+
+@pytest.mark.parametrize(
     ("art", "mit_original", "regel"),
     [
         ("kern.storno", False, "ck_buchung_storno_art"),
         ("test.buchung", True, "ck_buchung_storno_art"),
-        ("zahlung", False, "ck_buchung_art_format"),
+        *[
+            (art, False, "ck_buchung_art_format")
+            for art in [
+                "zahlung",
+                "Kern.zahlung",
+                "kern.",
+                ".x",
+                "a.b.c",
+                "kern.zahl-ung",
+                "kern.x1",
+                "kern.x\n",
+                "x.ä",
+            ]
+        ],
     ],
 )
 def test_art_der_buchung(

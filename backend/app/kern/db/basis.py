@@ -6,13 +6,13 @@ Fehlerbehandlung beziehen sich auf dieselben Namen (z. B. ``uq_buchung_storno_vo
 """
 
 from decimal import Decimal
-from typing import Final
+from typing import Any, Final
 
 from sqlalchemy import MetaData, Numeric
 from sqlalchemy.engine import Dialect
 from sqlalchemy.exc import DontWrapMixin
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.types import TypeDecorator
+from sqlalchemy.types import TypeDecorator, UserDefinedType
 
 from app.kern.geld import speicherbar
 
@@ -58,3 +58,15 @@ class BetragTyp(TypeDecorator[Decimal]):
             return speicherbar(value)
         except (TypeError, ValueError) as fehler:
             raise BetragNichtSpeicherbarError(str(fehler)) from fehler
+
+
+class Xid8(UserDefinedType[str]):
+    """PostgreSQL ``xid8``: 64-Bit-Transaktionsnummer, die nie wiederverwendet wird.
+
+    SQLAlchemy kennt den Typ nicht; psycopg liefert ihn als Text.
+    """
+
+    cache_ok = True
+
+    def get_col_spec(self, **kw: Any) -> str:
+        return "xid8"

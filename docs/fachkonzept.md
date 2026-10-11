@@ -168,6 +168,7 @@ CREATE TABLE buchung (
   art          text NOT NULL CHECK (art ~ '^[a-z_]+\.[a-z_]+$'),  -- <modul>.<name>, Kap. 4.3
   wertstellung date NOT NULL,
   erfasst_am   timestamptz NOT NULL DEFAULT now(),  -- setzt ein Trigger, siehe unten
+  erfasst_txid xid8 NOT NULL,                       -- setzt ein Trigger, siehe unten
   -- erfasst_von uuid REFERENCES benutzer: Spalte und Fremdschlüssel folgen mit der Tabelle benutzer
   storno_von   uuid UNIQUE REFERENCES buchung,      -- höchstens ein Storno je Buchung
   -- beleg_id uuid REFERENCES dokument: Spalte und Fremdschlüssel folgen mit der Tabelle dokument
@@ -187,9 +188,13 @@ CREATE TABLE posting (
 --   alle Konten gehören zum Haushalt der Buchung;
 --   ein Storno besteht genau aus den negierten Postings der Ursprungsbuchung.
 -- Sofort beim Einfügen (Trigger):
---   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion; ein Wert vom Client
---   wird überschrieben.
---   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht.
+--   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion, und erfasst_txid auf
+--   pg_current_xact_id(), die Nummer der Transaktion; Werte vom Client werden überschrieben.
+--   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht: Ein Posting
+--   wird nur angenommen, wenn erfasst_txid seiner Buchung gleich pg_current_xact_id() ist.
+--   Geprüft wird die Transaktionsnummer, nicht erfasst_am, weil now() nicht je Transaktion
+--   eindeutig ist: Alle Transaktionen einer Client-Nachricht haben denselben Zeitstempel. Die
+--   Nummer ist eindeutig, gilt auch in Savepoints und wird nie wiederverwendet.
 --   Storno: Die Ursprungsbuchung existiert, ist selbst kein Storno, gehört zum selben
 --   Haushalt und hat dieselbe Wertstellung (E-18).
 -- UPDATE, DELETE und TRUNCATE auf buchung und posting sind per Trigger verboten.

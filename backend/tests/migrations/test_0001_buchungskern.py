@@ -36,12 +36,19 @@ TABELLEN = ("haushalt", "konto", "buchung", "posting")
 TRIGGER = {
     ("buchung", "buchung_pruefen"),
     ("buchung", "buchung_vor_insert"),
-    ("buchung", "buchung_merken"),
     ("buchung", "buchung_unveraenderlich"),
     ("posting", "posting_pruefen"),
     ("posting", "posting_vor_insert"),
     ("posting", "posting_unveraenderlich"),
     ("konto", "konto_vor_update"),
+}
+
+FUNKTIONEN = {
+    "ledger_pruefe_buchung",
+    "ledger_buchung_vor_insert",
+    "ledger_posting_vor_insert",
+    "ledger_unveraenderlich",
+    "ledger_konto_vor_update",
 }
 
 CONSTRAINTS = {
@@ -75,8 +82,13 @@ def test_stand_ist_0001(owner_engine: Engine) -> None:
     assert katalog(owner_engine, "SELECT version_num FROM alembic_version") == [("0001",)]
 
 
+@pytest.mark.filterwarnings("ignore:Did not recognize type 'xid8':sqlalchemy.exc.SAWarning")
 def test_modelle_und_migration_stimmen_ueberein(owner_engine: Engine) -> None:
-    """Spalten, Typen, Defaults, Indizes, Fremdschlüssel und Namen der CHECKs."""
+    """Spalten, Typen, Defaults, Indizes, Fremdschlüssel und Namen der CHECKs.
+
+    SQLAlchemy kennt den Typ xid8 beim Auslesen nicht und Alembic vergleicht ihn dann nicht;
+    test_erfasst_txid prüft ihn deshalb im Katalog.
+    """
     with owner_engine.connect() as verbindung:
         kontext = MigrationContext.configure(
             verbindung,
@@ -91,6 +103,17 @@ def test_modelle_und_migration_stimmen_ueberein(owner_engine: Engine) -> None:
         )
         unterschiede = compare_metadata(kontext, Basis.metadata)
     assert unterschiede == []
+
+
+def test_erfasst_txid(owner_engine: Engine) -> None:
+    """Transaktionsnummer der Buchung (Fachkonzept 4.4): xid8, Pflichtfeld, ohne Default."""
+    zeilen = katalog(
+        owner_engine,
+        "SELECT format_type(a.atttypid, a.atttypmod), a.attnotnull, a.atthasdef"
+        " FROM pg_attribute AS a"
+        " WHERE a.attrelid = 'public.buchung'::regclass AND a.attname = 'erfasst_txid'",
+    )
+    assert zeilen == [("xid8", True, False)]
 
 
 def test_trigger_sind_angelegt_und_immer_aktiv(owner_engine: Engine) -> None:
@@ -133,21 +156,35 @@ def test_funktionen_mit_festem_suchpfad(owner_engine: Engine) -> None:
         "SELECT proname, proconfig FROM pg_proc"
         " WHERE pronamespace = 'public'::regnamespace AND proname LIKE 'ledger\\_%'",
     )
-    assert len(zeilen) >= 5
+    assert {name for name, _ in zeilen} == FUNKTIONEN
     for name, konfiguration in zeilen:
         assert konfiguration == ["search_path=pg_catalog, pg_temp"], name
 
 
 @pytest.mark.parametrize("tabelle", TABELLEN)
-def test_rechte_der_laufzeitrolle(owner_engine: Engine, tabelle: str) -> None:
-    zeilen = katalog(
-        owner_engine,
-        "SELECT privilege_type FROM information_schema.role_table_grants"
-        " WHERE grantee = :rolle AND table_name = :tabelle",
-        rolle=APP_ROLE,
-        tabelle=tabelle,
+@pytest.mark.parametrize(
+    ("recht", "erwartet"),
+    [
+        ("SELECT", True),
+        ("INSERT", True),
+        ("UPDATE", False),
+        ("DELETE", False),
+        ("TRUNCATE", False),
+        ("REFERENCES", False),
+        ("TRIGGER", False),
+    ],
+)
+def test_rechte_der_laufzeitrolle(
+    owner_engine: Engine, tabelle: str, recht: str, erwartet: bool
+) -> None:
+    """Nur lesen und einfügen (E-19), auch nicht über PUBLIC oder einzelne Spalten."""
+    sql = (
+        "SELECT has_any_column_privilege(:rolle, :tabelle, :recht)"
+        if recht in {"SELECT", "INSERT", "UPDATE", "REFERENCES"}
+        else "SELECT has_table_privilege(:rolle, :tabelle, :recht)"
     )
-    assert {recht for (recht,) in zeilen} == {"SELECT", "INSERT"}
+    zeilen = katalog(owner_engine, sql, rolle=APP_ROLE, tabelle=f"public.{tabelle}", recht=recht)
+    assert zeilen == [(erwartet,)]
 
 
 def test_rueckweg_und_erneuter_aufbau(admin_url: URL) -> None:

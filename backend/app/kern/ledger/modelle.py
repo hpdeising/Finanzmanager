@@ -15,7 +15,7 @@ from sqlalchemy import CHAR, CheckConstraint, Date, DateTime, ForeignKey, Text, 
 from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.kern.db import Basis, BetragTyp
+from app.kern.db import Basis, BetragTyp, Xid8
 
 # Eine der fünf Grundarten des Kerns (Fachkonzept 4.2).
 Kontoart = Literal["aktiv", "passiv", "aufwand", "ertrag", "eigenkapital"]
@@ -67,6 +67,9 @@ class Buchung(Basis):
     wertstellung: Mapped[date] = mapped_column(Date)
     # Setzt die Datenbank auf den Beginn der Transaktion; ein Wert vom Client wird ersetzt.
     erfasst_am: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # Setzt die Datenbank auf die Nummer der Transaktion, in der die Buchung entsteht. Nur in
+    # dieser Transaktion nimmt sie Postings an (Fachkonzept 4.4). Wird erst bei Bedarf geladen.
+    erfasst_txid: Mapped[str] = mapped_column(Xid8(), deferred=True)
     storno_von: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("buchung.id"), unique=True)
     text: Mapped[str | None] = mapped_column(Text)
 

@@ -9,9 +9,10 @@ Umsetzung von Fachkonzept 4.4, E-17, E-18 und E-19:
 - Zurückgestellt (DEFERRABLE INITIALLY DEFERRED, am Ende der Transaktion) je Buchung:
   mindestens zwei Postings auf mindestens zwei verschiedenen Konten, Summe null, alle Konten
   im Haushalt der Buchung; ein Storno besteht genau aus den negierten Postings des Originals.
-- Sofort: Postings nur in der Transaktion ihrer Buchung; erfasst_am setzt die Datenbank;
-  Storno nur von einer vorhandenen Buchung, die selbst kein Storno ist, im selben Haushalt
-  und mit derselben Wertstellung; höchstens ein Storno je Buchung (eindeutiger Index).
+- Sofort: Postings nur in der Transaktion ihrer Buchung, erkannt an der Transaktionsnummer
+  (erfasst_txid); erfasst_am und erfasst_txid setzt die Datenbank; Storno nur von einer
+  vorhandenen Buchung, die selbst kein Storno ist, im selben Haushalt und mit derselben
+  Wertstellung; höchstens ein Storno je Buchung (eindeutiger Index).
 - UPDATE, DELETE und TRUNCATE auf buchung und posting sind verboten; an konto sind die
   Stammfelder unveränderlich. Alle Trigger feuern immer (ENABLE ALWAYS).
 - Die Laufzeitrolle darf nur lesen und einfügen.
@@ -23,6 +24,7 @@ Doppelpunkt-Namen, weil op.execute sie als SQLAlchemy-Text verarbeitet.
 """
 
 import uuid
+from typing import Any
 
 import sqlalchemy as sa
 from alembic import op
@@ -34,6 +36,16 @@ depends_on: str | tuple[str, ...] | None = None
 
 NAMENSMUSTER = r"'^[a-z_]+\.[a-z_]+$'"
 
+
+class _Xid8(sa.types.UserDefinedType[str]):
+    """PostgreSQL xid8; eigene Klasse, damit die Migration nicht vom Code der App abhängt."""
+
+    cache_ok = True
+
+    def get_col_spec(self, **kw: Any) -> str:
+        return "xid8"
+
+
 FUNKTIONEN = [
     # Zurückgestellte Prüfung einer Buchung; feuert für die Buchung und für jedes Posting.
     """
@@ -43,6 +55,8 @@ DECLARE
     v_buchung_id uuid;
     v_haushalt_id uuid;
     v_storno_von uuid;
+    v_original uuid;
+    v_storno uuid;
     v_anzahl bigint;
     v_konten bigint;
     v_summe numeric;
@@ -87,21 +101,31 @@ BEGIN
             ERRCODE = 'check_violation',
             CONSTRAINT = 'buchung_ein_haushalt', TABLE = 'posting';
     END IF;
-    IF v_storno_von IS NOT NULL AND EXISTS (
+    -- Spiegelung in beide Richtungen: Geprüft wird das Storno und ebenso das Original, wenn
+    -- es eines hat. Sonst entgingen ihr Postings, die das Original nach einer vorgezogenen
+    -- Prüfung (SET CONSTRAINTS ... IMMEDIATE) in derselben Transaktion bekommt.
+    IF v_storno_von IS NOT NULL THEN
+        v_original := v_storno_von;
+        v_storno := v_buchung_id;
+    ELSE
+        v_original := v_buchung_id;
+        SELECT b.id INTO v_storno FROM public.buchung AS b WHERE b.storno_von = v_buchung_id;
+    END IF;
+    IF v_storno IS NOT NULL AND EXISTS (
         (SELECT p.konto_id, p.betrag FROM public.posting AS p
-          WHERE p.buchung_id = v_buchung_id
+          WHERE p.buchung_id = v_storno
          EXCEPT ALL
          SELECT o.konto_id, -o.betrag FROM public.posting AS o
-          WHERE o.buchung_id = v_storno_von)
+          WHERE o.buchung_id = v_original)
         UNION ALL
         (SELECT o.konto_id, -o.betrag FROM public.posting AS o
-          WHERE o.buchung_id = v_storno_von
+          WHERE o.buchung_id = v_original
          EXCEPT ALL
          SELECT p.konto_id, p.betrag FROM public.posting AS p
-          WHERE p.buchung_id = v_buchung_id)
+          WHERE p.buchung_id = v_storno)
     ) THEN
         RAISE EXCEPTION USING
-            MESSAGE = 'Storno ' || v_buchung_id || ' negiert die Ursprungsbuchung nicht genau.',
+            MESSAGE = 'Storno ' || v_storno || ' negiert die Ursprungsbuchung nicht genau.',
             ERRCODE = 'check_violation',
             CONSTRAINT = 'storno_spiegelbildlich', TABLE = 'posting';
     END IF;
@@ -109,7 +133,9 @@ BEGIN
 END
 $$
 """,
-    # Vor dem Einfügen einer Buchung: erfasst_am setzen, Storno-Regeln prüfen.
+    # Vor dem Einfügen einer Buchung: erfasst_am und erfasst_txid setzen, Storno-Regeln prüfen.
+    # pg_current_xact_id() ist die Nummer der äußersten Transaktion, auch in einem Savepoint,
+    # und wird nie wiederverwendet (64 Bit).
     """
 CREATE FUNCTION public.ledger_buchung_vor_insert() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
@@ -119,6 +145,7 @@ DECLARE
     v_storno_von uuid;
 BEGIN
     NEW.erfasst_am := now();
+    NEW.erfasst_txid := pg_current_xact_id();
     IF NEW.storno_von IS NULL THEN
         RETURN NEW;
     END IF;
@@ -154,44 +181,22 @@ BEGIN
 END
 $$
 """,
-    # Nach dem Einfügen einer Buchung: ihre ID transaktionslokal vormerken. set_config mit
-    # true gilt bis zum Ende der Transaktion; ein Rollback auf einen Savepoint nimmt es zurück.
-    """
-CREATE FUNCTION public.ledger_buchung_merken() RETURNS trigger
-LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
-BEGIN
-    PERFORM set_config(
-        'finanzmanager.neue_buchungen',
-        coalesce(nullif(current_setting('finanzmanager.neue_buchungen', true), ''), ',')
-            || NEW.id || ',',
-        true
-    );
-    RETURN NULL;
-END
-$$
-""",
     # Vor dem Einfügen eines Postings: Die Buchung muss in dieser Transaktion entstanden sein.
-    # Die Liste allein genügt nicht, weil jede Rolle set_config aufrufen kann; erfasst_am setzt
-    # dagegen nur die Datenbank, und now() ist der Beginn der laufenden Transaktion.
+    # Findet der Trigger sie nicht (noch nicht committet, zurückgerollt oder erst später in
+    # derselben Anweisung), ist v_erfasst_txid NULL und das Posting wird ebenfalls abgelehnt;
+    # der Fremdschlüssel prüft nur, dass es die Buchung am Ende der Anweisung gibt.
     """
 CREATE FUNCTION public.ledger_posting_vor_insert() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
 DECLARE
-    v_erfasst_am timestamptz;
+    v_erfasst_txid xid8;
 BEGIN
-    SELECT b.erfasst_am INTO v_erfasst_am
+    SELECT b.erfasst_txid INTO v_erfasst_txid
       FROM public.buchung AS b WHERE b.id = NEW.buchung_id;
-    IF NOT FOUND THEN
-        RETURN NEW;
-    END IF;
-    IF v_erfasst_am <> now()
-       OR strpos(
-            coalesce(current_setting('finanzmanager.neue_buchungen', true), ''),
-            ',' || NEW.buchung_id || ','
-          ) = 0 THEN
+    IF v_erfasst_txid IS DISTINCT FROM pg_current_xact_id() THEN
         RAISE EXCEPTION USING
-            MESSAGE = 'Buchung ' || NEW.buchung_id
-                || ' ist abgeschlossen; Postings entstehen nur mit ihrer Buchung.',
+            MESSAGE = 'Buchung ' || NEW.buchung_id || ' ist nicht in dieser Transaktion'
+                || ' entstanden; Postings entstehen nur mit ihrer Buchung.',
             ERRCODE = 'restrict_violation',
             CONSTRAINT = 'buchung_abgeschlossen', TABLE = 'posting';
     END IF;
@@ -234,8 +239,6 @@ $$
 TRIGGER = [
     "CREATE TRIGGER buchung_vor_insert BEFORE INSERT ON public.buchung"
     " FOR EACH ROW EXECUTE FUNCTION public.ledger_buchung_vor_insert()",
-    "CREATE TRIGGER buchung_merken AFTER INSERT ON public.buchung"
-    " FOR EACH ROW EXECUTE FUNCTION public.ledger_buchung_merken()",
     "CREATE CONSTRAINT TRIGGER buchung_pruefen AFTER INSERT ON public.buchung"
     " DEFERRABLE INITIALLY DEFERRED"
     " FOR EACH ROW EXECUTE FUNCTION public.ledger_pruefe_buchung()",
@@ -254,7 +257,6 @@ TRIGGER = [
     " FOR EACH ROW EXECUTE FUNCTION public.ledger_konto_vor_update()",
     # ENABLE ALWAYS: Die Trigger feuern auch bei session_replication_role = replica.
     "ALTER TABLE public.buchung ENABLE ALWAYS TRIGGER buchung_vor_insert",
-    "ALTER TABLE public.buchung ENABLE ALWAYS TRIGGER buchung_merken",
     "ALTER TABLE public.buchung ENABLE ALWAYS TRIGGER buchung_pruefen",
     "ALTER TABLE public.buchung ENABLE ALWAYS TRIGGER buchung_unveraenderlich",
     "ALTER TABLE public.posting ENABLE ALWAYS TRIGGER posting_vor_insert",
@@ -266,7 +268,6 @@ TRIGGER = [
 FUNKTIONSNAMEN = (
     "ledger_pruefe_buchung",
     "ledger_buchung_vor_insert",
-    "ledger_buchung_merken",
     "ledger_posting_vor_insert",
     "ledger_unveraenderlich",
     "ledger_konto_vor_update",
@@ -320,6 +321,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
+        sa.Column("erfasst_txid", _Xid8(), nullable=False),
         sa.Column("storno_von", sa.Uuid(), nullable=True),
         sa.Column("text", sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_buchung")),
