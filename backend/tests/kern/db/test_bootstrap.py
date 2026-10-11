@@ -7,7 +7,10 @@ Laufzeitrolle darf sich verbinden, aber weder Objekte noch temporäre Tabellen a
 
 import secrets
 from collections.abc import Iterator
+from pathlib import Path
+from typing import Any
 
+import psycopg
 import pytest
 from sqlalchemy import URL, Engine, create_engine, text
 
@@ -21,7 +24,10 @@ from app.kern.db.bootstrap import (
     richte_datenbank_ein,
 )
 from app.kern.db.engine import URL_VARIABLE
-from tests.datenbank import PRAEFIX, Sitzungsdatenbank
+from tests.datenbank import PRAEFIX, Sitzungsdatenbank, pruefe_cluster
+
+# Erfundenes, falsches Passwort mit allem, was eine URI zerlegen könnte.
+SONDERPASSWORT = "Wort mit Leerzeichen ' \\ % @ : / ? # + &"
 
 
 @pytest.fixture
@@ -164,3 +170,122 @@ def test_kommandozeile_verlangt_alle_variablen(monkeypatch: pytest.MonkeyPatch) 
         monkeypatch.delenv(variable, raising=False)
     with pytest.raises(SystemExit, match=ADMIN_URL_VARIABLE):
         main()
+
+
+def test_passwoerter_gehen_nur_als_scram_verifier_an_den_server(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    admin_url: URL,
+    testdatenbank: Sitzungsdatenbank,
+) -> None:
+    """Ein Klartext in ALTER ROLE … PASSWORD kann im Serverlog landen (PostgreSQL-Doku).
+
+    Das libpq-Protokoll der Verbindung zeigt, was tatsächlich an den Server geht. Gesetzt
+    werden dieselben Passwörter wie für die Sitzung, damit sich nichts ändert.
+    """
+    protokoll = tmp_path / "libpq.trace"
+    verbinde = psycopg.connect
+
+    with protokoll.open("w") as datei:
+
+        def mit_protokoll(*args: Any, **kwargs: Any) -> Any:
+            verbindung = verbinde(*args, **kwargs)
+            verbindung.pgconn.trace(datei.fileno())
+            return verbindung
+
+        monkeypatch.setattr(psycopg, "connect", mit_protokoll)
+        richte_datenbank_ein(
+            admin_url.render_as_string(hide_password=False),
+            datenbank=testdatenbank.name,
+            owner_passwort=testdatenbank.owner_url.password,
+            app_passwort=testdatenbank.app_url.password,
+        )
+    inhalt = protokoll.read_text()
+    assert inhalt.count("PASSWORD 'SCRAM-SHA-256$") == 2
+    for passwort in (testdatenbank.owner_url.password, testdatenbank.app_url.password):
+        assert passwort
+        assert passwort not in inhalt
+
+
+def test_admin_passwort_mit_sonderzeichen(admin_url: URL) -> None:
+    """Die Adresse geht in Teilen an libpq, nicht als URI: nichts wird falsch zerlegt.
+
+    Das Passwort ist absichtlich falsch; erwartet wird die Ablehnung durch den Server, nicht
+    ein Fehler beim Zerlegen der Adresse, und keine Meldung nennt das Passwort.
+    """
+    falsch = admin_url.set(password=SONDERPASSWORT).render_as_string(hide_password=False)
+    with pytest.raises(psycopg.OperationalError, match="password authentication failed") as fehler:
+        richte_datenbank_ein(falsch, datenbank=f"{PRAEFIX}nie_angelegt")
+    assert "Leerzeichen" not in str(fehler.value)
+
+
+def test_kommandozeile_meldet_datenbankfehler_ohne_passwort(
+    monkeypatch: pytest.MonkeyPatch, admin_url: URL, testdatenbank: Sitzungsdatenbank
+) -> None:
+    falsch = admin_url.set(password=SONDERPASSWORT).render_as_string(hide_password=False)
+    monkeypatch.setenv(ADMIN_URL_VARIABLE, falsch)
+    monkeypatch.setenv(URL_VARIABLE, testdatenbank.app_url.render_as_string(hide_password=False))
+    monkeypatch.setenv(
+        MIGRATION_URL_VARIABLE, testdatenbank.owner_url.render_as_string(hide_password=False)
+    )
+    with pytest.raises(SystemExit, match="fehlgeschlagen") as fehler:
+        main()
+    assert fehler.value.__cause__ is None
+    assert fehler.value.__suppress_context__
+    meldung = str(fehler.value)
+    for geheim in (
+        SONDERPASSWORT,
+        testdatenbank.app_url.password,
+        testdatenbank.owner_url.password,
+    ):
+        assert geheim
+        assert geheim not in meldung
+    assert "Leerzeichen" not in meldung
+
+
+def test_vorhandene_datenbank_eines_anderen_eigentuemers(admin: Engine, admin_url: URL) -> None:
+    """So legt etwa das offizielle Image eine Datenbank über POSTGRES_DB an.
+
+    Die Eigentümerrolle könnte dort nichts anlegen; das Bootstrap bricht deshalb ab, statt
+    Erfolg zu melden, und ändert nichts.
+    """
+    name = f"{PRAEFIX}{secrets.token_hex(6)}"
+    with admin.connect() as verbindung:
+        verbindung.execute(text(f'CREATE DATABASE "{name}"'))
+    try:
+        with pytest.raises(RuntimeError, match=OWNER_ROLE):
+            richte_datenbank_ein(admin_url.render_as_string(hide_password=False), datenbank=name)
+        with admin.connect() as verbindung:
+            verbindet = verbindung.execute(
+                text("SELECT has_database_privilege(:rolle, :name, 'CONNECT')"),
+                {"rolle": APP_ROLE, "name": name},
+            ).scalar_one()
+        # Unverändert: PUBLIC darf sich weiter verbinden, kein REVOKE ist gelaufen.
+        assert verbindet is True
+    finally:
+        with admin.connect() as verbindung:
+            verbindung.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+
+
+@pytest.mark.parametrize("bezug", ["eigentuemer", "connect"])
+def test_tests_verweigern_einen_cluster_mit_einer_instanz(
+    admin: Engine, admin_url: URL, bezug: str
+) -> None:
+    """Tests setzen die Passwörter der clusterweiten Rollen neu; das träfe eine echte Instanz."""
+    name = f"fm_instanz_{secrets.token_hex(6)}"
+    with admin.connect() as verbindung:
+        if bezug == "eigentuemer":
+            verbindung.execute(text(f'CREATE DATABASE "{name}" OWNER {OWNER_ROLE}'))
+        else:
+            verbindung.execute(text(f'CREATE DATABASE "{name}"'))
+            verbindung.execute(text(f'GRANT CONNECT ON DATABASE "{name}" TO {APP_ROLE}'))
+    try:
+        with pytest.raises(RuntimeError, match=name):
+            pruefe_cluster(admin_url)
+    finally:
+        with admin.connect() as verbindung:
+            verbindung.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
+
+
+def test_tests_akzeptieren_einen_cluster_ohne_instanz(admin_url: URL) -> None:
+    pruefe_cluster(admin_url)

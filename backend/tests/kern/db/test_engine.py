@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.kern.db import erzeuge_engine, sitzungsfabrik
 from app.kern.db.engine import URL_VARIABLE
+from tests.datenbank import Sitzungsdatenbank
 
 
 def test_fehlende_umgebungsvariable_wird_genannt(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -49,3 +50,46 @@ def test_sitzungsfabrik_bindet_an_die_engine(app_engine: Engine) -> None:
     with fabrik() as sitzung:
         assert isinstance(sitzung, Session)
         assert sitzung.execute(text("SELECT current_user")).scalar_one() == "finanzmanager_app"
+
+
+def zeige(engine: Engine, *einstellungen: str) -> list[str]:
+    try:
+        with engine.connect() as verbindung:
+            return [
+                str(verbindung.execute(text(f"SHOW {einstellung}")).scalar_one())
+                for einstellung in einstellungen
+            ]
+    finally:
+        engine.dispose()
+
+
+def test_optionen_aus_der_adresse_bleiben_erhalten(testdatenbank: Sitzungsdatenbank) -> None:
+    """Sitzungsparameter wie Timeouts aus FINANZMANAGER_DATABASE_URL fallen nicht still weg."""
+    url = testdatenbank.app_url.update_query_dict({"options": "-c lock_timeout=5000"})
+    assert zeige(erzeuge_engine(url), "lock_timeout", "TimeZone") == ["5s", "UTC"]
+
+
+def test_pgoptions_bleiben_erhalten(
+    monkeypatch: pytest.MonkeyPatch, testdatenbank: Sitzungsdatenbank
+) -> None:
+    monkeypatch.setenv("PGOPTIONS", "-c statement_timeout=1234")
+    engine = erzeuge_engine(testdatenbank.app_url)
+    assert zeige(engine, "statement_timeout", "TimeZone") == ["1234ms", "UTC"]
+
+
+def test_adresse_hat_vorrang_vor_pgoptions(
+    monkeypatch: pytest.MonkeyPatch, testdatenbank: Sitzungsdatenbank
+) -> None:
+    """Wie bei libpq: Ein Parameter der Verbindung schlägt die Umgebungsvariable."""
+    monkeypatch.setenv("PGOPTIONS", "-c lock_timeout=1000")
+    url = testdatenbank.app_url.update_query_dict({"options": "-c lock_timeout=5000"})
+    assert zeige(erzeuge_engine(url), "lock_timeout") == ["5s"]
+
+
+def test_zeitzone_bleibt_utc(
+    monkeypatch: pytest.MonkeyPatch, testdatenbank: Sitzungsdatenbank
+) -> None:
+    """UTC ist Pflicht (CLAUDE.md, Datum und Fristen); weder Adresse noch PGOPTIONS ändern das."""
+    monkeypatch.setenv("PGOPTIONS", "-c TimeZone=Europe/Berlin")
+    url = testdatenbank.app_url.update_query_dict({"options": "-c TimeZone=America/New_York"})
+    assert zeige(erzeuge_engine(url), "TimeZone") == ["UTC"]

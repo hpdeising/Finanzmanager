@@ -19,10 +19,14 @@ def erzeuge_engine(url: str | URL | None = None) -> Engine:
 
     - Nur PostgreSQL: Die Invarianten des Buchungskerns erzwingt die Datenbank selbst
       (Fachkonzept 4.4); eine andere Datenbank hätte sie nicht.
-    - ``hide_parameters``: Gebundene Werte wie Beträge und Buchungstexte erscheinen nicht in
-      Fehlermeldungen und damit nicht in Logs (CLAUDE.md, Sicherheit).
+    - ``hide_parameters``: SQLAlchemy nennt gebundene Werte wie Beträge und Buchungstexte
+      nicht in seinen Fehlermeldungen. Das DETAIL von PostgreSQL kann bei CHECK- und
+      NOT-NULL-Verletzungen trotzdem die ganze Zeile enthalten; Logs schreiben deshalb nur
+      SQLSTATE und Regelname (CLAUDE.md, Sicherheit).
     - Zeitzone der Sitzung UTC: Zeitstempel kommen als ``datetime`` in UTC zurück, unabhängig
-      von der Einstellung des Servers (CLAUDE.md, Datum und Fristen).
+      von der Einstellung des Servers (CLAUDE.md, Datum und Fristen). Sitzungsparameter aus
+      ``PGOPTIONS`` und aus ``options`` in der Adresse bleiben erhalten; die Adresse hat
+      Vorrang, die Zeitzone setzt sich immer durch.
     """
     ziel = url if url is not None else os.environ.get(URL_VARIABLE)
     if not ziel:
@@ -32,10 +36,16 @@ def erzeuge_engine(url: str | URL | None = None) -> Engine:
     if adresse.get_backend_name() != "postgresql":
         msg = "Der Finanzmanager unterstützt nur PostgreSQL."
         raise ValueError(msg)
+    aus_adresse = adresse.query.get("options")
+    if isinstance(aus_adresse, tuple):
+        msg = "Parameter options steht mehrfach in der Adresse."
+        raise ValueError(msg)
+    # libpq liest PGOPTIONS nur ohne eigenes options; bei mehrfachem -c gilt das letzte.
+    optionen = (os.environ.get("PGOPTIONS"), aus_adresse, "-c TimeZone=UTC")
     return create_engine(
-        adresse,
+        adresse.difference_update_query(["options"]),
         hide_parameters=True,
-        connect_args={"options": "-c TimeZone=UTC"},
+        connect_args={"options": " ".join(teil for teil in optionen if teil)},
     )
 
 

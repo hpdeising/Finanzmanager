@@ -75,9 +75,13 @@ jobs:
       - name: Modulgrenzen (import-linter)
         run: uv run --locked lint-imports
 
+      - name: Tests
+        run: uv run --locked pytest
+
       # Derselbe Weg wie beim Installer: Rollen per Bootstrap, Migration als Eigentümerrolle,
       # Anmeldung als Laufzeitrolle, alles über scram-sha-256. Die Passwörter entstehen
-      # zur Laufzeit und gelten nur für diesen Schritt.
+      # zur Laufzeit und gelten nur für diesen Schritt. Er läuft nach den Tests, weil die
+      # Tests einen Cluster mit einer Finanzmanager-Datenbank ablehnen (CONTRIBUTING.md).
       - name: Datenbank einrichten (Bootstrap, Migration, Anmeldung)
         run: |
           owner_passwort="$(openssl rand -hex 24)"
@@ -98,6 +102,3 @@ jobs:
               rolle = verbindung.execute(text("SELECT current_user")).scalar_one()
           assert rolle == "finanzmanager_app", rolle
           EOF
-
-      - name: Tests
-        run: uv run --locked pytest

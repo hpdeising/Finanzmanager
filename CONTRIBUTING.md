@@ -58,20 +58,25 @@ Optional führt [pre-commit](https://pre-commit.com/) dieselben Prüfungen vor j
 
 Die Tests laufen gegen echtes PostgreSQL 16, weil die Datenbank die Regeln des Buchungskerns selbst erzwingt. Ohne Datenbank schlagen `pytest` und der pre-commit-Hook fehl; Datenbanktests werden nicht übersprungen.
 
-1. PostgreSQL 16 starten, nur an `127.0.0.1`, mit Passwort-Anmeldung. Entweder ein lokal installiertes PostgreSQL 16 oder:
+1. PostgreSQL 16 starten, nur an `127.0.0.1`, mit Passwort-Anmeldung, und zwar einen eigenen Cluster nur für Tests: entweder ein lokal installiertes PostgreSQL 16, auf dem keine Finanzmanager-Instanz läuft, oder:
 
    ```bash
-   docker run --rm -d --name fm-test-db -p 127.0.0.1:5432:5432 \
+   docker run --rm -d --name fm-test-db -p 127.0.0.1:5433:5432 \
      -e POSTGRES_PASSWORD=<selbst gewählt> postgres:16.15
    ```
+
+   Port 5433, damit der Test-Cluster nicht mit einer Instanz auf 5432 verwechselt wird.
 
 2. Die Adresse eines Superusers setzen (Vorlage: `.env.example`):
 
    ```bash
-   export FINANZMANAGER_TEST_ADMIN_DATABASE_URL=postgresql+psycopg://postgres:<passwort>@127.0.0.1:5432/postgres
+   export FINANZMANAGER_TEST_ADMIN_DATABASE_URL=postgresql+psycopg://postgres:<passwort>@127.0.0.1:5433/postgres
    ```
 
-Jede Testsitzung legt über das Bootstrap-Skript die Rollen `finanzmanager_owner` und `finanzmanager_app` sowie eine eigene Datenbank `fm_test_<zufall>` an und löscht die Datenbank am Ende wieder. Die Tests laufen als Laufzeitrolle `finanzmanager_app`. Rollen gelten für den ganzen Cluster; deshalb nicht zwei Testläufe gleichzeitig gegen denselben Server starten.
+Jede Testsitzung legt über das Bootstrap-Skript die Rollen `finanzmanager_owner` und `finanzmanager_app` sowie eine eigene Datenbank `fm_test_<zufall>` an und löscht die Datenbank am Ende wieder. Die Tests laufen als Laufzeitrolle `finanzmanager_app`. Rollen gelten für den ganzen Cluster, und jede Testsitzung setzt ihre Passwörter neu. Deshalb:
+
+- nie gegen den Cluster einer echten Instanz testen; liegt dort eine Datenbank, die einer der beiden Rollen gehört oder ihnen Rechte gibt, brechen die Tests ab,
+- nicht zwei Testläufe gleichzeitig gegen denselben Server starten.
 
 Die Property-Tests mit Datenbank laufen lokal gründlich (Profil `db-gruendlich`); die CI setzt `FINANZMANAGER_HYPOTHESIS_DB_PROFIL=db-ci` mit weniger Beispielen.
 

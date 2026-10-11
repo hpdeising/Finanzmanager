@@ -18,12 +18,12 @@ from sqlalchemy import Engine, text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session
 
+from app.kern.db.bootstrap import psycopg_verbindung
 from tests.datenbank import (
     WERTSTELLUNG,
     Sitzungsdatenbank,
     constraint_name,
     pruefe_aufgeschobene,
-    psycopg_verbindung,
     roh_buchung,
     roh_haushalt,
     roh_konto,

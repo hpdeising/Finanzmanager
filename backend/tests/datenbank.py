@@ -25,7 +25,6 @@ import psycopg
 from alembic import command
 from alembic.config import Config
 from hypothesis import settings
-from psycopg.rows import TupleRow
 from sqlalchemy import URL, Connection, Engine, create_engine, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
@@ -73,6 +72,43 @@ def pruefe_testdatenbank(verbindung: Connection) -> None:
         raise RuntimeError(msg)
 
 
+def pruefe_cluster(admin_url: URL) -> None:
+    """Schutz: Jede Testsitzung setzt die Passwörter der clusterweiten Rollen neu.
+
+    Liegt auf dem Cluster eine echte Instanz, könnte sie sich danach nicht mehr anmelden.
+    Erkennbar ist sie an einer Datenbank ohne Präfix ``fm_test_``, die einer der beiden Rollen
+    gehört oder ihnen ausdrücklich Rechte gibt. Dann bricht der Testlauf ab.
+    """
+    engine = create_engine(admin_url, hide_parameters=True)
+    try:
+        with engine.connect() as verbindung:
+            namen = (
+                verbindung.execute(
+                    text(
+                        "SELECT d.datname FROM pg_database AS d"
+                        " WHERE d.datname NOT LIKE 'fm\\_test\\_%'"
+                        " AND (pg_get_userbyid(d.datdba) IN (:owner, :app)"
+                        " OR EXISTS (SELECT 1 FROM aclexplode(d.datacl) AS a"
+                        " JOIN pg_roles AS r ON r.oid = a.grantee"
+                        " WHERE r.rolname IN (:owner, :app)))"
+                        " ORDER BY d.datname"
+                    ),
+                    {"owner": OWNER_ROLE, "app": APP_ROLE},
+                )
+                .scalars()
+                .all()
+            )
+    finally:
+        engine.dispose()
+    if namen:
+        msg = (
+            f"Der Test-Cluster enthält Datenbanken einer Finanzmanager-Instanz: {', '.join(namen)}."
+            " Die Tests setzen die Passwörter der Rollen neu; bitte einen eigenen Cluster nur für"
+            " Tests verwenden (CONTRIBUTING.md, Abschnitt „Test-Datenbank“)."
+        )
+        raise RuntimeError(msg)
+
+
 def migriere(url: URL, ziel: str = "head") -> None:
     """Als Eigentümerrolle auf ``ziel`` migrieren."""
     engine = erzeuge_engine(url)
@@ -91,11 +127,12 @@ def neue_testdatenbank(admin_url: URL, *, migrieren: bool = True) -> Generator[S
     Die Datenbank bekommt absichtlich die Zeitzone Europe/Berlin. So prüfen die Tests,
     dass die Engine Zeitstempel trotzdem in UTC liefert.
     """
+    pruefe_cluster(admin_url)
     name = f"{PRAEFIX}{secrets.token_hex(6)}"
     owner_passwort = secrets.token_urlsafe(24)
     app_passwort = secrets.token_urlsafe(24)
     richte_datenbank_ein(
-        admin_url.render_as_string(hide_password=False),
+        admin_url,
         datenbank=name,
         owner_passwort=owner_passwort,
         app_passwort=app_passwort,
@@ -143,22 +180,6 @@ def pruefe_aufgeschobene(sitzung: Session) -> None:
     sitzung.flush()
     sitzung.execute(text("SET CONSTRAINTS ALL IMMEDIATE"))
     sitzung.execute(text("SET CONSTRAINTS ALL DEFERRED"))
-
-
-def psycopg_verbindung(url: URL, *, autocommit: bool = False) -> psycopg.Connection[TupleRow]:
-    """Direkte psycopg-Verbindung, etwa für mehrere Anweisungen in einer Client-Nachricht.
-
-    Ohne Parameter schickt psycopg eine Anfrage über das einfache Protokoll; dann darf sie
-    mehrere Anweisungen und Transaktionen enthalten.
-    """
-    return psycopg.connect(
-        host=url.host,
-        port=url.port,
-        user=url.username,
-        password=url.password,
-        dbname=url.database,
-        autocommit=autocommit,
-    )
 
 
 def sqlstate(fehler: BaseException) -> str | None:
