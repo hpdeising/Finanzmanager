@@ -224,7 +224,7 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | Tabelle | Wesentliche Felder |
 |---|---|
 | `glaeubiger` | Name, Anschrift, IBAN, Vertreter (Inkasso), Kontaktdaten |
-| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Rundung, Status, Aktenzeichen des Gläubigers |
+| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`; bis zur Entscheidung über P-11), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Rundung, Status, Aktenzeichen des Gläubigers |
 | `akte_konto` | Akte, Konto. Die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten |
 | `akte_dokument` | Akte, Dokument |
 | `titel` | Art, Gericht, Aktenzeichen, erlassen am, zugestellt am, rechtskräftig am |
@@ -239,8 +239,8 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 
 ### 4.6 Erweiterbarkeit
 
-- Neue Module (Forderungen, Konten, Depot, Sachwerte) bringen eigene Kontoarten, Rollen, Buchungsarten, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets mit und melden sie beim Kern an. Eine eigene Buchungslogik bringen sie nicht mit.
-- Das Modul Forderungen (Gläubigersicht) nutzt dieselben Tabellen mit `richtung = forderung` und Aktivkonten.
+- Neue Module (Forderungen, Konten, Depot, Sachwerte) bringen eigene Rollen, Buchungsarten, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets mit und melden sie beim Kern an. Eine eigene Buchungslogik bringen sie nicht mit.
+- Gläubigersicht: Ob sie ein eigenes Modul mit eigenen Tabellen wird oder Teil des Moduls Verbindlichkeiten, ist offen (Prüfpunkt P-11).
 - Mandantenfähigkeit ist nicht vorgesehen; jede Instanz ist ein Haushalt. Spätere Mandanten wären eine Spalte über `haushalt`, kein Umbau.
 
 ---
@@ -597,5 +597,6 @@ toleranz: "0.00"
 | P-08 | Plausibilitätsprüfung der Höhe von Inkassokosten: Release 1 oder später? | Häufigste Abweichungsquelle |
 | P-09 | Wortlaut von Disclaimer und Abgrenzung zur Rechtsdienstleistung | Haftung |
 | P-10 | Löschkonzept: Wie werden eine irrtümlich angelegte Akte oder ein ganzer Haushalt endgültig gelöscht, obwohl Buchungen unveränderlich sind? Entscheidung spätestens mit M8 | Unveränderlichkeit der Buchungen, Datenschutz |
+| P-11 | Gläubigersicht: eigenes Modul mit eigenen Tabellen, oder Teil des Moduls Verbindlichkeiten (dann mit `akte.richtung`)? Wie wird die gemeinsame Rechenlogik (Zinsen, Anrechnung) genutzt, ohne E-17 zu verletzen? Entscheidung vor Beginn der Gläubigersicht | Zuschnitt der Module, Tabelle `akte` |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
 | T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |
