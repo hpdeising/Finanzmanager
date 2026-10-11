@@ -18,6 +18,6 @@
 - [ ] Keine geänderten Erwartungswerte in `tests/golden/`
 - [ ] Keine hartkodierten Stammdaten
 - [ ] Keine echten personenbezogenen Daten in Code, Tests, Logs oder Beispielen
-- [ ] Neue Abhängigkeiten mit Lizenz genannt, Lizenz laut CLAUDE.md erlaubt
+- [ ] Neue Abhängigkeiten mit Lizenz genannt, auch mitgebrachte native Bibliotheken; Lizenz laut CLAUDE.md erlaubt
 - [ ] Modulgrenzen eingehalten
 - [ ] Falls KI-gestützt: Werkzeug genannt

@@ -69,6 +69,10 @@ Alle Entscheidungen vom 11.10.2026.
 | E-14 | Zeitrahmen | Kein fester Zeitrahmen |
 | E-15 | Name und Aufbau | Projektname „Finanzmanager“; modularer Aufbau aus Kern und Fachmodulen; erstes Modul „Verbindlichkeiten“ |
 | E-16 | Lizenzen Dritter | PSF-2.0 zusätzlich erlaubt; die CI prüft Lizenzen bei jedem PR; Lizenzhinweise und SBOM entstehen automatisch je Release (Kap. 11.3) |
+| E-17 | Kern und Module im Datenmodell | Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf Kern-Tabellen verweisen, nie umgekehrt. Einzige Ausnahme ist `audit_log`: Es verweist allgemein über `entitaet_typ` und `entitaet_id`, ohne Fremdschlüssel, weil es jede Tabelle protokollieren muss. `konto` und `buchung` haben deshalb keine Spalte `akte_id`. Das Modul Verbindlichkeiten verknüpft Akten über eigene Tabellen (`akte_konto`, `akte_dokument`); die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten. Kontorollen und Buchungsarten folgen dem Schema `<modul>.<name>`, z. B. `verbindlichkeiten.hauptforderung`, `kern.externe_mittel`, `kern.storno`. Der Kern kennt nur `kern.externe_mittel` und `kern.storno`; die übrigen Rollen und Arten meldet das Modul an (Kap. 4.2, 4.4, 4.5) |
+| E-18 | Storno-Wertstellung | Eine Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; der Zeitpunkt der Korrektur steht in `erfasst_am`. Zinsen, Anrechnung und Fristen werden aus der Historie berechnet. Eine falsch erfasste Zahlung, die erst ab dem Korrekturtag storniert wäre, würde alle Zinsperioden davor weiter verfälschen. Über `erfasst_am` bleibt nachvollziehbar, was zu welchem Zeitpunkt bekannt war |
+| E-19 | Datenbankrollen | Die Eigentümerrolle führt nur die Migrationen aus. Die Anwendung verbindet sich mit einer Laufzeitrolle, die auf `buchung` und `posting` nur lesen und einfügen darf. Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration (Kap. 11.1) |
+| E-20 | Lizenzen nativer Bibliotheken | Die Lizenzliste in `CLAUDE.md` gilt auch für native Bibliotheken, die ein Paket mitbringt; zusätzlich erlaubt sind PostgreSQL, OLDAP-2.8 und Public Domain. Maßgeblich ist die Lizenz, die das Ursprungsprojekt für die Bibliothek erklärt; einzelne Dateien darin werden nicht gegen die Liste geprüft, ihre Lizenz- und Hinweistexte kommen vollständig in `THIRD-PARTY-LICENSES`. Für das Betriebssystem des Docker-Basis-Images gelten dessen eigene Lizenzhinweise (Kap. 11.3) |
 
 ---
 
@@ -83,7 +87,7 @@ Alle Entscheidungen vom 11.10.2026.
 | Bestandteil | Teil der Forderung mit eigener Rechtslogik: Hauptforderung, Zinsen, vorgerichtliche Kosten, Verfahrenskosten, Vollstreckungskosten |
 | Zinsregel | Berechnungsvorschrift für die Zinsen eines Bestandteils |
 | Ereignis | Datiertes, rechtlich relevantes Geschehen (Zustellung, Rechtskraft, Zahlung, Vollstreckungsantrag …). Fristen werden aus Ereignissen abgeleitet |
-| Buchung | Unveränderlicher Geschäftsvorfall aus mindestens zwei Postings mit der Summe null |
+| Buchung | Unveränderlicher Geschäftsvorfall aus mindestens zwei Postings, deren Summe null ist; sie betreffen mindestens zwei verschiedene Konten |
 | Stichtag | Datum, zu dem Salden und Zinsen berechnet werden |
 
 ---
@@ -92,70 +96,84 @@ Alle Entscheidungen vom 11.10.2026.
 
 ### 4.1 Grundprinzipien
 
-- Kein Saldo wird als Wahrheit gespeichert. Jeder Saldo ist die Summe der Postings eines Kontos bis zum Stichtag. Saldo-Snapshots sind als Cache zulässig.
-- Buchungen und Postings sind unveränderlich. Eine Korrektur besteht aus Stornobuchung und Neubuchung.
+- Kein Saldo wird als Wahrheit gespeichert. Jeder Saldo ist die Summe der Postings eines Kontos mit Wertstellung bis einschließlich Stichtag. Saldo-Snapshots sind als Cache zulässig.
+- Buchungen und Postings sind unveränderlich. Eine Korrektur besteht aus Stornobuchung und Neubuchung. Die Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; wann korrigiert wurde, steht in `erfasst_am` (E-18).
 - Vorzeichen: Soll positiv, Haben negativ. Die Summe der Postings jeder Buchung ist null; die Datenbank erzwingt das am Ende jeder Transaktion.
 - Beträge: `NUMERIC(19,4)`. Währung je Konto; Release 1 kennt nur EUR.
 
 ### 4.2 Kontenrahmen
 
-Beim Anlegen einer Akte entsteht je Bestandteil ein Passivkonto:
+Die Kontoart ist eine der fünf Grundarten des Kerns: `aktiv`, `passiv`, `aufwand`, `ertrag`, `eigenkapital`. Wofür ein Konto dient, sagt seine Rolle. Rollen folgen dem Schema `<modul>.<name>` (E-17); Rollen des Kerns beginnen mit `kern.`.
+
+Beim Anlegen einer Akte legt das Modul Verbindlichkeiten je Bestandteil ein Passivkonto an und verknüpft es über seine Tabelle `akte_konto` mit der Akte (Kap. 4.5):
 
 | Konto | Kontoart | Rolle |
 |---|---|---|
-| Hauptforderung | Passiv | `hauptforderung` |
-| Zinsen (eines je Zinsregel) | Passiv | `zinsen` |
-| Vorgerichtliche Kosten | Passiv | `kosten_vorgerichtlich` |
-| Verfahrenskosten | Passiv | `kosten_verfahren` |
-| Vollstreckungskosten | Passiv | `kosten_vollstreckung` |
+| Hauptforderung | Passiv | `verbindlichkeiten.hauptforderung` |
+| Zinsen (eines je Zinsregel) | Passiv | `verbindlichkeiten.zinsen` |
+| Vorgerichtliche Kosten | Passiv | `verbindlichkeiten.kosten_vorgerichtlich` |
+| Verfahrenskosten | Passiv | `verbindlichkeiten.kosten_verfahren` |
+| Vollstreckungskosten | Passiv | `verbindlichkeiten.kosten_vollstreckung` |
 
 Je Haushalt existieren:
 
-| Konto | Kontoart | Rolle |
-|---|---|---|
-| Eröffnung Altlasten | Eigenkapital | `eroeffnung` |
-| Zinsaufwand | Aufwand | `zinsaufwand` |
-| Kostenaufwand | Aufwand | `kostenaufwand` |
-| Externe Mittel | Eigenkapital | `externe_mittel` |
+| Konto | Kontoart | Rolle | Angelegt von |
+|---|---|---|---|
+| Eröffnung Altlasten | Eigenkapital | `verbindlichkeiten.eroeffnung` | Modul Verbindlichkeiten, bei der ersten Akte |
+| Zinsaufwand | Aufwand | `verbindlichkeiten.zinsaufwand` | Modul Verbindlichkeiten, bei der ersten Akte |
+| Kostenaufwand | Aufwand | `verbindlichkeiten.kostenaufwand` | Modul Verbindlichkeiten, bei der ersten Akte |
+| Externe Mittel | Eigenkapital | `kern.externe_mittel` | Kern |
+
+Die drei Konten des Moduls existieren je Haushalt, gehören aber fachlich zum Modul. Von den Rollen kennt der Kern nur `kern.externe_mittel`.
 
 „Externe Mittel“ steht für Geld, das aus nicht erfassten Konten gezahlt wird. Sobald Bankkonten als Aktivkonten hinzukommen, bucht eine Zahlung gegen das jeweilige Bankkonto statt gegen „Externe Mittel“. Am übrigen Modell ändert sich nichts.
 
-Vorbereitet, nicht implementiert: Bankkonto (Aktiv), Depot (Aktiv), Sachwert (Aktiv), Forderung gegen Dritte (Aktiv, Gläubigersicht).
+Vorbereitet, nicht implementiert: Bankkonto (Aktiv), Depot (Aktiv), Sachwert (Aktiv), Forderung gegen Dritte (Aktiv, Gläubigersicht). Ihre Rollen tragen das Präfix des Moduls, das sie einführt.
 
 ### 4.3 Buchungsarten
 
-| Vorgang | Soll | Haben |
-|---|---|---|
-| Erfassung einer Altlast | Eröffnung Altlasten | Hauptforderung (und ggf. Kosten, aufgelaufene Zinsen) |
-| Zinslauf bis Stichtag | Zinsaufwand | Zinsen |
-| Neue Kosten (z. B. Vollstreckung) | Kostenaufwand | Kosten Vollstreckung |
-| Zahlung | Bestandteile laut Anrechnung (Kap. 5.3) | Externe Mittel bzw. später Bankkonto |
-| Korrektur | Storno der Ursprungsbuchung | + Neubuchung |
+| Vorgang | Art | Soll | Haben |
+|---|---|---|---|
+| Erfassung einer Altlast | `verbindlichkeiten.entstehung` | Eröffnung Altlasten | Hauptforderung (und ggf. Kosten, aufgelaufene Zinsen) |
+| Zinslauf bis Stichtag | `verbindlichkeiten.zinslauf` | Zinsaufwand | Zinsen |
+| Neue Kosten (z. B. Vollstreckung) | `verbindlichkeiten.kosten` | Kostenaufwand | Kosten Vollstreckung |
+| Zahlung | `verbindlichkeiten.zahlung` | Bestandteile laut Anrechnung (Kap. 5.3) | Externe Mittel bzw. später Bankkonto |
+| Korrektur | `kern.storno` | Storno der Ursprungsbuchung | + Neubuchung |
+
+Buchungsarten folgen dem Schema `<modul>.<name>` (E-17). Der Kern kennt nur `kern.storno`; die übrigen Arten meldet das Modul mit seiner Umsetzung beim Kern an. In M1 prüft die Datenbank nur das Format, keine Liste.
 
 ### 4.4 Buchungskern (Skizze, nicht ausführbar)
 
+Die Tabellen gehören dem Kern und verweisen auf keine Tabelle eines Moduls (E-17).
+
 ```sql
+CREATE TABLE haushalt (
+  id           uuid PRIMARY KEY,
+  betriebsart  text NOT NULL CHECK (betriebsart IN ('einzel','haushalt_gemeinsam','haushalt_getrennt'))
+  -- bundesland (Kap. 4.5) folgt mit den Feiertagen (M4)
+);
+
 CREATE TABLE konto (
   id           uuid PRIMARY KEY,
   haushalt_id  uuid NOT NULL REFERENCES haushalt,
-  akte_id      uuid REFERENCES akte,             -- NULL bei Haushaltskonten
   kontoart     text NOT NULL CHECK (kontoart IN ('aktiv','passiv','aufwand','ertrag','eigenkapital')),
-  rolle        text NOT NULL,
-  waehrung     char(3) NOT NULL DEFAULT 'EUR',
+  rolle        text NOT NULL CHECK (rolle ~ '^[a-z_]+\.[a-z_]+$'),  -- <modul>.<name> (E-17)
+  waehrung     char(3) NOT NULL DEFAULT 'EUR' CHECK (waehrung = 'EUR'),  -- Release 1: nur EUR
   bezeichnung  text NOT NULL
 );
 
 CREATE TABLE buchung (
   id           uuid PRIMARY KEY,
   haushalt_id  uuid NOT NULL REFERENCES haushalt,
-  akte_id      uuid REFERENCES akte,
-  art          text NOT NULL,                    -- entstehung, zinslauf, kosten, zahlung, storno
+  art          text NOT NULL CHECK (art ~ '^[a-z_]+\.[a-z_]+$'),  -- <modul>.<name>, Kap. 4.3
   wertstellung date NOT NULL,
-  erfasst_am   timestamptz NOT NULL DEFAULT now(),
-  erfasst_von  uuid REFERENCES benutzer,
-  storno_von   uuid REFERENCES buchung,
-  beleg_id     uuid REFERENCES dokument,
-  text         text
+  erfasst_am   timestamptz NOT NULL DEFAULT now(),  -- setzt ein Trigger, siehe unten
+  -- erfasst_von uuid REFERENCES benutzer: Spalte und Fremdschlüssel folgen mit der Tabelle benutzer
+  storno_von   uuid UNIQUE REFERENCES buchung,      -- höchstens ein Storno je Buchung
+  -- beleg_id uuid REFERENCES dokument: Spalte und Fremdschlüssel folgen mit der Tabelle dokument
+  text         text,
+  CHECK ((art = 'kern.storno') = (storno_von IS NOT NULL)),
+  CHECK (storno_von <> id)
 );
 
 CREATE TABLE posting (
@@ -164,34 +182,65 @@ CREATE TABLE posting (
   konto_id     uuid NOT NULL REFERENCES konto,
   betrag       numeric(19,4) NOT NULL CHECK (betrag <> 0)
 );
--- Invariante: SUM(betrag) je buchung_id = 0,
--- geprüft per DEFERRABLE INITIALLY DEFERRED CONSTRAINT TRIGGER.
--- UPDATE und DELETE auf buchung/posting sind per Trigger verboten.
+-- Am Ende jeder Transaktion (DEFERRABLE INITIALLY DEFERRED CONSTRAINT TRIGGER) gilt je Buchung:
+--   mindestens zwei Postings auf mindestens zwei verschiedenen Konten; SUM(betrag) = 0;
+--   alle Konten gehören zum Haushalt der Buchung;
+--   ein Storno besteht genau aus den negierten Postings der Ursprungsbuchung.
+-- Sofort beim Einfügen (Trigger):
+--   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion; ein Wert vom Client
+--   wird überschrieben.
+--   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht.
+--   Storno: Die Ursprungsbuchung existiert, ist selbst kein Storno, gehört zum selben
+--   Haushalt und hat dieselbe Wertstellung (E-18).
+-- UPDATE, DELETE und TRUNCATE auf buchung und posting sind per Trigger verboten.
+-- An konto sind id, haushalt_id, kontoart, rolle und waehrung unveränderlich.
+-- Die Trigger feuern immer, auch bei session_replication_role = replica.
+-- Rechte (E-19): Die Laufzeitrolle darf auf buchung und posting nur lesen und einfügen;
+--   in M1 gilt das auch für haushalt und konto.
+-- Beträge: NUMERIC(19,4) rundet eine fünfte und jede weitere Nachkommastelle still, und kein
+--   Trigger sieht den ursprünglichen Wert. Deshalb lehnt die Anwendung solche Beträge vor dem
+--   Speichern ab (kern/geld). Beträge ab 10^15 weist schon die Datenbank zurück (Überlauf); die
+--   Anwendung prüft auch das vorher, um einen verständlichen Fehler zu liefern. Der Buchungskern
+--   rundet nie; Module runden vorher über kern/geld.
 ```
 
 ### 4.5 Fachtabellen
+
+Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf Kern-Tabellen verweisen, nie umgekehrt. Einzige Ausnahme ist `audit_log`, ohne Fremdschlüssel (E-17).
+
+**Kern-Tabellen**
 
 | Tabelle | Wesentliche Felder |
 |---|---|
 | `haushalt` | Betriebsart (`einzel`, `haushalt_gemeinsam`, `haushalt_getrennt`), Bundesland (für Feiertage) |
 | `benutzer` | Haushalt, Anmeldename, Passwort-Hash, umschlossener Dokumentschlüssel |
+| `konto`, `buchung`, `posting` | siehe Kap. 4.4 |
+| `dokument` | Art, Dateiname, SHA-256, Größe, Schlüsselversion |
+| `import_zeile` | Quelle, Datum, Betrag, Gegen-IBAN, Verwendungszweck, Status; nach der Verarbeitung die erzeugte Buchung. Die Zuordnung zur Akte macht das Modul |
+| `audit_log` | Wer, wann, welche Entität (`entitaet_typ`, `entitaet_id`, ohne Fremdschlüssel), welche Aktion – ohne Inhaltsdaten; nur anhängend |
+
+**Tabellen des Moduls Verbindlichkeiten**
+
+| Tabelle | Wesentliche Felder |
+|---|---|
 | `glaeubiger` | Name, Anschrift, IBAN, Vertreter (Inkasso), Kontaktdaten |
-| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Rundung, Status, Aktenzeichen des Gläubigers |
+| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`; bis zur Entscheidung über P-11), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Rundung, Status, Aktenzeichen des Gläubigers |
+| `akte_konto` | Akte, Konto. Die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten |
+| `akte_dokument` | Akte, Dokument |
 | `titel` | Art, Gericht, Aktenzeichen, erlassen am, zugestellt am, rechtskräftig am |
 | `bestandteil` | Akte, Art, Konto, Ursprungsbetrag, entstanden am, fällig am |
 | `zinsregel` | Bestandteil, Typ, Aufschlag in Prozentpunkten, fester Satz, ab, bis, Quelle (Titel/Vertrag) |
 | `ereignis` | Akte, Typ, Datum, Details (JSON), Beleg |
 | `aufgabe` | Akte, Typ, fällig am, erledigt am |
-| `dokument` | Akte, Art, Dateiname, SHA-256, Größe, Schlüsselversion |
-| `import_zeile` | Quelle, Datum, Betrag, Gegen-IBAN, Verwendungszweck, Zuordnung, Status |
-| `audit_log` | Wer, wann, welche Entität, welche Aktion – ohne Inhaltsdaten; nur anhängend |
+
+In Meilenstein M1 entstehen davon nur `haushalt`, `konto`, `buchung` und `posting`.
 
 Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`.
 
 ### 4.6 Erweiterbarkeit
 
-- Neue Module (Forderungen, Konten, Depot, Sachwerte) bringen eigene Kontoarten, Rollen, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets mit und melden sie beim Kern an. Eine eigene Buchungslogik bringen sie nicht mit.
-- Das Modul Forderungen (Gläubigersicht) nutzt dieselben Tabellen mit `richtung = forderung` und Aktivkonten.
+- Neue Module (Forderungen, Konten, Depot, Sachwerte) bringen eigene Rollen, Buchungsarten, Ereignistypen, Stammdaten, Vorlagen und Dashboard-Widgets mit und melden sie beim Kern an. Eine eigene Buchungslogik bringen sie nicht mit.
+- Gläubigersicht: Ob sie ein eigenes Modul mit eigenen Tabellen wird oder Teil des Moduls Verbindlichkeiten, ist offen (Prüfpunkt P-11).
 - Mandantenfähigkeit ist nicht vorgesehen; jede Instanz ist ein Haushalt. Spätere Mandanten wären eine Spalte über `haushalt`, kein Umbau.
 
 ---
@@ -417,6 +466,12 @@ Architektur: Widgets sind registrierte Komponenten mit eigener API-Abfrage. Spä
   - Ein Passwortwechsel umschließt den DEK nur neu.
   - Wer Passwort und Recovery-Key verliert, verliert die Dokumente.
 - **Datenbank:** Nicht feldverschlüsselt. Geschützt wird sie über Systemverschlüsselung (BitLocker, FileVault, LUKS). Der Installer prüft das und warnt, wenn sie fehlt.
+- **Datenbankrollen (E-19):**
+  - Die Eigentümerrolle besitzt die Tabellen und führt nur die Migrationen aus.
+  - Die Anwendung verbindet sich mit der Laufzeitrolle. Sie darf auf `buchung` und `posting` nur lesen und einfügen, also kein UPDATE, DELETE oder TRUNCATE, und kann keine Trigger abschalten.
+  - Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration, weil Rollen für den ganzen Datenbank-Cluster gelten. CI, Tests und Installer nutzen dasselbe Skript.
+  - Die Tests laufen als Laufzeitrolle; ein Test weist nach, dass sie Trigger nicht abschalten kann.
+  - Das schützt gegen eigenen Code, auch KI-generierten, der Buchungen ändern will. Gegen den Superuser der Datenbank schützt es nicht und soll es nicht.
 - **Backups:** Täglich, bestehend aus Datenbank-Dump und Dokumenten, verschlüsselt. Das Ziel ist frei wählbar (externe Platte, NAS). Der Installer führt eine Wiederherstellungsprobe durch.
 - **Protokolle:** Keine personenbezogenen Inhalte, also keine Namen, IBANs oder Aktenzeichen.
 - **Audit-Log:** Nur anhängend. Es hält fest, wer wann welche Entität geändert hat.
@@ -455,6 +510,7 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 - **Docker-Images:** enthalten die Datei für alle Python-Abhängigkeiten.
 - **Frontend-Bundle:** enthält die Datei für alle npm-Abhängigkeiten, weil das Bündeln die Lizenzkommentare im Code entfernt.
 - **Oberfläche:** eine Seite „Lizenzen“, verlinkt neben dem Quellcode-Link.
+- **Native Bibliotheken (E-20):** Bringt ein Python-Paket native Bibliotheken mit (z. B. libpq und OpenSSL in `psycopg-binary`), gilt die Lizenzliste auch für sie, und sie gehören in `THIRD-PARTY-LICENSES`. Maßgeblich ist die Lizenz, die das Ursprungsprojekt für die Bibliothek erklärt; Lizenzen einzelner Dateien darin werden nicht gegen die Liste geprüft, ihre Lizenz- und Hinweistexte aber vollständig übernommen. Der Lizenztest liest nur Python-Metadaten; deshalb nennt der Pull Request ihre Lizenzen. Für das Betriebssystem des Docker-Basis-Images gelten dessen eigene Lizenzhinweise (Debian: `/usr/share/doc/*/copyright`). Sie werden mit dem Image ausgeliefert und nicht gegen die Liste geprüft.
 - **Release:** Zu jedem Release gehört eine SBOM (CycloneDX oder SPDX).
 - **Prüfung:** Erlaubte Lizenzen stehen in `CLAUDE.md`; die CI prüft sie bei jedem Pull Request.
 
@@ -540,4 +596,7 @@ toleranz: "0.00"
 | P-07 | Reihenfolge innerhalb der Kosten bei § 367 Abs. 1 BGB | Anrechnung |
 | P-08 | Plausibilitätsprüfung der Höhe von Inkassokosten: Release 1 oder später? | Häufigste Abweichungsquelle |
 | P-09 | Wortlaut von Disclaimer und Abgrenzung zur Rechtsdienstleistung | Haftung |
+| P-10 | Löschkonzept: Wie werden eine irrtümlich angelegte Akte oder ein ganzer Haushalt endgültig gelöscht, obwohl Buchungen unveränderlich sind? Entscheidung spätestens mit M8 | Unveränderlichkeit der Buchungen, Datenschutz |
+| P-11 | Gläubigersicht: eigenes Modul mit eigenen Tabellen, oder Teil des Moduls Verbindlichkeiten (dann mit `akte.richtung`)? Wie wird die gemeinsame Rechenlogik (Zinsen, Anrechnung) genutzt, ohne E-17 zu verletzen? Entscheidung vor Beginn der Gläubigersicht | Zuschnitt der Module, Tabelle `akte` |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
+| T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |
