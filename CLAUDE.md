@@ -47,7 +47,8 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 
 ### Buchungen
 
-- Buchungen und Postings werden nie geändert oder gelöscht. Korrekturen nur durch Storno und Neubuchung.
+- Buchungen und Postings werden nie geändert oder gelöscht. Ein Erfassungsfehler wird nur durch Storno und Neubuchung korrigiert.
+- Differenzen der Berechnung für einen festgeschriebenen Zeitraum gleicht die nächste Festschreibung mit einer Korrekturbuchung aus (Fachkonzept E-25, Kap. 5.2 Schritt 7). Sie ist eine neue Buchung und ändert keine bestehende. Buchungen einer Festschreibung werden nie storniert (E-28).
 - Die Summe der Postings je Buchung ist null. Der Datenbank-Constraint dafür wird nie entfernt, deaktiviert oder umgangen.
 
 ### Recht
@@ -151,7 +152,7 @@ Prüfe den Pull Request gegen `docs/fachkonzept.md` und diese Datei. Melde minde
 1. `float` oder Rundung außerhalb von `kern/geld`
 2. Rechtsregel ohne Normzitat oder abweichend vom Fachkonzept
 3. Geänderte Erwartungswerte in `tests/golden/`
-4. Änderung bestehender Buchungen statt Storno
+4. Änderung bestehender Buchungen statt Storno oder Korrekturbuchung; Storno einer Buchung, die eine Festschreibung erzeugt hat
 5. Hartkodierte Stammdaten (Zinssätze, Freigrenzen, Stichtage)
 6. Personenbezogene Daten in Logs, Tests oder Beispielen
 7. Neue Abhängigkeit ohne Lizenzangabe oder mit verbotener Lizenz
