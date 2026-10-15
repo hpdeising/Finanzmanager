@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Migration 0001: Tabellen, Trigger, Rechte und Rückweg (Fachkonzept 4.4, 11.1).
+"""Migrationen: Tabellen, Trigger, Rechte und Rückweg (Fachkonzept 4.4, 11.1).
 
 Alembic vergleicht Trigger, Funktionen und Rechte nicht. Deshalb prüfen die Tests den
-Katalog von PostgreSQL direkt. Tests, die migrieren oder zurückmigrieren, bekommen eine
-eigene, frische Datenbank.
+Katalog von PostgreSQL direkt, und zwar den Stand nach ``alembic upgrade head`` (0001 und
+0002). Was nur 0002 betrifft, prüft test_0002_kontosperre.py. Tests, die migrieren oder
+zurückmigrieren, bekommen eine eigene, frische Datenbank.
 """
 
 from typing import Any
@@ -21,6 +22,7 @@ from app.kern.db import Basis, erzeuge_engine
 from app.kern.db.bootstrap import APP_ROLE, MIGRATION_URL_VARIABLE
 from tests.datenbank import (
     BACKEND,
+    HEAD,
     alembic_config,
     migriere,
     neue_testdatenbank,
@@ -31,7 +33,7 @@ from tests.datenbank import (
     sqlstate,
 )
 
-TABELLEN = ("haushalt", "konto", "buchung", "posting")
+TABELLEN = ("haushalt", "konto", "buchung", "posting", "konto_sperre")
 
 TRIGGER = {
     ("buchung", "buchung_pruefen"),
@@ -41,6 +43,8 @@ TRIGGER = {
     ("posting", "posting_vor_insert"),
     ("posting", "posting_unveraenderlich"),
     ("konto", "konto_vor_update"),
+    ("konto_sperre", "konto_sperre_vor_insert"),
+    ("konto_sperre", "konto_sperre_unveraenderlich"),
 }
 
 FUNKTIONEN = {
@@ -49,6 +53,10 @@ FUNKTIONEN = {
     "ledger_posting_vor_insert",
     "ledger_unveraenderlich",
     "ledger_konto_vor_update",
+    "ledger_konto_sperrschluessel",
+    "ledger_halte_konto",
+    "ledger_konto_sperre_vor_insert",
+    "ledger_konto_sperre_unveraenderlich",
 }
 
 CONSTRAINTS = {
@@ -66,10 +74,13 @@ CONSTRAINTS = {
     "ck_buchung_art_format",
     "ck_buchung_storno_art",
     "ck_buchung_storno_nicht_selbst",
+    "ck_buchung_buchungsdatum_nicht_vor_wertstellung",
     "pk_posting",
     "fk_posting_buchung_id_buchung",
     "fk_posting_konto_id_konto",
     "ck_posting_betrag_ungleich_null",
+    "pk_konto_sperre",
+    "fk_konto_sperre_konto_id_konto",
 }
 
 
@@ -78,8 +89,8 @@ def katalog(engine: Engine, sql: str, **parameter: str) -> list[Any]:
         return list(verbindung.execute(text(sql), parameter).all())
 
 
-def test_stand_ist_0001(owner_engine: Engine) -> None:
-    assert katalog(owner_engine, "SELECT version_num FROM alembic_version") == [("0001",)]
+def test_stand_ist_head(owner_engine: Engine) -> None:
+    assert katalog(owner_engine, "SELECT version_num FROM alembic_version") == [(HEAD,)]
 
 
 @pytest.mark.filterwarnings("ignore:Did not recognize type 'xid8':sqlalchemy.exc.SAWarning")
@@ -144,7 +155,8 @@ def test_constraint_namen(owner_engine: Engine) -> None:
         owner_engine,
         "SELECT conname FROM pg_constraint"
         " WHERE conrelid IN ('public.haushalt'::regclass, 'public.konto'::regclass,"
-        " 'public.buchung'::regclass, 'public.posting'::regclass) AND contype <> 't'",
+        " 'public.buchung'::regclass, 'public.posting'::regclass,"
+        " 'public.konto_sperre'::regclass) AND contype <> 't'",
     )
     assert {name for (name,) in zeilen} == CONSTRAINTS
 
@@ -201,7 +213,7 @@ def test_rueckweg_und_erneuter_aufbau(admin_url: URL) -> None:
             )
             assert {name for (name,) in uebrig} == {"alembic_version"}
             migriere(datenbank.owner_url)
-            assert katalog(engine, "SELECT version_num FROM alembic_version") == [("0001",)]
+            assert katalog(engine, "SELECT version_num FROM alembic_version") == [(HEAD,)]
         finally:
             engine.dispose()
 
@@ -236,7 +248,7 @@ def test_uebergebene_verbindung_hat_vorrang(
         migriere(datenbank.owner_url)
         engine = erzeuge_engine(datenbank.owner_url)
         try:
-            assert katalog(engine, "SELECT version_num FROM alembic_version") == [("0001",)]
+            assert katalog(engine, "SELECT version_num FROM alembic_version") == [(HEAD,)]
         finally:
             engine.dispose()
 

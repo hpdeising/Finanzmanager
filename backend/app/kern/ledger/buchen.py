@@ -4,6 +4,10 @@
 Die Funktionen prüfen vorab und liefern verständliche Fehler. Maßgeblich bleibt die
 Datenbank: Sie erzwingt dieselben Regeln, spätestens am Ende der Transaktion. Keine Funktion
 committet; das entscheidet der Aufrufer.
+
+Welches Buchungsdatum eine Buchung bekommt, entscheidet ein Modul (E-26, E-27). Ohne Angabe
+gilt der offene Zeitraum: Buchungsdatum gleich Wertstellung, beim Storno das Buchungsdatum
+der Ursprungsbuchung. Liegt das in einem gesperrten Zeitraum, lehnt der Kern ab.
 """
 
 import re
@@ -22,6 +26,7 @@ from app.kern.ledger.fehler import (
     BuchungUnbekanntError,
     BuchungUngueltigError,
     HaushaltUnbekanntError,
+    KontoGesperrtError,
     KontoUnbekanntError,
     KontoUngueltigError,
     StornoNichtMoeglichError,
@@ -37,6 +42,7 @@ from app.kern.ledger.modelle import (
     Kontoart,
     Posting,
 )
+from app.kern.ledger.sperre import sperrdaten, uebersetze_sperrfehler
 
 _NAME = re.compile(NAMENSMUSTER)
 
@@ -80,12 +86,16 @@ def pruefe_konto(kontoart: Kontoart, rolle: str) -> None:
 
 
 def pruefe_buchungsentwurf(
-    art: str, wertstellung: date, postings: Sequence[PostingEingabe]
+    art: str,
+    wertstellung: date,
+    postings: Sequence[PostingEingabe],
+    buchungsdatum: date | None = None,
 ) -> None:
     """Regeln aus Kap. 3 und 4.4, soweit sie ohne Datenbank prüfbar sind.
 
     Raises:
-        TypeError: wenn die Wertstellung kein ``date`` oder ein Betrag kein ``Decimal`` ist.
+        TypeError: wenn Wertstellung oder Buchungsdatum kein ``date`` oder ein Betrag kein
+            ``Decimal`` ist.
         BuchungUngueltigError: wenn eine Regel verletzt ist.
     """
     if not _ist_name(art):
@@ -101,6 +111,13 @@ def pruefe_buchungsentwurf(
     if type(wertstellung) is not date:
         msg = "Wertstellung muss ein datetime.date sein."
         raise TypeError(msg)
+    if buchungsdatum is not None:
+        if type(buchungsdatum) is not date:
+            msg = "Buchungsdatum muss ein datetime.date sein."
+            raise TypeError(msg)
+        if buchungsdatum < wertstellung:
+            msg = "Das Buchungsdatum liegt nie vor der Wertstellung (E-26)."
+            raise BuchungUngueltigError(msg)
     if len(postings) < 2:
         msg = "Eine Buchung braucht mindestens zwei Postings."
         raise BuchungUngueltigError(msg)
@@ -146,14 +163,27 @@ def buche(
     wertstellung: date,
     postings: Sequence[PostingEingabe],
     text: str | None = None,
+    buchungsdatum: date | None = None,
+    stornierbar: bool = True,
 ) -> Buchung:
     """Buchung mit ihren Postings schreiben (ohne Commit).
+
+    Ohne ``buchungsdatum`` gilt die Wertstellung. ``stornierbar=False`` schützt die Buchung
+    vor einem Storno, etwa die Buchungen einer Festschreibung (E-28).
 
     Buchung und Postings gehen in getrennten Anweisungen an die Datenbank: Postings
     entstehen nur in der Transaktion ihrer Buchung, und die Datenbank erkennt eine neue
     Buchung erst nach deren INSERT (Kap. 4.4).
+
+    Raises:
+        KontoGesperrtError: wenn ein Konto bis zum Buchungsdatum gesperrt ist.
+        KontoBelegtError: wenn eine andere Transaktion eines der Konten gerade sperrt.
     """
-    pruefe_buchungsentwurf(art, wertstellung, postings)
+    pruefe_buchungsentwurf(art, wertstellung, postings, buchungsdatum)
+    if type(stornierbar) is not bool:
+        msg = "stornierbar muss ein bool sein."
+        raise TypeError(msg)
+    datum = wertstellung if buchungsdatum is None else buchungsdatum
     if session.get(Haushalt, haushalt_id) is None:
         raise HaushaltUnbekanntError(str(haushalt_id))
     konto_ids = {posting.konto_id for posting in postings}
@@ -165,14 +195,32 @@ def buche(
     if any(konto_haushalt != haushalt_id for konto_haushalt in haushalte.values()):
         msg = "Alle Konten einer Buchung gehören zum Haushalt der Buchung."
         raise BuchungUngueltigError(msg)
-    return _schreibe(session, haushalt_id, art, wertstellung, postings, None, text)
+    _pruefe_sperre(session, konto_ids, datum)
+    return _schreibe(
+        session, haushalt_id, art, wertstellung, datum, postings, None, text, stornierbar
+    )
 
 
-def storniere(session: Session, *, buchung_id: uuid.UUID, text: str | None = None) -> Buchung:
+def storniere(
+    session: Session,
+    *,
+    buchung_id: uuid.UUID,
+    text: str | None = None,
+    buchungsdatum: date | None = None,
+) -> Buchung:
     """Stornobuchung zu ``buchung_id`` schreiben (ohne Commit).
 
     Das Storno besteht genau aus den negierten Postings und trägt die Wertstellung der
-    Ursprungsbuchung (E-18); wann storniert wurde, steht in ``erfasst_am``.
+    Ursprungsbuchung (E-18); wann storniert wurde, steht in ``erfasst_am``. Ohne
+    ``buchungsdatum`` übernimmt es das Buchungsdatum der Ursprungsbuchung (offener
+    Zeitraum); liegt deren Wertstellung in einem festgeschriebenen Zeitraum, gibt das Modul
+    den Tag der Erfassung an (E-26). Es liegt nie vor dem der Ursprungsbuchung (E-28).
+
+    Raises:
+        StornoNichtMoeglichError: wenn die Buchung ein Storno, schon storniert oder nicht
+            stornierbar ist oder das Buchungsdatum vor dem der Ursprungsbuchung liegt.
+        KontoGesperrtError: wenn ein Konto bis zum Buchungsdatum gesperrt ist.
+        KontoBelegtError: wenn eine andere Transaktion eines der Konten gerade sperrt.
     """
     original = session.get(Buchung, buchung_id)
     if original is None:
@@ -180,22 +228,46 @@ def storniere(session: Session, *, buchung_id: uuid.UUID, text: str | None = Non
     if original.storno_von is not None:
         msg = "Ein Storno wird nicht storniert; die Korrektur ist eine Neubuchung."
         raise StornoNichtMoeglichError(msg)
+    if not original.stornierbar:
+        msg = "Die Buchung ist nicht stornierbar (E-28)."
+        raise StornoNichtMoeglichError(msg)
     if session.scalar(select(Buchung.id).where(Buchung.storno_von == buchung_id)) is not None:
         msg = "Die Buchung ist bereits storniert."
+        raise StornoNichtMoeglichError(msg)
+    if buchungsdatum is not None and type(buchungsdatum) is not date:
+        msg = "Buchungsdatum muss ein datetime.date sein."
+        raise TypeError(msg)
+    datum = original.buchungsdatum if buchungsdatum is None else buchungsdatum
+    if datum < original.buchungsdatum:
+        msg = "Das Buchungsdatum eines Stornos liegt nicht vor dem der Ursprungsbuchung (E-28)."
         raise StornoNichtMoeglichError(msg)
     gegenpostings = [
         PostingEingabe(posting.konto_id, -posting.betrag)
         for posting in session.scalars(select(Posting).where(Posting.buchung_id == buchung_id))
     ]
+    _pruefe_sperre(session, {posting.konto_id for posting in gegenpostings}, datum)
     return _schreibe(
         session,
         original.haushalt_id,
         STORNO,
         original.wertstellung,
+        datum,
         gegenpostings,
         original.id,
         text,
+        True,
     )
+
+
+def _pruefe_sperre(session: Session, konto_ids: set[uuid.UUID], buchungsdatum: date) -> None:
+    """Vorab: Kein Konto ist bis zum Buchungsdatum gesperrt (E-27)."""
+    gesperrt = [bis for bis in sperrdaten(session, konto_ids).values() if buchungsdatum <= bis]
+    if gesperrt:
+        msg = (
+            f"Ein Konto der Buchung ist bis {max(gesperrt)} gesperrt;"
+            " das Buchungsdatum muss danach liegen."
+        )
+        raise KontoGesperrtError(msg)
 
 
 def _schreibe(
@@ -203,22 +275,27 @@ def _schreibe(
     haushalt_id: uuid.UUID,
     art: str,
     wertstellung: date,
+    buchungsdatum: date,
     postings: Sequence[PostingEingabe],
     storno_von: uuid.UUID | None,
     text: str | None,
+    stornierbar: bool,
 ) -> Buchung:
     buchung = Buchung(
         haushalt_id=haushalt_id,
         art=art,
         wertstellung=wertstellung,
+        buchungsdatum=buchungsdatum,
         storno_von=storno_von,
         text=text,
+        stornierbar=stornierbar,
     )
-    session.add(buchung)
-    session.flush()
-    session.add_all(
-        Posting(buchung_id=buchung.id, konto_id=posting.konto_id, betrag=posting.betrag)
-        for posting in postings
-    )
-    session.flush()
+    with uebersetze_sperrfehler():
+        session.add(buchung)
+        session.flush()
+        session.add_all(
+            Posting(buchung_id=buchung.id, konto_id=posting.konto_id, betrag=posting.betrag)
+            for posting in postings
+        )
+        session.flush()
     return buchung

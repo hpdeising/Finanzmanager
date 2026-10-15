@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Rechte der Laufzeitrolle (Fachkonzept 11.1, E-19).
 
-Die Anwendung verbindet sich mit der Laufzeitrolle. Sie darf auf buchung und posting nur
-lesen und einfügen und kann die Trigger nicht abschalten. Das schützt gegen eigenen Code,
-der Buchungen ändern will; gegen den Superuser schützt es nicht und soll es nicht.
+Die Anwendung verbindet sich mit der Laufzeitrolle. Sie darf auf buchung, posting und
+konto_sperre nur lesen und einfügen und kann die Trigger nicht abschalten. Das schützt
+gegen eigenen Code, der Buchungen ändern will; gegen den Superuser schützt es nicht und
+soll es nicht.
 """
 
 import pytest
@@ -24,6 +25,11 @@ UNZULAESSIG = [
     "DELETE FROM konto",
     "UPDATE haushalt SET betriebsart = 'einzel'",
     "DELETE FROM haushalt",
+    "UPDATE konto_sperre SET gesperrt_bis = '2000-01-01'",
+    "DELETE FROM konto_sperre",
+    "TRUNCATE konto_sperre",
+    "ALTER TABLE konto_sperre DISABLE TRIGGER ALL",
+    "DROP FUNCTION public.ledger_halte_konto(uuid)",
     "ALTER TABLE buchung DISABLE TRIGGER buchung_pruefen",
     "ALTER TABLE posting DISABLE TRIGGER ALL",
     "ALTER TABLE posting ENABLE REPLICA TRIGGER posting_pruefen",
@@ -44,7 +50,7 @@ def test_laufzeitrolle_darf_das_nicht(app_engine: Engine, anweisung: str) -> Non
     assert sqlstate(fehler.value) == "42501"
 
 
-@pytest.mark.parametrize("tabelle", ["haushalt", "konto", "buchung", "posting"])
+@pytest.mark.parametrize("tabelle", ["haushalt", "konto", "buchung", "posting", "konto_sperre"])
 def test_laufzeitrolle_darf_lesen_und_einfuegen(app_engine: Engine, tabelle: str) -> None:
     with app_engine.connect() as verbindung:
         rechte = verbindung.execute(

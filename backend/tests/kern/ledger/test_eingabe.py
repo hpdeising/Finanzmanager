@@ -6,7 +6,7 @@ verständliche Fehler, bevor etwas geschrieben wird.
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -181,3 +181,23 @@ def test_ungueltige_rollen(rolle: str) -> None:
 def test_kontoart_ist_eine_der_fuenf_grundarten(kontoart: str) -> None:
     with pytest.raises(KontoUngueltigError, match="Kontoart"):
         pruefe_konto(kontoart, "test.konto")  # pyright: ignore[reportArgumentType]
+
+
+def test_buchungsdatum_nicht_vor_der_wertstellung() -> None:
+    """E-26, E-27: Das Buchungsdatum liegt nie vor der Wertstellung."""
+    with pytest.raises(BuchungUngueltigError, match="Buchungsdatum"):
+        pruefe_buchungsentwurf(
+            "test.buchung", TAG, postings((A, "1"), (B, "-1")), buchungsdatum=TAG - timedelta(1)
+        )
+    pruefe_buchungsentwurf("test.buchung", TAG, postings((A, "1"), (B, "-1")), buchungsdatum=TAG)
+
+
+@pytest.mark.parametrize("buchungsdatum", ["2024-01-01", datetime(2024, 1, 1, 12, 0)])  # noqa: DTZ001
+def test_buchungsdatum_ist_ein_datum(buchungsdatum: object) -> None:
+    with pytest.raises(TypeError, match="Buchungsdatum"):
+        pruefe_buchungsentwurf(
+            "test.buchung",
+            TAG,
+            postings((A, "1"), (B, "-1")),
+            buchungsdatum=buchungsdatum,  # pyright: ignore[reportArgumentType]
+        )

@@ -240,8 +240,11 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 --   Postings des Kontos mit Buchungsdatum bis zum Sperrdatum nicht mehr, auch nicht durch
 --   Transaktionen, die schon vorher liefen. Fügt eine Transaktion, die gleichzeitig mit der
 --   sperrenden läuft, Postings mit Buchungsdatum bis zum neuen Sperrdatum auf das Konto ein,
---   scheitert eine der beiden. So rechnet eine Festschreibung auf genau den Postings, die ihre
---   Sperre einfriert.
+--   scheitert eine der beiden, sofort und ohne zu warten. So rechnet eine Festschreibung auf
+--   genau den Postings, die ihre Sperre einfriert.
+-- Isolationsstufe: Postings und Sperren gibt es nur in READ COMMITTED; andere Stufen lehnt die
+--   Datenbank ab, weil eine Transaktion in REPEATABLE READ oder SERIALIZABLE eine später
+--   committete Sperre nicht sähe.
 -- Buchungsdatum (E-26 bis E-28): Welches Buchungsdatum eine Buchung bekommt, entscheidet das
 --   Modul; der Kern übernimmt es und prüft es gegen die Wertstellung (CHECK oben), gegen die
 --   Kontosperre und beim Storno gegen das Buchungsdatum der Ursprungsbuchung. Die Sperre kennt
@@ -251,8 +254,7 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 -- Die Trigger feuern immer, auch bei session_replication_role = replica.
 -- Rechte (E-19; für konto_sperre diese Skizze): Die Laufzeitrolle darf auf buchung, posting
 --   und konto_sperre nur lesen und einfügen; in M1 gilt das auch für haushalt und konto.
--- Buchungsdatum, Kontosperre und stornierbar (E-26 bis E-28) folgen mit einer eigenen
---   Migration nach M1.
+-- Buchungsdatum, Kontosperre und stornierbar (E-26 bis E-28) kommen mit Migration 0002.
 -- Beträge: NUMERIC(19,4) rundet eine fünfte und jede weitere Nachkommastelle still, und kein
 --   Trigger sieht den ursprünglichen Wert. Deshalb lehnt die Anwendung solche Beträge vor dem
 --   Speichern ab (kern/geld). Beträge ab 10^15 weist schon die Datenbank zurück (Überlauf); die
@@ -681,3 +683,4 @@ Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern
 | P-20 | Überzahlung: Wird eine Überzahlung auf Positionen angerechnet, die später entstehen, z. B. neue Vollstreckungskosten? Wenn ja, ab welcher Wertstellung? | Anrechnung, Restschuld, Status |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
 | T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |
+| T-03 | Wiederherstellung aus einer Sicherung: Die Trigger auf `buchung`, `posting` und `konto_sperre` greifen auch beim Einspielen eines Dumps. `erfasst_am` und `erfasst_txid` würden überschrieben (`erfasst_am` auch in `konto_sperre`); damit ginge die Historie verloren, wann etwas bekannt war. Postings würden abgelehnt, wenn `buchung` und `posting` in getrennten Transaktionen eingespielt werden oder `konto_sperre` vor `posting` kommt. Dazu kommt die Prüfung der Isolationsstufe. Zu klären bis M8: Wie laufen Backup und Restore? Zum Beispiel als Eigentümerrolle in einer Transaktion mit abgeschalteten Triggern, danach ein Prüflauf aller Invarianten | Backup und Wiederherstellungsprobe des Installers (Kap. 11) |

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Saldo zum Stichtag (Fachkonzept 4.1): Summe der Postings mit Wertstellung bis
-einschließlich Stichtag, exakt und ungerundet."""
+"""Saldo zum Stichtag (Fachkonzept 4.1): Summe der Postings mit Buchungsdatum bis
+einschließlich Stichtag, exakt und ungerundet. Ohne Angabe ist das Buchungsdatum die
+Wertstellung (offener Zeitraum, E-26)."""
 
 import uuid
 from datetime import date, datetime

@@ -225,8 +225,8 @@ def test_mehrere_transaktionen_in_einer_nachricht(
         sitzung.commit()
     original, storno = uuid.uuid4(), uuid.uuid4()
     neue_buchung = sql.SQL(
-        "INSERT INTO buchung (id, haushalt_id, art, wertstellung, storno_von)"
-        " VALUES ({}, {}, {}, DATE '2024-01-15', {})"
+        "INSERT INTO buchung (id, haushalt_id, art, wertstellung, buchungsdatum, storno_von)"
+        " VALUES ({}, {}, {}, DATE '2024-01-15', DATE '2024-01-15', {})"
     )
     paar = sql.SQL(
         "INSERT INTO posting (buchung_id, konto_id, betrag) VALUES ({}, {}, {}), ({}, {}, {})"
@@ -325,8 +325,8 @@ def test_buchung_und_postings_in_einer_anweisung(session: Session, k: RohKonten)
     buchung_id = (
         session.execute(
             text(
-                "WITH b AS (INSERT INTO buchung (haushalt_id, art, wertstellung)"
-                " VALUES (:h, 'test.buchung', DATE '2024-01-15') RETURNING id)"
+                "WITH b AS (INSERT INTO buchung (haushalt_id, art, wertstellung, buchungsdatum)"
+                " VALUES (:h, 'test.buchung', DATE '2024-01-15', DATE '2024-01-15') RETURNING id)"
                 " INSERT INTO posting (buchung_id, konto_id, betrag)"
                 " SELECT b.id, p.konto_id, p.betrag FROM b,"
                 " (VALUES (CAST(:a AS uuid), 10), (CAST(:b AS uuid), -10)) AS p (konto_id, betrag)"
@@ -348,9 +348,9 @@ def test_postings_vor_ihrer_buchung_in_einer_anweisung(session: Session, k: RohK
             text(
                 "WITH p AS (INSERT INTO posting (buchung_id, konto_id, betrag)"
                 " VALUES (:id, :a, 10), (:id, :b, -10) RETURNING buchung_id)"
-                " INSERT INTO buchung (id, haushalt_id, art, wertstellung)"
+                " INSERT INTO buchung (id, haushalt_id, art, wertstellung, buchungsdatum)"
                 " SELECT DISTINCT p.buchung_id, CAST(:h AS uuid), 'test.buchung',"
-                " DATE '2024-01-15' FROM p"
+                " DATE '2024-01-15', DATE '2024-01-15' FROM p"
             ),
             {"id": uuid.uuid4(), "h": k.haushalt_id, "a": k.a, "b": k.b},
         )
@@ -361,8 +361,8 @@ def test_erfasst_txid_vom_client_wird_ueberschrieben(session: Session, k: RohKon
     """Die Datenbank setzt die Transaktionsnummer selbst (Fachkonzept 4.4)."""
     eigene = session.execute(
         text(
-            "INSERT INTO buchung (haushalt_id, art, wertstellung, erfasst_txid)"
-            " VALUES (:h, 'test.buchung', DATE '2024-01-15', '1')"
+            "INSERT INTO buchung (haushalt_id, art, wertstellung, buchungsdatum, erfasst_txid)"
+            " VALUES (:h, 'test.buchung', DATE '2024-01-15', DATE '2024-01-15', '1')"
             " RETURNING erfasst_txid = pg_current_xact_id()"
         ),
         {"h": k.haushalt_id},
@@ -407,8 +407,9 @@ def test_storno_auf_sich_selbst(session: Session, k: RohKonten) -> None:
     with pytest.raises(IntegrityError) as fehler:
         session.execute(
             text(
-                "INSERT INTO buchung (id, haushalt_id, art, wertstellung, storno_von)"
-                " VALUES (:id, :haushalt_id, 'kern.storno', '2024-01-15', :id)"
+                "INSERT INTO buchung"
+                " (id, haushalt_id, art, wertstellung, buchungsdatum, storno_von)"
+                " VALUES (:id, :haushalt_id, 'kern.storno', '2024-01-15', '2024-01-15', :id)"
             ),
             {"id": eigene_id, "haushalt_id": k.haushalt_id},
         )
@@ -548,8 +549,9 @@ VERBOTEN = [
     "DELETE FROM buchung WHERE id = :buchung_id",
     "TRUNCATE buchung CASCADE",
     "TRUNCATE haushalt CASCADE",
-    "INSERT INTO buchung (id, haushalt_id, art, wertstellung) "
-    "SELECT id, haushalt_id, art, wertstellung FROM buchung WHERE id = :buchung_id "
+    "INSERT INTO buchung (id, haushalt_id, art, wertstellung, buchungsdatum) "
+    "SELECT id, haushalt_id, art, wertstellung, buchungsdatum FROM buchung"
+    " WHERE id = :buchung_id "
     "ON CONFLICT (id) DO UPDATE SET text = 'x'",
 ]
 
