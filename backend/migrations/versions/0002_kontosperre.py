@@ -76,7 +76,8 @@ BEGIN
         {NAMENSRAUM}, public.ledger_konto_sperrschluessel(p_konto_id)
     ) THEN
         RAISE EXCEPTION USING
-            MESSAGE = 'Auf dem Konto ' || p_konto_id || ' wird gerade gebucht.',
+            MESSAGE = 'Eine andere Transaktion bucht gerade auf dem Konto ' || p_konto_id
+                || ' oder hält es.',
             ERRCODE = 'lock_not_available',
             CONSTRAINT = 'konto_wird_bebucht', TABLE = 'konto';
     END IF;
@@ -208,7 +209,7 @@ BEGIN
         {NAMENSRAUM}, public.ledger_konto_sperrschluessel(NEW.konto_id)
     ) THEN
         RAISE EXCEPTION USING
-            MESSAGE = 'Das Konto ' || NEW.konto_id || ' wird gerade gesperrt.',
+            MESSAGE = 'Eine andere Transaktion hält das Konto ' || NEW.konto_id || ' gerade.',
             ERRCODE = 'lock_not_available',
             CONSTRAINT = 'konto_wird_gesperrt', TABLE = 'posting';
     END IF;
@@ -358,7 +359,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Sperren, Stornoschutz und abweichende Buchungsdaten gingen verloren; dann nicht.
+    # Sperren, Stornoschutz und abweichende Buchungsdaten gingen verloren; dann nicht. Die
+    # Tabellen werden vorher exklusiv gesperrt, damit keine gleichzeitige Transaktion nach
+    # der Prüfung noch solche Daten committet.
+    op.execute("LOCK TABLE public.buchung, public.konto_sperre IN ACCESS EXCLUSIVE MODE")
     op.execute(
         "DO $$ BEGIN"
         " IF EXISTS (SELECT 1 FROM public.konto_sperre)"

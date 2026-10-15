@@ -94,17 +94,40 @@ def test_doppeltes_storno_gleichzeitig(app_engine: Engine) -> None:
 
 # --- Kontosperre und Posting ---------------------------------------------------------------
 
+GEHALTEN = (
+    "Eine andere Transaktion hält das Konto gerade, etwa um es zu sperren; bitte erneut versuchen."
+)
+BEBUCHT = "Eine andere Transaktion bucht gerade auf dem Konto oder hält es; bitte erneut versuchen."
+
+
+def nicht_warten(sitzung: Session) -> None:
+    """Ein Warten auf die Advisory-Sperre endete als 55P03 ohne Regelnamen; der Test schlüge fehl.
+
+    Ohne Zeitlimit hinge er stattdessen, weil beide Sitzungen im selben Thread laufen.
+    """
+    sitzung.execute(text("SET LOCAL lock_timeout = '1s'"))
+
+
+def erwarte_belegt(
+    fehler: pytest.ExceptionInfo[KontoBelegtError], meldung: str, konten: Konten
+) -> None:
+    """55P03 aus der Regel, verständliche Meldung, keine Konto-ID (CLAUDE.md, Sicherheit)."""
+    assert str(fehler.value) == meldung
+    for konto_id in (konten.hauptforderung, konten.eroeffnung):
+        assert str(konto_id) not in str(fehler.value)
+    ursache = fehler.value.__cause__
+    assert ursache is not None
+    assert sqlstate(ursache) == "55P03"
+
 
 def test_sperre_laeuft_buchung_scheitert_sofort(app_engine: Engine) -> None:
     konten = committete_konten(app_engine)
     with Session(app_engine) as sperrend, Session(app_engine) as buchend:
         sperre_konten(sperrend, konto_ids=[konten.hauptforderung], bis=STICHTAG)
-        # Ohne Wartezeit: Ein lock_timeout würde ein Warten als 55P03 sichtbar machen.
-        buchend.execute(text("SET LOCAL lock_timeout = '5s'"))
-        with pytest.raises(KontoBelegtError, match="erneut versuchen") as fehler:
+        nicht_warten(buchend)
+        with pytest.raises(KontoBelegtError) as fehler:
             zahlung(buchend, konten, wertstellung=date(2024, 8, 1))
-        assert fehler.value.__cause__ is not None
-        assert sqlstate(fehler.value.__cause__) == "55P03"
+        erwarte_belegt(fehler, GEHALTEN, konten)
         buchend.rollback()
 
         sperrend.commit()
@@ -121,10 +144,10 @@ def test_buchung_laeuft_sperre_scheitert_sofort(app_engine: Engine) -> None:
     konten = committete_konten(app_engine)
     with Session(app_engine) as buchend, Session(app_engine) as sperrend:
         zahlung(buchend, konten)
-        with pytest.raises(KontoBelegtError, match="erneut versuchen") as fehler:
+        nicht_warten(sperrend)
+        with pytest.raises(KontoBelegtError) as fehler:
             sperre_konten(sperrend, konto_ids=[konten.hauptforderung], bis=STICHTAG)
-        assert fehler.value.__cause__ is not None
-        assert sqlstate(fehler.value.__cause__) == "55P03"
+        erwarte_belegt(fehler, BEBUCHT, konten)
         sperrend.rollback()
 
         buchend.commit()
@@ -134,13 +157,27 @@ def test_buchung_laeuft_sperre_scheitert_sofort(app_engine: Engine) -> None:
         sperrend.commit()
 
 
+def test_sperre_gegen_sperre(app_engine: Engine) -> None:
+    konten = committete_konten(app_engine)
+    with Session(app_engine) as erste, Session(app_engine) as zweite:
+        sperre_konten(erste, konto_ids=[konten.hauptforderung], bis=STICHTAG)
+        nicht_warten(zweite)
+        with pytest.raises(KontoBelegtError) as fehler:
+            sperre_konten(zweite, konto_ids=[konten.hauptforderung], bis=date(2024, 9, 30))
+        erwarte_belegt(fehler, BEBUCHT, konten)
+        zweite.rollback()
+        erste.commit()
+
+
 def test_halte_konten_friert_die_postings_ein(app_engine: Engine) -> None:
     """Die Festschreibung hält die Konten, bevor sie rechnet (Kap. 5.2 Schritt 7)."""
     konten = committete_konten(app_engine)
     with Session(app_engine) as haltend, Session(app_engine) as buchend:
         halte_konten(haltend, konto_ids=[konten.hauptforderung, konten.eroeffnung])
-        with pytest.raises(KontoBelegtError):
+        nicht_warten(buchend)
+        with pytest.raises(KontoBelegtError) as fehler:
             zahlung(buchend, konten)
+        erwarte_belegt(fehler, GEHALTEN, konten)
         buchend.rollback()
 
         haltend.rollback()
@@ -153,8 +190,10 @@ def test_halte_konten_scheitert_bei_laufender_buchung(app_engine: Engine) -> Non
     konten = committete_konten(app_engine)
     with Session(app_engine) as buchend, Session(app_engine) as haltend:
         zahlung(buchend, konten)
-        with pytest.raises(KontoBelegtError):
+        nicht_warten(haltend)
+        with pytest.raises(KontoBelegtError) as fehler:
             halte_konten(haltend, konto_ids=[konten.eroeffnung])
+        erwarte_belegt(fehler, BEBUCHT, konten)
         haltend.rollback()
         buchend.rollback()
 
@@ -164,13 +203,16 @@ def test_zwei_buchungen_auf_dasselbe_konto_gleichzeitig(app_engine: Engine) -> N
     konten = committete_konten(app_engine)
     with Session(app_engine) as erste, Session(app_engine) as zweite:
         zahlung(erste, konten)
+        nicht_warten(zweite)
         zahlung(zweite, konten)
         erste.commit()
         zweite.commit()
 
 
 def test_committete_sperre_gilt_in_laufender_transaktion(app_engine: Engine) -> None:
-    """READ COMMITTED: Der Trigger liest das Sperrdatum erst nach seiner Advisory-Sperre."""
+    """READ COMMITTED: Eine Sperre, die vor der Anweisung committet ist, gilt auch in einer
+    Transaktion, die schon vorher lief. Dass der Trigger das Sperrdatum erst nach seiner
+    Advisory-Sperre liest und VOLATILE ist, prüft test_0002_kontosperre im Katalog."""
     konten = committete_konten(app_engine)
     with Session(app_engine) as buchend, Session(app_engine) as sperrend:
         buchend.execute(text("SELECT 1"))  # Transaktion läuft schon

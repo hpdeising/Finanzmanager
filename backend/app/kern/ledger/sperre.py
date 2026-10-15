@@ -33,8 +33,13 @@ from app.kern.ledger.modelle import Konto, KontoSperre
 
 # Regeln aus Migration 0002, an denen die Datenbank mit 55P03 sofort abbricht.
 _BELEGT: Final = {
-    "konto_wird_gesperrt": "Das Konto wird gerade gesperrt; bitte erneut versuchen.",
-    "konto_wird_bebucht": "Auf dem Konto wird gerade gebucht; bitte erneut versuchen.",
+    "konto_wird_gesperrt": (
+        "Eine andere Transaktion hält das Konto gerade, etwa um es zu sperren;"
+        " bitte erneut versuchen."
+    ),
+    "konto_wird_bebucht": (
+        "Eine andere Transaktion bucht gerade auf dem Konto oder hält es; bitte erneut versuchen."
+    ),
 }
 
 

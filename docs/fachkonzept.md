@@ -238,10 +238,13 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 --   das bisherige Sperrdatum des Kontos; ihr erfasst_am setzt ein Trigger auf now().
 -- Nebenläufigkeit (Kap. 5.2 Schritt 7): Ist eine Sperre committet, ändert sich die Menge der
 --   Postings des Kontos mit Buchungsdatum bis zum Sperrdatum nicht mehr, auch nicht durch
---   Transaktionen, die schon vorher liefen. Fügt eine Transaktion, die gleichzeitig mit der
---   sperrenden läuft, Postings mit Buchungsdatum bis zum neuen Sperrdatum auf das Konto ein,
---   scheitert eine der beiden, sofort und ohne zu warten. So rechnet eine Festschreibung auf
---   genau den Postings, die ihre Sperre einfriert.
+--   Transaktionen, die schon vorher liefen. Ab dem Zeitpunkt, zu dem die sperrende
+--   Transaktion das Konto hält (ausdrücklich vorab oder mit dem Einfügen der Sperre),
+--   scheitert jede andere, die Postings auf das Konto einfügt; umgekehrt scheitert das
+--   Halten, solange eine andere Transaktion auf dem Konto bucht; jeweils sofort und ohne zu
+--   warten. Was vor dem Halten committet ist, gehört zum gesperrten Zeitraum. Hält eine
+--   Festschreibung die Konten, bevor sie rechnet, rechnet sie deshalb auf genau den Postings,
+--   die ihre Sperre einfriert.
 -- Isolationsstufe: Postings und Sperren gibt es nur in READ COMMITTED; andere Stufen lehnt die
 --   Datenbank ab, weil eine Transaktion in REPEATABLE READ oder SERIALIZABLE eine später
 --   committete Sperre nicht sähe.
@@ -338,6 +341,7 @@ Ablauf:
 7. Zinsen und Anrechnung werden bei jeder Abfrage zum Stichtag neu berechnet, nicht laufend gebucht (E-21). Gebucht wird nur bei einer Festschreibung (E-25):
    - **Anforderung:** Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung wie in Kap. 4.1 (Zeitzone der Installation); ein Abschluss zum 31.12. wird also frühestens am 01.01. angefordert.
    - **Zinsen und Anrechnung eines Zeitraums** sind die Berechnung zu seinem Stichtag abzüglich der Berechnung zum vorigen Stichtag. Für eine angebrochene Zinsperiode zählt der bis zum Stichtag berechnete und gerundete Betrag; die Rundungsdifferenz zur ganzen Periode fällt in den nächsten Zeitraum und ist keine Korrektur.
+   - **Halten:** Bevor sie rechnet, hält die Festschreibung die Konten der Akte (Kap. 4.4). Bis zum Commit bucht dann keine andere Transaktion auf ihnen; läuft gerade eine Buchung, scheitert die Festschreibung und wird wiederholt.
    - **Buchungen:** Die Festschreibung bucht mit Buchungsdatum und Wertstellung an ihrem Stichtag die Zinsen des Zeitraums (`verbindlichkeiten.zinslauf`), seine Anrechnung als Umbuchung vom Zahlungskonto auf die Bestandteile (`verbindlichkeiten.anrechnung`) und die Korrekturbuchungen für frühere Zeiträume. Die Regel für nachträgliche Buchungen (E-26) gilt für diese Buchungen nicht. Danach setzt das Modul in derselben Transaktion die Sperre der Konten der Akte auf den Stichtag (E-27). Legt das Modul später ein neues Konto für die Akte an, sperrt es dieses in derselben Transaktion bis zum letzten Stichtag der Akte. Die Festschreibung wird auch gespeichert, wenn nichts zu buchen ist; jede ihrer Buchungen steht in `festschreibung_buchung` (Kap. 4.5).
    - **Abschluss:** Ein festgeschriebener Zeitraum ist abgeschlossen. Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Das Modul legt sie mit `stornierbar = false` an, sodass auch die Datenbank ihr Storno ablehnt (E-28). Zahlung, Kosten und Entstehung bleiben stornierbar.
    - **Nachträgliche Buchungen:** Eine Buchung, deren Wertstellung in einem festgeschriebenen Zeitraum liegt, wird im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum (E-26). Das gilt für ein Storno, für die Neubuchung einer Korrektur und für nachträglich erfasste Zahlungen oder Kosten. Für Zinsen, Anrechnung und Fristen zählt ihre Wertstellung; eine stornierte Buchung gilt ab ihrer ursprünglichen Wertstellung als nie geschehen.

@@ -7,7 +7,8 @@ ein Modul; ohne Angabe gilt der offene Zeitraum: Buchungsdatum gleich Wertstellu
 """
 
 import uuid
-from datetime import date, datetime
+from collections.abc import Collection
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -17,18 +18,21 @@ from app.kern.ledger import (
     Buchung,
     BuchungUngueltigError,
     KontoGesperrtError,
+    KontoSperre,
     KontoUnbekanntError,
     PostingEingabe,
     SperreUngueltigError,
     StornoNichtMoeglichError,
     buche,
+    buchen,
     halte_konten,
     saldo,
     sperrdatum,
+    sperre,
     sperre_konten,
     storniere,
 )
-from tests.datenbank import pruefe_aufgeschobene
+from tests.datenbank import constraint_name, pruefe_aufgeschobene
 from tests.kern.ledger.conftest import Konten
 
 DAVOR = date(2024, 3, 1)
@@ -228,3 +232,38 @@ def test_storno_in_gesperrten_zeitraum_braucht_spaeteres_buchungsdatum(
     # Die Bücher des gesperrten Zeitraums bleiben, wie sie waren (Kap. 4.1).
     assert saldo(session, konto_id=konten.hauptforderung, stichtag=STICHTAG) == Decimal(10)
     assert saldo(session, konto_id=konten.hauptforderung, stichtag=DANACH) == 0
+
+
+# --- Übersetzung der Datenbankfehler ---------------------------------------------------------
+
+
+def keine_sperrdaten(session: Session, konto_ids: Collection[uuid.UUID]) -> dict[uuid.UUID, date]:
+    """Ersetzt die Vorabprüfung: Sie sieht eine Sperre noch nicht (Wettlauf)."""
+    return {}
+
+
+def test_sperre_im_wettlauf_wird_zu_konto_gesperrt(
+    session: Session, konten: Konten, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sieht die Vorabprüfung eine Sperre noch nicht, lehnt die Datenbank ab (E-27)."""
+    sperre_konten(session, konto_ids=[konten.hauptforderung], bis=STICHTAG)
+    monkeypatch.setattr(buchen, "sperrdaten", keine_sperrdaten)
+    with pytest.raises(KontoGesperrtError) as fehler:
+        zahlung(session, konten, wertstellung=DAVOR)
+    assert constraint_name(fehler.value.__cause__ or fehler.value) == "posting_konto_gesperrt"
+    assert str(konten.hauptforderung) not in str(fehler.value)
+
+
+def test_fallendes_sperrdatum_im_wettlauf(
+    session: Session, konten: Konten, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sperre_konten(session, konto_ids=[konten.hauptforderung], bis=STICHTAG)
+    monkeypatch.setattr(sperre, "sperrdaten", keine_sperrdaten)
+    with pytest.raises(SperreUngueltigError) as fehler:
+        sperre_konten(session, konto_ids=[konten.hauptforderung], bis=DAVOR)
+    assert constraint_name(fehler.value.__cause__ or fehler.value) == "konto_sperre_steigt"
+
+
+def test_erfasst_am_der_sperre_setzt_die_datenbank() -> None:
+    with pytest.raises(SperreUngueltigError, match="erfasst_am"):
+        KontoSperre(konto_id=uuid.uuid4(), gesperrt_bis=STICHTAG, erfasst_am=datetime.now(UTC))

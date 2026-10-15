@@ -8,6 +8,8 @@ gleich der Wertstellung (E-26).
 """
 
 import importlib.util
+import threading
+import time
 import uuid
 from collections.abc import Callable
 from datetime import date
@@ -224,3 +226,84 @@ def test_rueckweg_stellt_die_fassungen_aus_0001_wortgleich_her() -> None:
 
 def _name(sql: str) -> str:
     return sql.split("FUNCTION public.", 1)[1].split("(", 1)[0]
+
+
+@pytest.mark.parametrize(
+    ("funktion", "zuerst"),
+    [
+        ("ledger_posting_vor_insert", "pg_try_advisory_xact_lock_shared("),
+        ("ledger_konto_sperre_vor_insert", "public.ledger_halte_konto("),
+    ],
+)
+def test_sperrdatum_wird_erst_nach_der_advisory_sperre_gelesen(
+    owner_engine: Engine, funktion: str, zuerst: str
+) -> None:
+    """Fachkonzept 4.4: Erst halten, dann lesen; VOLATILE, damit jede Abfrage im Trigger
+    einen frischen Snapshot nimmt und so eine Sperre sieht, die während der Anweisung
+    committet wurde."""
+    ((quelltext, volatilitaet),) = katalog(
+        owner_engine,
+        "SELECT prosrc, provolatile FROM pg_proc"
+        " WHERE pronamespace = 'public'::regnamespace AND proname = :name",
+        name=funktion,
+    )
+    assert volatilitaet == "v"
+    assert quelltext.index(zuerst) < quelltext.index("FROM public.konto_sperre")
+
+
+def test_halten_ist_volatile_und_nur_versucht(owner_engine: Engine) -> None:
+    ((quelltext, volatilitaet),) = katalog(
+        owner_engine,
+        "SELECT prosrc, provolatile FROM pg_proc"
+        " WHERE pronamespace = 'public'::regnamespace AND proname = 'ledger_halte_konto'",
+    )
+    assert volatilitaet == "v"
+    assert "pg_try_advisory_xact_lock(" in quelltext
+    assert "pg_advisory_xact_lock(" not in quelltext.replace("pg_try_advisory_xact_lock(", "")
+
+
+def test_rueckweg_sieht_auch_eine_gleichzeitig_committete_sperre(admin_url: URL) -> None:
+    """Der Rückweg sperrt buchung und konto_sperre, bevor er prüft (kein Prüfen-dann-Löschen).
+
+    Eine laufende Transaktion fügt eine Sperre ein; der Rückweg wartet auf sie und bricht nach
+    ihrem Commit ab, statt die Tabelle samt Sperre zu löschen.
+    """
+    with neue_testdatenbank(admin_url) as datenbank:
+        app = erzeuge_engine(datenbank.app_url)
+        owner = erzeuge_engine(datenbank.owner_url)
+        ergebnis: list[BaseException | None] = []
+        try:
+            with Session(app) as sitzung:
+                konto = roh_konto(sitzung, roh_haushalt(sitzung))
+                sitzung.commit()
+                roh_sperre(sitzung, konto, date(2024, 6, 30))  # noch nicht committet
+
+                def rueckweg() -> None:
+                    try:
+                        zurueck_auf_0001(owner)
+                        ergebnis.append(None)
+                    except BaseException as fehler:  # an den Test übergeben
+                        ergebnis.append(fehler)
+
+                faden = threading.Thread(target=rueckweg)
+                faden.start()
+                for _ in range(200):  # höchstens etwa 10 s
+                    wartend = katalog(
+                        app,
+                        "SELECT count(*) FROM pg_stat_activity"
+                        " WHERE wait_event_type = 'Lock' AND datname = current_database()",
+                    )
+                    if wartend == [(1,)]:
+                        break
+                    time.sleep(0.05)
+                sitzung.commit()
+                faden.join(timeout=30)
+
+            assert len(ergebnis) == 1
+            fehler = ergebnis[0]
+            assert fehler is not None
+            assert sqlstate(fehler) == "55000"
+            assert katalog(owner, "SELECT count(*) FROM konto_sperre") == [(1,)]
+        finally:
+            app.dispose()
+            owner.dispose()

@@ -39,6 +39,11 @@ class KontoGesperrtError(BuchungUngueltigError):
 
     Das Buchungsdatum muss nach dem Sperrdatum liegen. Für eine Buchung, deren Wertstellung
     im gesperrten Zeitraum liegt, gibt das Modul den Tag der Erfassung an (E-26).
+
+    Meist erkennt die Vorabprüfung die Sperre, bevor etwas geschrieben ist; die Transaktion
+    bleibt dann nutzbar. Committet eine andere Transaktion die Sperre erst danach, lehnt die
+    Datenbank ab; dann ist die Transaktion abgebrochen, und der Aufrufer rollt zurück
+    (``__cause__`` ist der Datenbankfehler).
     """
 
 

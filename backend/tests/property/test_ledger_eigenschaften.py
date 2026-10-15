@@ -231,7 +231,9 @@ def test_storno_plus_neubuchung_wie_die_korrigierte_buchung(
     falsch=ENTWURF,
     richtig=ENTWURF,
     verspaetung=st.integers(0, 60),
-    stichtag=STICHTAG,
+    nah=st.booleans(),
+    abstand=st.integers(-3, 3),
+    frei=STICHTAG,
 )
 def test_storno_plus_neubuchung_mit_spaeterem_buchungsdatum(
     app_engine: Engine,
@@ -239,7 +241,9 @@ def test_storno_plus_neubuchung_mit_spaeterem_buchungsdatum(
     falsch: Entwurf,
     richtig: Entwurf,
     verspaetung: int,
-    stichtag: date,
+    nah: bool,
+    abstand: int,
+    frei: date,
 ) -> None:
     """Fachkonzept Kap. 12: Korrektur mit Tag der Erfassung nach der Wertstellung (E-26).
 
@@ -252,6 +256,8 @@ def test_storno_plus_neubuchung_mit_spaeterem_buchungsdatum(
             buche_entwurf(sitzung, haushalt, entwurf)
         falsch_id = buche_entwurf(sitzung, haushalt, falsch)
         erfasst = max(falsch.wertstellung, richtig.wertstellung) + timedelta(days=verspaetung)
+        # Halb der Rand um den Tag der Erfassung, halb ein beliebiger Stichtag.
+        stichtag = erfasst + timedelta(days=abstand) if nah else frei
         storniere(sitzung, buchung_id=falsch_id, buchungsdatum=erfasst)
         buche_entwurf(sitzung, haushalt, richtig, buchungsdatum=erfasst)
         pruefe_aufgeschobene(sitzung)
@@ -266,6 +272,7 @@ def test_storno_plus_neubuchung_mit_spaeterem_buchungsdatum(
 @given(
     vorher=st.lists(ENTWURF, max_size=4),
     nachher=st.lists(ENTWURF, max_size=4),
+    stornos=st.lists(st.booleans(), max_size=4),
     sperrdatum=WERTSTELLUNG,
     stichtag=STICHTAG,
 )
@@ -273,18 +280,20 @@ def test_saldo_bis_zum_sperrdatum_bleibt_nach_der_sperre_gleich(
     app_engine: Engine,
     vorher: list[Entwurf],
     nachher: list[Entwurf],
+    stornos: list[bool],
     sperrdatum: date,
     stichtag: date,
 ) -> None:
     """Fachkonzept Kap. 12, E-27: Was nach der Sperre gebucht wird, landet danach.
 
-    Buchungen in den gesperrten Zeitraum lehnt der Kern ab; nachträgliche Buchungen mit
-    einem Buchungsdatum nach dem Sperrdatum (E-26) ändern die Salden bis dahin nicht.
+    Buchungen in den gesperrten Zeitraum lehnt der Kern ab, auch das Storno einer Buchung
+    von davor mit ihrem eigenen Buchungsdatum; nachträgliche Buchungen und Stornos mit einem
+    Buchungsdatum nach dem Sperrdatum (E-26) ändern die Salden bis dahin nicht.
     """
+    danach = sperrdatum + timedelta(days=1)
     with sitzung_mit_rollback(app_engine) as sitzung:
         haushalt = lege_an(sitzung)
-        for entwurf in vorher:
-            buche_entwurf(sitzung, haushalt, entwurf)
+        alte = [(buche_entwurf(sitzung, haushalt, entwurf), entwurf) for entwurf in vorher]
         sperre_konten(sitzung, konto_ids=haushalt.konten, bis=sperrdatum)
         pruefe_aufgeschobene(sitzung)
         stand = min(stichtag, sperrdatum)
@@ -294,11 +303,18 @@ def test_saldo_bis_zum_sperrdatum_bleibt_nach_der_sperre_gleich(
             if entwurf.wertstellung <= sperrdatum:
                 with pytest.raises(KontoGesperrtError):
                     buche_entwurf(sitzung, haushalt, entwurf)
-                buche_entwurf(
-                    sitzung, haushalt, entwurf, buchungsdatum=sperrdatum + timedelta(days=1)
-                )
+                buche_entwurf(sitzung, haushalt, entwurf, buchungsdatum=danach)
             else:
                 buche_entwurf(sitzung, haushalt, entwurf)
+        for (buchung_id, entwurf), stornieren in zip(alte, stornos, strict=False):
+            if not stornieren:
+                continue
+            if entwurf.wertstellung <= sperrdatum:
+                with pytest.raises(KontoGesperrtError):
+                    storniere(sitzung, buchung_id=buchung_id)
+                storniere(sitzung, buchung_id=buchung_id, buchungsdatum=danach)
+            else:
+                storniere(sitzung, buchung_id=buchung_id)
         pruefe_aufgeschobene(sitzung)
 
         assert salden(sitzung, haushalt, stand) == bis_zur_sperre
