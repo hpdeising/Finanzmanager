@@ -2,8 +2,11 @@
 """Saldo zum Stichtag (Fachkonzept 4.1).
 
 Kein Saldo wird als Wahrheit gespeichert. Der Saldo ist die Summe der Postings eines Kontos
-mit Wertstellung bis einschließlich Stichtag, exakt und ungerundet. Stornos tragen die
-Wertstellung der Ursprungsbuchung (E-18) und wirken deshalb auf denselben Stichtag zurück.
+mit Buchungsdatum bis einschließlich Stichtag, exakt und ungerundet. Das Buchungsdatum
+ordnet eine Buchung einem Zeitraum zu (E-26); so bleiben die Salden eines gesperrten
+Zeitraums unverändert (E-27). Im offenen Zeitraum ist das Buchungsdatum die Wertstellung,
+ein Storno übernimmt das der Ursprungsbuchung und wirkt auf denselben Stichtag zurück
+(E-18). Zinsen und Anrechnung rechnen nach der Wertstellung; das ist Sache der Module.
 """
 
 import uuid
@@ -18,7 +21,7 @@ from app.kern.ledger.modelle import Buchung, Konto, Posting
 
 
 def saldo(session: Session, *, konto_id: uuid.UUID, stichtag: date) -> Decimal:
-    """Summe der Postings von ``konto_id`` mit Wertstellung bis einschließlich ``stichtag``.
+    """Summe der Postings von ``konto_id`` mit Buchungsdatum bis einschließlich ``stichtag``.
 
     Soll positiv, Haben negativ; ohne Postings ``Decimal(0)``.
     """
@@ -30,6 +33,6 @@ def saldo(session: Session, *, konto_id: uuid.UUID, stichtag: date) -> Decimal:
     summe = session.scalar(
         select(func.sum(Posting.betrag))
         .join(Buchung, Posting.buchung_id == Buchung.id)
-        .where(Posting.konto_id == konto_id, Buchung.wertstellung <= stichtag)
+        .where(Posting.konto_id == konto_id, Buchung.buchungsdatum <= stichtag)
     )
     return summe if summe is not None else Decimal(0)

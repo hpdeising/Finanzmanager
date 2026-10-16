@@ -8,7 +8,7 @@ Fehler auslösen soll; so zeigt jeder Test zugleich, dass die Prüfung zurückge
 
 import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import psycopg
@@ -188,7 +188,8 @@ def test_commit_einer_unausgeglichenen_buchung(app_engine: Engine) -> None:
 
 
 # --- Postings nur in der Transaktion ihrer Buchung --------------------------------------
-# Die Datenbank vergleicht buchung.erfasst_txid mit pg_current_xact_id() (Fachkonzept 4.4).
+# Die Datenbank vergleicht buchung.erfasst_txid mit pg_current_xact_id() und buchung.erfasst_am
+# mit now() (Fachkonzept 4.4).
 
 
 def test_postings_an_eine_abgeschlossene_buchung(app_engine: Engine) -> None:
@@ -225,8 +226,8 @@ def test_mehrere_transaktionen_in_einer_nachricht(
         sitzung.commit()
     original, storno = uuid.uuid4(), uuid.uuid4()
     neue_buchung = sql.SQL(
-        "INSERT INTO buchung (id, haushalt_id, art, wertstellung, storno_von)"
-        " VALUES ({}, {}, {}, DATE '2024-01-15', {})"
+        "INSERT INTO buchung (id, haushalt_id, art, wertstellung, buchungsdatum, storno_von)"
+        " VALUES ({}, {}, {}, DATE '2024-01-15', DATE '2024-01-15', {})"
     )
     paar = sql.SQL(
         "INSERT INTO posting (buchung_id, konto_id, betrag) VALUES ({}, {}, {}), ({}, {}, {})"
@@ -325,8 +326,8 @@ def test_buchung_und_postings_in_einer_anweisung(session: Session, k: RohKonten)
     buchung_id = (
         session.execute(
             text(
-                "WITH b AS (INSERT INTO buchung (haushalt_id, art, wertstellung)"
-                " VALUES (:h, 'test.buchung', DATE '2024-01-15') RETURNING id)"
+                "WITH b AS (INSERT INTO buchung (haushalt_id, art, wertstellung, buchungsdatum)"
+                " VALUES (:h, 'test.buchung', DATE '2024-01-15', DATE '2024-01-15') RETURNING id)"
                 " INSERT INTO posting (buchung_id, konto_id, betrag)"
                 " SELECT b.id, p.konto_id, p.betrag FROM b,"
                 " (VALUES (CAST(:a AS uuid), 10), (CAST(:b AS uuid), -10)) AS p (konto_id, betrag)"
@@ -348,9 +349,9 @@ def test_postings_vor_ihrer_buchung_in_einer_anweisung(session: Session, k: RohK
             text(
                 "WITH p AS (INSERT INTO posting (buchung_id, konto_id, betrag)"
                 " VALUES (:id, :a, 10), (:id, :b, -10) RETURNING buchung_id)"
-                " INSERT INTO buchung (id, haushalt_id, art, wertstellung)"
+                " INSERT INTO buchung (id, haushalt_id, art, wertstellung, buchungsdatum)"
                 " SELECT DISTINCT p.buchung_id, CAST(:h AS uuid), 'test.buchung',"
-                " DATE '2024-01-15' FROM p"
+                " DATE '2024-01-15', DATE '2024-01-15' FROM p"
             ),
             {"id": uuid.uuid4(), "h": k.haushalt_id, "a": k.a, "b": k.b},
         )
@@ -361,13 +362,58 @@ def test_erfasst_txid_vom_client_wird_ueberschrieben(session: Session, k: RohKon
     """Die Datenbank setzt die Transaktionsnummer selbst (Fachkonzept 4.4)."""
     eigene = session.execute(
         text(
-            "INSERT INTO buchung (haushalt_id, art, wertstellung, erfasst_txid)"
-            " VALUES (:h, 'test.buchung', DATE '2024-01-15', '1')"
+            "INSERT INTO buchung (haushalt_id, art, wertstellung, buchungsdatum, erfasst_txid)"
+            " VALUES (:h, 'test.buchung', DATE '2024-01-15', DATE '2024-01-15', '1')"
             " RETURNING erfasst_txid = pg_current_xact_id()"
         ),
         {"h": k.haushalt_id},
     ).scalar_one()
     assert eigene is True
+
+
+def wiederhergestellte_buchung(sitzung: Session, k: RohKonten, erfasst_am: datetime) -> uuid.UUID:
+    """Buchung wie nach dem Restore eines vollständigen Dumps in einen neuen Cluster (T-03).
+
+    Ein vollständiger Dump legt die Trigger erst nach den Daten an; erfasst_am und erfasst_txid
+    bleiben, wie sie waren. Der Zähler des neuen Clusters beginnt wieder unten, die Nummer einer
+    alten Buchung kann deshalb die einer neuen Transaktion sein. Nachgestellt wird das als
+    Eigentümerrolle in der laufenden Transaktion, die am Ende zurückgerollt wird. Bis dahin
+    bleibt der Trigger aus: Solange zurückgestellte Prüfungen ausstehen, lässt PostgreSQL kein
+    ALTER TABLE zu. Für das Posting zählt nur der Trigger auf posting.
+    """
+    sitzung.execute(text("ALTER TABLE buchung DISABLE TRIGGER buchung_vor_insert"))
+    return sitzung.execute(
+        text(
+            "INSERT INTO buchung"
+            " (haushalt_id, art, wertstellung, buchungsdatum, erfasst_am, erfasst_txid)"
+            " VALUES (:h, 'test.buchung', DATE '2024-01-15', DATE '2024-01-15', :am,"
+            " pg_current_xact_id()) RETURNING id"
+        ),
+        {"h": k.haushalt_id, "am": erfasst_am},
+    ).scalar_one()
+
+
+def test_postings_an_eine_wiederhergestellte_buchung_mit_gleicher_nummer(
+    owner_session: Session,
+) -> None:
+    """Die Nummer passt, erfasst_am liegt in der Vergangenheit: Das Posting wird abgelehnt."""
+    k = roh_konten(owner_session)
+    alt = datetime(2020, 1, 1, tzinfo=UTC)
+    buchung_id = wiederhergestellte_buchung(owner_session, k, alt)
+    with pytest.raises(IntegrityError) as fehler:
+        roh_postings(owner_session, buchung_id, [(k.a, "10"), (k.b, "-10")])
+    erwarte(fehler, "23001", "buchung_abgeschlossen")
+
+
+def test_gegenprobe_wiederhergestellte_buchung_mit_erfasst_am_jetzt(
+    owner_session: Session,
+) -> None:
+    """Gegenprobe zum Test davor: Mit erfasst_am = now() geht es; es entscheidet erfasst_am."""
+    k = roh_konten(owner_session)
+    jetzt: datetime = owner_session.execute(text("SELECT now()")).scalar_one()
+    buchung_id = wiederhergestellte_buchung(owner_session, k, jetzt)
+    roh_postings(owner_session, buchung_id, [(k.a, "10"), (k.b, "-10")])
+    pruefe_aufgeschobene(owner_session)
 
 
 # --- Storno ----------------------------------------------------------------------------
@@ -407,8 +453,9 @@ def test_storno_auf_sich_selbst(session: Session, k: RohKonten) -> None:
     with pytest.raises(IntegrityError) as fehler:
         session.execute(
             text(
-                "INSERT INTO buchung (id, haushalt_id, art, wertstellung, storno_von)"
-                " VALUES (:id, :haushalt_id, 'kern.storno', '2024-01-15', :id)"
+                "INSERT INTO buchung"
+                " (id, haushalt_id, art, wertstellung, buchungsdatum, storno_von)"
+                " VALUES (:id, :haushalt_id, 'kern.storno', '2024-01-15', '2024-01-15', :id)"
             ),
             {"id": eigene_id, "haushalt_id": k.haushalt_id},
         )
@@ -548,8 +595,9 @@ VERBOTEN = [
     "DELETE FROM buchung WHERE id = :buchung_id",
     "TRUNCATE buchung CASCADE",
     "TRUNCATE haushalt CASCADE",
-    "INSERT INTO buchung (id, haushalt_id, art, wertstellung) "
-    "SELECT id, haushalt_id, art, wertstellung FROM buchung WHERE id = :buchung_id "
+    "INSERT INTO buchung (id, haushalt_id, art, wertstellung, buchungsdatum) "
+    "SELECT id, haushalt_id, art, wertstellung, buchungsdatum FROM buchung"
+    " WHERE id = :buchung_id "
     "ON CONFLICT (id) DO UPDATE SET text = 'x'",
 ]
 

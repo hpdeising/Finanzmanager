@@ -20,7 +20,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.kern.haushalt import lege_haushalt_an
-from app.kern.ledger import Posting, PostingEingabe, buche, lege_konto_an, saldo, storniere
+from app.kern.ledger import (
+    KontoGesperrtError,
+    Posting,
+    PostingEingabe,
+    buche,
+    lege_konto_an,
+    saldo,
+    sperre_konten,
+    storniere,
+)
 from tests.datenbank import (
     DB_EINSTELLUNGEN,
     constraint_name,
@@ -92,12 +101,15 @@ def lege_an(sitzung: Session) -> Haushalt:
     return Haushalt(haushalt.id, konten)
 
 
-def buche_entwurf(sitzung: Session, haushalt: Haushalt, entwurf: Entwurf) -> uuid.UUID:
+def buche_entwurf(
+    sitzung: Session, haushalt: Haushalt, entwurf: Entwurf, buchungsdatum: date | None = None
+) -> uuid.UUID:
     return buche(
         sitzung,
         haushalt_id=haushalt.id,
         art="test.buchung",
         wertstellung=entwurf.wertstellung,
+        buchungsdatum=buchungsdatum,
         postings=[PostingEingabe(haushalt.konten[i], betrag) for i, betrag in entwurf.postings],
     ).id
 
@@ -211,6 +223,101 @@ def test_storno_plus_neubuchung_wie_die_korrigierte_buchung(
         assert salden(sitzung, haushalt, stichtag) == [
             modellsaldo([*bestand, richtig], i, stichtag) for i in range(ANZAHL_KONTEN)
         ]
+
+
+@DB_EINSTELLUNGEN
+@given(
+    bestand=st.lists(ENTWURF, max_size=3),
+    falsch=ENTWURF,
+    richtig=ENTWURF,
+    verspaetung=st.integers(0, 60),
+    nah=st.booleans(),
+    abstand=st.integers(-3, 3),
+    frei=STICHTAG,
+)
+def test_storno_plus_neubuchung_mit_spaeterem_buchungsdatum(
+    app_engine: Engine,
+    bestand: list[Entwurf],
+    falsch: Entwurf,
+    richtig: Entwurf,
+    verspaetung: int,
+    nah: bool,
+    abstand: int,
+    frei: date,
+) -> None:
+    """Fachkonzept Kap. 12: Korrektur mit Tag der Erfassung nach der Wertstellung (E-26).
+
+    Bis zum Vortag der Erfassung zeigen die Salden die falsche Buchung, ab dem Tag der
+    Erfassung die korrigierte. Storno und Neubuchung tragen dasselbe Buchungsdatum.
+    """
+    with sitzung_mit_rollback(app_engine) as sitzung:
+        haushalt = lege_an(sitzung)
+        for entwurf in bestand:
+            buche_entwurf(sitzung, haushalt, entwurf)
+        falsch_id = buche_entwurf(sitzung, haushalt, falsch)
+        erfasst = max(falsch.wertstellung, richtig.wertstellung) + timedelta(days=verspaetung)
+        # Halb der Rand um den Tag der Erfassung, halb ein beliebiger Stichtag.
+        stichtag = erfasst + timedelta(days=abstand) if nah else frei
+        storniere(sitzung, buchung_id=falsch_id, buchungsdatum=erfasst)
+        buche_entwurf(sitzung, haushalt, richtig, buchungsdatum=erfasst)
+        pruefe_aufgeschobene(sitzung)
+        # Vor dem Tag der Erfassung stehen Storno und Neubuchung noch nicht in den Büchern.
+        gueltig = [*bestand, richtig] if stichtag >= erfasst else [*bestand, falsch]
+        assert salden(sitzung, haushalt, stichtag) == [
+            modellsaldo(gueltig, i, stichtag) for i in range(ANZAHL_KONTEN)
+        ]
+
+
+@DB_EINSTELLUNGEN
+@given(
+    vorher=st.lists(ENTWURF, max_size=4),
+    nachher=st.lists(ENTWURF, max_size=4),
+    stornos=st.lists(st.booleans(), max_size=4),
+    sperrdatum=WERTSTELLUNG,
+    stichtag=STICHTAG,
+)
+def test_saldo_bis_zum_sperrdatum_bleibt_nach_der_sperre_gleich(
+    app_engine: Engine,
+    vorher: list[Entwurf],
+    nachher: list[Entwurf],
+    stornos: list[bool],
+    sperrdatum: date,
+    stichtag: date,
+) -> None:
+    """Fachkonzept Kap. 12, E-27: Was nach der Sperre gebucht wird, landet danach.
+
+    Buchungen in den gesperrten Zeitraum lehnt der Kern ab, auch das Storno einer Buchung
+    von davor mit ihrem eigenen Buchungsdatum; nachträgliche Buchungen und Stornos mit einem
+    Buchungsdatum nach dem Sperrdatum (E-26) ändern die Salden bis dahin nicht.
+    """
+    danach = sperrdatum + timedelta(days=1)
+    with sitzung_mit_rollback(app_engine) as sitzung:
+        haushalt = lege_an(sitzung)
+        alte = [(buche_entwurf(sitzung, haushalt, entwurf), entwurf) for entwurf in vorher]
+        sperre_konten(sitzung, konto_ids=haushalt.konten, bis=sperrdatum)
+        pruefe_aufgeschobene(sitzung)
+        stand = min(stichtag, sperrdatum)
+        bis_zur_sperre = salden(sitzung, haushalt, stand)
+
+        for entwurf in nachher:
+            if entwurf.wertstellung <= sperrdatum:
+                with pytest.raises(KontoGesperrtError):
+                    buche_entwurf(sitzung, haushalt, entwurf)
+                buche_entwurf(sitzung, haushalt, entwurf, buchungsdatum=danach)
+            else:
+                buche_entwurf(sitzung, haushalt, entwurf)
+        for (buchung_id, entwurf), stornieren in zip(alte, stornos, strict=False):
+            if not stornieren:
+                continue
+            if entwurf.wertstellung <= sperrdatum:
+                with pytest.raises(KontoGesperrtError):
+                    storniere(sitzung, buchung_id=buchung_id)
+                storniere(sitzung, buchung_id=buchung_id, buchungsdatum=danach)
+            else:
+                storniere(sitzung, buchung_id=buchung_id)
+        pruefe_aufgeschobene(sitzung)
+
+        assert salden(sitzung, haushalt, stand) == bis_zur_sperre
 
 
 SPEICHERBAR = st.decimals(

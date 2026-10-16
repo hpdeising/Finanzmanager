@@ -106,8 +106,9 @@ def test_erfasst_am_vom_client_wird_ueberschrieben(session: Session) -> None:
     haushalt_id = roh_haushalt(session)
     erfasst_am, jetzt = session.execute(
         text(
-            "INSERT INTO buchung (haushalt_id, art, wertstellung, erfasst_am)"
-            " VALUES (:haushalt_id, 'test.buchung', '2024-01-15', '2000-01-01 00:00+00')"
+            "INSERT INTO buchung (haushalt_id, art, wertstellung, buchungsdatum, erfasst_am)"
+            " VALUES (:haushalt_id, 'test.buchung', '2024-01-15', '2024-01-15',"
+            " '2000-01-01 00:00+00')"
             " RETURNING erfasst_am, now()"
         ),
         {"haushalt_id": haushalt_id},
@@ -231,7 +232,9 @@ def test_unbekannter_haushalt(session: Session, konten: Konten) -> None:
 
 def test_orm_lehnt_mehr_als_vier_nachkommastellen_ab(session: Session, konten: Konten) -> None:
     """Auch am API vorbei über das ORM rundet nichts still (CLAUDE.md, Geld)."""
-    buchung = Buchung(haushalt_id=konten.haushalt_id, art="test.buchung", wertstellung=TAG)
+    buchung = Buchung(
+        haushalt_id=konten.haushalt_id, art="test.buchung", wertstellung=TAG, buchungsdatum=TAG
+    )
     session.add(buchung)
     session.flush()
     session.add(

@@ -1,7 +1,7 @@
 # Finanzmanager – Fachkonzept v0.1
 
 **Modul in Release 1:** Verbindlichkeiten
-**Stand:** 13.10.2026 · **Status:** Entwurf · **Projektlizenz:** AGPL-3.0-or-later
+**Stand:** 15.10.2026 · **Status:** Entwurf · **Projektlizenz:** AGPL-3.0-or-later
 **Rechtsstand der Normzitate:** 11.10.2026. Offene Rechtsfragen stehen in Kapitel 14.
 
 Dieses Dokument ist die fachliche Quelle der Wahrheit. Code, der davon abweicht, ist falsch – oder dieses Dokument wird vorher geändert. Die Software rechnet, erinnert und erzeugt Entwürfe. Sie leistet keine Rechtsberatung im Einzelfall.
@@ -49,7 +49,7 @@ Der Kern enthält keine Fachlogik eines Moduls. Module hängen vom Kern ab, nie 
 
 ## 2 Entscheidungsprotokoll
 
-E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026.
+E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026.
 
 | Nr. | Thema | Entscheidung |
 |---|---|---|
@@ -79,8 +79,9 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-24 | Zinsbeginn | Voreinstellung `genannter_tag`: Der als Zinsbeginn genannte Tag („seit dem …“) ist der erste Zinstag. Je Akte umstellbar auf `folgetag`: Erster Zinstag ist der Tag danach. Der Parameter gilt nur für den Beginn der Verzinsung; wechselt die Zinsregel, schließt die neue lückenlos an. Schließt P-06 (Kap. 5.1, 5.2) |
 | E-25 | Festschreibung | Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung in der Zeitzone der Installation. Die Festschreibung bucht die bis zum Stichtag berechneten Zinsen und die Anrechnung, soweit sie noch nicht gebucht sind. Ein festgeschriebener Zeitraum ist abgeschlossen: Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Ändert sich nachträglich die Berechnung für einen festgeschriebenen Zeitraum, fällt die Differenz in den offenen Zeitraum; die nächste Festschreibung bucht sie als Korrekturbuchung mit maschinenlesbarem Bezug auf den korrigierten Zeitraum. Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung, keine Rechtsregel (Kap. 5.2 Schritt 7) |
 | E-26 | Buchungsdatum und Wertstellung | Jede Buchung hat zwei Daten. Das Buchungsdatum ordnet sie einem Zeitraum zu und bestimmt die Salden, die Wertstellung bestimmt, ab wann sie fachlich wirkt (Zinsen, Anrechnung, Fristen). Liegt die Wertstellung im offenen Zeitraum der Akte, sind beide gleich. Liegt sie in einem festgeschriebenen Zeitraum der Akte, wird die Buchung im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum. Das gilt für ein Storno wie für jede neue Buchung (Neubuchung einer Korrektur, nachträglich erfasste Zahlung oder Kosten), nicht aber für die Buchungen einer Festschreibung selbst (E-25). Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den gebuchten Vorgang, etwa die Zahlung, hat es nie gegeben. Für Zinsen, Anrechnung und Fristen gilt die stornierte Buchung deshalb ab ihrer ursprünglichen Wertstellung als nie geschehen. Eine Rücklastschrift ist kein Storno, sondern ein tatsächliches Ereignis. Ergänzt E-18 (Kap. 4.1, 4.4, 5.2 Schritt 7) |
-| E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten (die Konten je Haushalt, Kap. 4.2) werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4). Ergänzt durch E-28: Das Modul legt Festschreibungsbuchungen mit `stornierbar = false` an, der Storno-Trigger lehnt ihr Storno ab; der Kern prüft zusätzlich, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt |
+| E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten (die Konten je Haushalt, Kap. 4.2) werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4). Ergänzt durch E-28: Das Modul legt Festschreibungsbuchungen mit `stornierbar = false` an, der Storno-Trigger lehnt ihr Storno ab; der Kern prüft zusätzlich, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt. Ergänzt durch E-29: Das Sperrdatum liegt höchstens auf dem heutigen Tag |
 | E-28 | Stornoschutz im Kern | Jede Buchung trägt das Merkmal `stornierbar`. Es wird beim Einfügen gesetzt und ist danach unveränderlich. Der Storno-Trigger lehnt das Storno einer Buchung mit `stornierbar = false` ab; der Kern kennt dabei keinen Grund, nur das Merkmal (E-17). Das Modul legt die Buchungen einer Festschreibung mit `stornierbar = false` an, damit setzt auch die Datenbank durch, dass sie nie storniert werden (E-25). Zusätzlich prüft der Kern, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt (E-26). Ergänzt E-27 (Kap. 4.4, 5.2 Schritt 7) |
+| E-29 | Sperrdatum höchstens heute | Die Datenbank lehnt eine Kontosperre ab, deren Sperrdatum nach dem heutigen Tag liegt (`gesperrt_bis > current_date`); die Kern-API prüft das vorab. Ein Sperrdatum steigt nur, und keine Sperre wird gelöscht (E-27). Ein Tipp- oder Modulfehler (2062 statt 2026) machte die Konten sonst bis dahin unbebuchbar, reparieren ließe es sich nur durch einen Eingriff am Trigger vorbei. Heute ist `current_date`, der Tag in der Zeitzone der Datenbanksitzung; die Anwendung verbindet sich in UTC. Bewusst „höchstens heute“ und nicht „höchstens Vortag“: So verträgt sich die Regel mit dem Stichtag einer Festschreibung, der höchstens auf dem Vortag in der Zeitzone der Installation liegt (E-25), auch wenn die Sitzung in einer anderen Zeitzone läuft. Dieser Vortag liegt nie nach dem heutigen Tag der Sitzung, solange deren Zeitzone höchstens 24 Stunden hinter der der Installation liegt. Das gilt für jede Sitzung in UTC und bei einer Installation in Deutschland für jede Zeitzone der Erde (UTC−12 bis UTC+14). Ergänzt E-27 (Kap. 4.4) |
 
 ---
 
@@ -225,10 +226,14 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 --   erfasst_am setzt ein Trigger auf now(), den Beginn der Transaktion, und erfasst_txid auf
 --   pg_current_xact_id(), die Nummer der Transaktion; Werte vom Client werden überschrieben.
 --   Postings entstehen nur in der Transaktion, in der auch ihre Buchung entsteht: Ein Posting
---   wird nur angenommen, wenn erfasst_txid seiner Buchung gleich pg_current_xact_id() ist.
---   Geprüft wird die Transaktionsnummer, nicht erfasst_am, weil now() nicht je Transaktion
---   eindeutig ist: Alle Transaktionen einer Client-Nachricht haben denselben Zeitstempel. Die
---   Nummer ist eindeutig, gilt auch in Savepoints und wird nie wiederverwendet.
+--   wird nur angenommen, wenn erfasst_txid seiner Buchung gleich pg_current_xact_id() und ihr
+--   erfasst_am gleich now() ist. In derselben Transaktion gilt beides immer; erfasst_am und
+--   now() sind beide der Beginn der Transaktion. Die Transaktionsnummer ist nötig, weil now()
+--   nicht je Transaktion eindeutig ist: Mehrere Transaktionen einer Client-Nachricht können
+--   denselben Zeitstempel haben. Die Nummer ist innerhalb eines Clusters eindeutig und gilt
+--   auch in Savepoints, zusammen mit erfasst_am auch über eine Wiederherstellung hinweg: In
+--   einem neuen Cluster kann sich die Nummer einer eingespielten Buchung wiederholen, ihr
+--   erfasst_am liegt aber in der Vergangenheit (T-03).
 --   Storno: Die Ursprungsbuchung existiert, ist selbst kein Storno, gehört zum selben
 --   Haushalt, hat dieselbe Wertstellung (E-18) und ist stornierbar (E-28). Das Buchungsdatum
 --   des Stornos liegt nicht vor dem der Ursprungsbuchung (E-28).
@@ -236,12 +241,20 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 --   oder vor dem Sperrdatum seines Kontos liegt. Das gilt auch für ein Storno.
 --   Eine neue Zeile in konto_sperre wird nur angenommen, wenn gesperrt_bis größer ist als
 --   das bisherige Sperrdatum des Kontos; ihr erfasst_am setzt ein Trigger auf now().
+--   gesperrt_bis liegt nicht nach current_date, dem heutigen Tag in der Zeitzone der Sitzung
+--   (E-29).
 -- Nebenläufigkeit (Kap. 5.2 Schritt 7): Ist eine Sperre committet, ändert sich die Menge der
 --   Postings des Kontos mit Buchungsdatum bis zum Sperrdatum nicht mehr, auch nicht durch
---   Transaktionen, die schon vorher liefen. Fügt eine Transaktion, die gleichzeitig mit der
---   sperrenden läuft, Postings mit Buchungsdatum bis zum neuen Sperrdatum auf das Konto ein,
---   scheitert eine der beiden. So rechnet eine Festschreibung auf genau den Postings, die ihre
---   Sperre einfriert.
+--   Transaktionen, die schon vorher liefen. Ab dem Zeitpunkt, zu dem die sperrende
+--   Transaktion das Konto hält (ausdrücklich vorab oder mit dem Einfügen der Sperre),
+--   scheitert jede andere, die Postings auf das Konto einfügt; umgekehrt scheitert das
+--   Halten, solange eine andere Transaktion auf dem Konto bucht; jeweils sofort und ohne zu
+--   warten. Was vor dem Halten committet ist, gehört zum gesperrten Zeitraum. Hält eine
+--   Festschreibung die Konten, bevor sie rechnet, rechnet sie deshalb auf genau den Postings,
+--   die ihre Sperre einfriert.
+-- Isolationsstufe: Postings und Sperren gibt es nur in READ COMMITTED; andere Stufen lehnt die
+--   Datenbank ab, weil eine Transaktion in REPEATABLE READ oder SERIALIZABLE eine später
+--   committete Sperre nicht sähe.
 -- Buchungsdatum (E-26 bis E-28): Welches Buchungsdatum eine Buchung bekommt, entscheidet das
 --   Modul; der Kern übernimmt es und prüft es gegen die Wertstellung (CHECK oben), gegen die
 --   Kontosperre und beim Storno gegen das Buchungsdatum der Ursprungsbuchung. Die Sperre kennt
@@ -251,8 +264,7 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 -- Die Trigger feuern immer, auch bei session_replication_role = replica.
 -- Rechte (E-19; für konto_sperre diese Skizze): Die Laufzeitrolle darf auf buchung, posting
 --   und konto_sperre nur lesen und einfügen; in M1 gilt das auch für haushalt und konto.
--- Buchungsdatum, Kontosperre und stornierbar (E-26 bis E-28) folgen mit einer eigenen
---   Migration nach M1.
+-- Buchungsdatum, Kontosperre und stornierbar (E-26 bis E-29) kommen mit Migration 0002.
 -- Beträge: NUMERIC(19,4) rundet eine fünfte und jede weitere Nachkommastelle still, und kein
 --   Trigger sieht den ursprünglichen Wert. Deshalb lehnt die Anwendung solche Beträge vor dem
 --   Speichern ab (kern/geld). Beträge ab 10^15 weist schon die Datenbank zurück (Überlauf); die
@@ -336,6 +348,7 @@ Ablauf:
 7. Zinsen und Anrechnung werden bei jeder Abfrage zum Stichtag neu berechnet, nicht laufend gebucht (E-21). Gebucht wird nur bei einer Festschreibung (E-25):
    - **Anforderung:** Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung wie in Kap. 4.1 (Zeitzone der Installation); ein Abschluss zum 31.12. wird also frühestens am 01.01. angefordert.
    - **Zinsen und Anrechnung eines Zeitraums** sind die Berechnung zu seinem Stichtag abzüglich der Berechnung zum vorigen Stichtag. Für eine angebrochene Zinsperiode zählt der bis zum Stichtag berechnete und gerundete Betrag; die Rundungsdifferenz zur ganzen Periode fällt in den nächsten Zeitraum und ist keine Korrektur.
+   - **Halten:** Bevor sie rechnet, hält die Festschreibung die Konten der Akte (Kap. 4.4). Bis zum Commit bucht dann keine andere Transaktion auf ihnen; läuft gerade eine Buchung, scheitert die Festschreibung und wird wiederholt.
    - **Buchungen:** Die Festschreibung bucht mit Buchungsdatum und Wertstellung an ihrem Stichtag die Zinsen des Zeitraums (`verbindlichkeiten.zinslauf`), seine Anrechnung als Umbuchung vom Zahlungskonto auf die Bestandteile (`verbindlichkeiten.anrechnung`) und die Korrekturbuchungen für frühere Zeiträume. Die Regel für nachträgliche Buchungen (E-26) gilt für diese Buchungen nicht. Danach setzt das Modul in derselben Transaktion die Sperre der Konten der Akte auf den Stichtag (E-27). Legt das Modul später ein neues Konto für die Akte an, sperrt es dieses in derselben Transaktion bis zum letzten Stichtag der Akte. Die Festschreibung wird auch gespeichert, wenn nichts zu buchen ist; jede ihrer Buchungen steht in `festschreibung_buchung` (Kap. 4.5).
    - **Abschluss:** Ein festgeschriebener Zeitraum ist abgeschlossen. Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Das Modul legt sie mit `stornierbar = false` an, sodass auch die Datenbank ihr Storno ablehnt (E-28). Zahlung, Kosten und Entstehung bleiben stornierbar.
    - **Nachträgliche Buchungen:** Eine Buchung, deren Wertstellung in einem festgeschriebenen Zeitraum liegt, wird im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum (E-26). Das gilt für ein Storno, für die Neubuchung einer Korrektur und für nachträglich erfasste Zahlungen oder Kosten. Für Zinsen, Anrechnung und Fristen zählt ihre Wertstellung; eine stornierte Buchung gilt ab ihrer ursprünglichen Wertstellung als nie geschehen.
@@ -681,3 +694,4 @@ Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern
 | P-20 | Überzahlung: Wird eine Überzahlung auf Positionen angerechnet, die später entstehen, z. B. neue Vollstreckungskosten? Wenn ja, ab welcher Wertstellung? | Anrechnung, Restschuld, Status |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
 | T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |
+| T-03 | Wiederherstellung aus einer Sicherung: Werden nur die Daten in ein schon migriertes Schema eingespielt, greifen die Trigger auf `buchung`, `posting` und `konto_sperre`. `erfasst_am` und `erfasst_txid` würden überschrieben (`erfasst_am` auch in `konto_sperre`); damit ginge die Historie verloren, wann etwas bekannt war. Postings würden abgelehnt, wenn `buchung` und `posting` in getrennten Transaktionen eingespielt werden oder `konto_sperre` vor `posting` kommt. Dazu kommt die Prüfung der Isolationsstufe. Ein vollständiger Dump legt die Trigger dagegen erst nach den Daten an (post-data); beim Einspielen greift dann keiner von ihnen. Gelöst ist die Wiederholung der Transaktionsnummer: Im neuen Cluster beginnt der Zähler wieder unten, sodass die Nummer einer eingespielten Buchung wieder vorkommen kann. Die Posting-Prüfung verlangt deshalb zusätzlich `erfasst_am = now()` (Kap. 4.4). Zu klären bis M8: Wie laufen Backup und Restore? Zum Beispiel als Eigentümerrolle in einer Transaktion mit abgeschalteten Triggern, danach ein Prüflauf aller Invarianten | Backup und Wiederherstellungsprobe des Installers (Kap. 11) |

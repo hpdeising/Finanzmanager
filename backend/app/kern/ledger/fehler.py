@@ -34,5 +34,32 @@ class BuchungUnbekanntError(LedgerError, LookupError):
     pass
 
 
+class KontoGesperrtError(BuchungUngueltigError):
+    """Ein Konto der Buchung ist bis zu einem Datum gesperrt (E-27).
+
+    Das Buchungsdatum muss nach dem Sperrdatum liegen. Für eine Buchung, deren Wertstellung
+    im gesperrten Zeitraum liegt, gibt das Modul den Tag der Erfassung an (E-26).
+
+    Meist erkennt die Vorabprüfung die Sperre, bevor etwas geschrieben ist; die Transaktion
+    bleibt dann nutzbar. Committet eine andere Transaktion die Sperre erst danach, lehnt die
+    Datenbank ab; dann ist die Transaktion abgebrochen, und der Aufrufer rollt zurück
+    (``__cause__`` ist der Datenbankfehler).
+    """
+
+
+class SperreUngueltigError(EingabeUngueltigError):
+    """Eine Kontosperre verletzt eine Regel: Das Sperrdatum steigt nicht (E-27) oder liegt nach
+    dem heutigen Tag (E-29)."""
+
+
 class StornoNichtMoeglichError(LedgerError):
-    """Die Buchung ist selbst ein Storno oder wurde schon storniert."""
+    """Die Buchung ist selbst ein Storno, wurde schon storniert oder ist nicht stornierbar."""
+
+
+class KontoBelegtError(LedgerError):
+    """Eine gleichzeitige Transaktion sperrt das Konto oder bucht darauf (Fachkonzept 4.4).
+
+    Die Datenbank hat sofort abgelehnt, ohne zu warten (SQLSTATE 55P03). Vorab prüfen lässt
+    sich das nicht. Die Transaktion ist danach abgebrochen; der Aufrufer rollt zurück und
+    versucht es erneut.
+    """

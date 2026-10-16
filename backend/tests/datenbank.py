@@ -33,6 +33,8 @@ from app.kern.db import erzeuge_engine
 from app.kern.db.bootstrap import APP_ROLE, OWNER_ROLE, richte_datenbank_ein
 
 BACKEND: Final = Path(__file__).resolve().parent.parent
+# Neueste Migration; die Katalogtests prüfen den Stand nach ``alembic upgrade head``.
+HEAD: Final = "0002"
 TEST_ADMIN_URL_VARIABLE: Final = "FINANZMANAGER_TEST_ADMIN_DATABASE_URL"
 PRAEFIX: Final = "fm_test_"
 MINDESTVERSION: Final = 160000
@@ -221,20 +223,35 @@ def roh_buchung(
     *,
     art: str = "test.buchung",
     wertstellung: date = WERTSTELLUNG,
+    buchungsdatum: date | None = None,
     storno_von: uuid.UUID | None = None,
+    stornierbar: bool = True,
 ) -> uuid.UUID:
+    """Buchung ohne Postings; ohne Buchungsdatum gilt die Wertstellung (offener Zeitraum)."""
     return sitzung.execute(
         text(
-            "INSERT INTO buchung (haushalt_id, art, wertstellung, storno_von)"
-            " VALUES (:haushalt_id, :art, :wertstellung, :storno_von) RETURNING id"
+            "INSERT INTO buchung"
+            " (haushalt_id, art, wertstellung, buchungsdatum, storno_von, stornierbar)"
+            " VALUES (:haushalt_id, :art, :wertstellung, :buchungsdatum, :storno_von,"
+            " :stornierbar) RETURNING id"
         ),
         {
             "haushalt_id": haushalt_id,
             "art": art,
             "wertstellung": wertstellung,
+            "buchungsdatum": wertstellung if buchungsdatum is None else buchungsdatum,
             "storno_von": storno_von,
+            "stornierbar": stornierbar,
         },
     ).scalar_one()
+
+
+def roh_sperre(sitzung: Session, konto_id: uuid.UUID, gesperrt_bis: date) -> None:
+    """Konto bis einschließlich ``gesperrt_bis`` sperren (E-27), am API vorbei."""
+    sitzung.execute(
+        text("INSERT INTO konto_sperre (konto_id, gesperrt_bis) VALUES (:konto_id, :bis)"),
+        {"konto_id": konto_id, "bis": gesperrt_bis},
+    )
 
 
 def roh_postings(
