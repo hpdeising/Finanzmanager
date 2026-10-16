@@ -4,8 +4,8 @@
 Der Kern sperrt Konten bis zu einem Datum. Er kennt dabei weder Akte noch Festschreibung,
 nur Konto und Datum (E-17); wann gesperrt wird, entscheidet ein Modul. Ein Posting auf ein
 gesperrtes Konto, dessen Buchung ein Buchungsdatum am oder vor dem Sperrdatum hat, lehnt die
-Datenbank ab. Das Sperrdatum liegt höchstens auf dem heutigen Tag der Datenbanksitzung
-(E-29); eine Sperre lässt sich nicht zurücknehmen.
+Datenbank ab. Eine neue Sperre reicht höchstens bis zum heutigen Tag der Datenbanksitzung
+(E-29), denn eine Sperre lässt sich nicht zurücknehmen.
 
 Nebenläufigkeit: Jedes Posting hält sein Konto gemeinsam mit anderen Postings, eine Sperre
 hält es allein, jeweils bis zum Ende der Transaktion. Wer das Konto nicht bekommt, scheitert

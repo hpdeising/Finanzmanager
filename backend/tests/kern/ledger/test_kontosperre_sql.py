@@ -195,13 +195,21 @@ def test_sperrdatum_steigt_nur(session: Session, k: RohKonten) -> None:
 
 
 @pytest.mark.parametrize(
+    "zeitzone", ["UTC", "Pacific/Kiritimati", "Etc/GMT+12"], ids=["utc", "plus_14", "minus_12"]
+)
+@pytest.mark.parametrize(
     "abstand", [timedelta(days=1), timedelta(days=36 * 365)], ids=["morgen", "tippfehler"]
 )
-def test_sperrdatum_hoechstens_heute(session: Session, k: RohKonten, abstand: timedelta) -> None:
+def test_sperrdatum_hoechstens_heute(
+    session: Session, k: RohKonten, abstand: timedelta, zeitzone: str
+) -> None:
     """E-29: Ein Sperrdatum in der Zukunft machte das Konto bis dahin unbebuchbar.
 
-    Heute ist current_date, der Tag in der Zeitzone der Sitzung, nicht der Tag in Python.
+    Heute ist current_date, der Tag in der Zeitzone der Sitzung, nicht der UTC-Tag und nicht
+    der Tag in Python. UTC+14 und UTC-12 liegen 26 Stunden auseinander; zu jeder Uhrzeit ist
+    in mindestens einer von beiden ein anderer Tag als in UTC.
     """
+    session.execute(text(f"SET LOCAL TIME ZONE '{zeitzone}'"))
     heute: date = session.execute(text("SELECT current_date")).scalar_one()
     with pytest.raises(DBAPIError) as fehler, session.begin_nested():
         roh_sperre(session, k.a, heute + abstand)

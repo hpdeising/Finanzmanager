@@ -1,7 +1,7 @@
 # Finanzmanager – Fachkonzept v0.1
 
 **Modul in Release 1:** Verbindlichkeiten
-**Stand:** 13.10.2026 · **Status:** Entwurf · **Projektlizenz:** AGPL-3.0-or-later
+**Stand:** 15.10.2026 · **Status:** Entwurf · **Projektlizenz:** AGPL-3.0-or-later
 **Rechtsstand der Normzitate:** 11.10.2026. Offene Rechtsfragen stehen in Kapitel 14.
 
 Dieses Dokument ist die fachliche Quelle der Wahrheit. Code, der davon abweicht, ist falsch – oder dieses Dokument wird vorher geändert. Die Software rechnet, erinnert und erzeugt Entwürfe. Sie leistet keine Rechtsberatung im Einzelfall.
@@ -81,7 +81,7 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-26 | Buchungsdatum und Wertstellung | Jede Buchung hat zwei Daten. Das Buchungsdatum ordnet sie einem Zeitraum zu und bestimmt die Salden, die Wertstellung bestimmt, ab wann sie fachlich wirkt (Zinsen, Anrechnung, Fristen). Liegt die Wertstellung im offenen Zeitraum der Akte, sind beide gleich. Liegt sie in einem festgeschriebenen Zeitraum der Akte, wird die Buchung im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum. Das gilt für ein Storno wie für jede neue Buchung (Neubuchung einer Korrektur, nachträglich erfasste Zahlung oder Kosten), nicht aber für die Buchungen einer Festschreibung selbst (E-25). Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den gebuchten Vorgang, etwa die Zahlung, hat es nie gegeben. Für Zinsen, Anrechnung und Fristen gilt die stornierte Buchung deshalb ab ihrer ursprünglichen Wertstellung als nie geschehen. Eine Rücklastschrift ist kein Storno, sondern ein tatsächliches Ereignis. Ergänzt E-18 (Kap. 4.1, 4.4, 5.2 Schritt 7) |
 | E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten (die Konten je Haushalt, Kap. 4.2) werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4). Ergänzt durch E-28: Das Modul legt Festschreibungsbuchungen mit `stornierbar = false` an, der Storno-Trigger lehnt ihr Storno ab; der Kern prüft zusätzlich, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt. Ergänzt durch E-29: Das Sperrdatum liegt höchstens auf dem heutigen Tag |
 | E-28 | Stornoschutz im Kern | Jede Buchung trägt das Merkmal `stornierbar`. Es wird beim Einfügen gesetzt und ist danach unveränderlich. Der Storno-Trigger lehnt das Storno einer Buchung mit `stornierbar = false` ab; der Kern kennt dabei keinen Grund, nur das Merkmal (E-17). Das Modul legt die Buchungen einer Festschreibung mit `stornierbar = false` an, damit setzt auch die Datenbank durch, dass sie nie storniert werden (E-25). Zusätzlich prüft der Kern, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt (E-26). Ergänzt E-27 (Kap. 4.4, 5.2 Schritt 7) |
-| E-29 | Sperrdatum höchstens heute | Die Datenbank lehnt eine Kontosperre ab, deren Sperrdatum nach dem heutigen Tag liegt (`gesperrt_bis > current_date`); die Kern-API prüft das vorab. Ein Sperrdatum steigt nur, und keine Sperre wird gelöscht (E-27). Ein Tipp- oder Modulfehler (2062 statt 2026) machte die Konten sonst bis dahin unbebuchbar, reparieren ließe es sich nur durch einen Eingriff am Trigger vorbei. Heute ist `current_date`, der Tag in der Zeitzone der Datenbanksitzung; die Anwendung verbindet sich in UTC. Bewusst „höchstens heute“ und nicht „höchstens Vortag“: So verträgt sich die Regel mit dem Stichtag einer Festschreibung, der höchstens auf dem Vortag in der Zeitzone der Installation liegt (E-25), auch wenn die Sitzung in einer anderen Zeitzone läuft. Dieser Vortag liegt nie nach dem heutigen Tag der Sitzung, solange deren Zeitzone höchstens 24 Stunden hinter der der Installation liegt. Das gilt für jede Sitzung in UTC und bei einer Installation in Deutschland für jede Zeitzone. Ergänzt E-27 (Kap. 4.4) |
+| E-29 | Sperrdatum höchstens heute | Die Datenbank lehnt eine Kontosperre ab, deren Sperrdatum nach dem heutigen Tag liegt (`gesperrt_bis > current_date`); die Kern-API prüft das vorab. Ein Sperrdatum steigt nur, und keine Sperre wird gelöscht (E-27). Ein Tipp- oder Modulfehler (2062 statt 2026) machte die Konten sonst bis dahin unbebuchbar, reparieren ließe es sich nur durch einen Eingriff am Trigger vorbei. Heute ist `current_date`, der Tag in der Zeitzone der Datenbanksitzung; die Anwendung verbindet sich in UTC. Bewusst „höchstens heute“ und nicht „höchstens Vortag“: So verträgt sich die Regel mit dem Stichtag einer Festschreibung, der höchstens auf dem Vortag in der Zeitzone der Installation liegt (E-25), auch wenn die Sitzung in einer anderen Zeitzone läuft. Dieser Vortag liegt nie nach dem heutigen Tag der Sitzung, solange deren Zeitzone höchstens 24 Stunden hinter der der Installation liegt. Das gilt für jede Sitzung in UTC und bei einer Installation in Deutschland für jede Zeitzone der Erde (UTC−12 bis UTC+14). Ergänzt E-27 (Kap. 4.4) |
 
 ---
 
@@ -229,11 +229,11 @@ CREATE TABLE konto_sperre (                         -- E-27; nur anhängend
 --   wird nur angenommen, wenn erfasst_txid seiner Buchung gleich pg_current_xact_id() und ihr
 --   erfasst_am gleich now() ist. In derselben Transaktion gilt beides immer; erfasst_am und
 --   now() sind beide der Beginn der Transaktion. Die Transaktionsnummer ist nötig, weil now()
---   nicht je Transaktion eindeutig ist: Alle Transaktionen einer Client-Nachricht haben
---   denselben Zeitstempel. Die Nummer ist innerhalb eines Clusters eindeutig und gilt auch in
---   Savepoints, zusammen mit erfasst_am auch über eine Wiederherstellung hinweg: In einem
---   neuen Cluster kann sich die Nummer einer eingespielten Buchung wiederholen, ihr erfasst_am
---   liegt aber in der Vergangenheit (T-03).
+--   nicht je Transaktion eindeutig ist: Mehrere Transaktionen einer Client-Nachricht können
+--   denselben Zeitstempel haben. Die Nummer ist innerhalb eines Clusters eindeutig und gilt
+--   auch in Savepoints, zusammen mit erfasst_am auch über eine Wiederherstellung hinweg: In
+--   einem neuen Cluster kann sich die Nummer einer eingespielten Buchung wiederholen, ihr
+--   erfasst_am liegt aber in der Vergangenheit (T-03).
 --   Storno: Die Ursprungsbuchung existiert, ist selbst kein Storno, gehört zum selben
 --   Haushalt, hat dieselbe Wertstellung (E-18) und ist stornierbar (E-28). Das Buchungsdatum
 --   des Stornos liegt nicht vor dem der Ursprungsbuchung (E-28).

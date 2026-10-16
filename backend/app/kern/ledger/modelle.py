@@ -124,9 +124,9 @@ class Posting(Basis):
 class KontoSperre(Basis):
     """Sperre eines Kontos bis einschließlich ``gesperrt_bis`` (E-27); nur anhängend.
 
-    Das Sperrdatum eines Kontos ist das größte ``gesperrt_bis`` seiner Zeilen; es liegt
-    höchstens auf dem heutigen Tag der Datenbanksitzung (E-29). Die Sperre kennt keine Akte
-    und keine Festschreibung, nur Konto und Datum (E-17).
+    Das Sperrdatum eines Kontos ist das größte ``gesperrt_bis`` seiner Zeilen. Eine neue Zeile
+    reicht höchstens bis zum heutigen Tag der einfügenden Datenbanksitzung (E-29). Die Sperre
+    kennt keine Akte und keine Festschreibung, nur Konto und Datum (E-17).
     """
 
     __tablename__ = "konto_sperre"

@@ -61,9 +61,11 @@ class BetragTyp(TypeDecorator[Decimal]):
 
 
 class Xid8(UserDefinedType[str]):
-    """PostgreSQL ``xid8``: 64-Bit-Transaktionsnummer, die nie wiederverwendet wird.
+    """PostgreSQL ``xid8``: 64-Bit-Transaktionsnummer, innerhalb eines Clusters eindeutig.
 
-    SQLAlchemy kennt den Typ nicht; psycopg liefert ihn als Text.
+    Nach einem Restore in einen neuen Cluster kann sich die Nummer einer eingespielten Zeile
+    wiederholen (Fachkonzept 4.4, T-03). SQLAlchemy kennt den Typ nicht; psycopg liefert ihn
+    als Text.
     """
 
     cache_ok = True
