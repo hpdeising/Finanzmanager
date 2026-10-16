@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Buchungsdatum, Kontosperre und Stornoschutz über die Python-API (E-26 bis E-28).
+"""Buchungsdatum, Kontosperre und Stornoschutz über die Python-API (E-26 bis E-29).
 
 Die API prüft vorab und meldet verständliche Fehler; die Datenbank erzwingt dieselben
 Regeln (test_kontosperre_sql.py). Welches Buchungsdatum eine Buchung bekommt, entscheidet
@@ -8,10 +8,11 @@ ein Modul; ohne Angabe gilt der offene Zeitraum: Buchungsdatum gleich Wertstellu
 
 import uuid
 from collections.abc import Collection
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.kern.ledger import (
@@ -142,6 +143,45 @@ def test_sperre_bis_ist_ein_datum(session: Session, konten: Konten) -> None:
         )
 
 
+def datenbankdatum(session: Session) -> date:
+    return session.execute(text("SELECT current_date")).scalar_one()
+
+
+@pytest.mark.parametrize(
+    "abstand", [timedelta(days=1), timedelta(days=36 * 365)], ids=["morgen", "tippfehler"]
+)
+def test_sperrdatum_hoechstens_heute(session: Session, konten: Konten, abstand: timedelta) -> None:
+    """E-29: Die Vorabprüfung meldet ein Sperrdatum in der Zukunft, bevor die Datenbank ablehnt."""
+    heute = datenbankdatum(session)
+    with pytest.raises(SperreUngueltigError, match="höchstens bis heute") as fehler:
+        sperre_konten(session, konto_ids=[konten.hauptforderung], bis=heute + abstand)
+    assert fehler.value.__cause__ is None
+    assert sperrdatum(session, konto_id=konten.hauptforderung) is None
+    sperre_konten(session, konto_ids=[konten.hauptforderung], bis=heute)
+    assert sperrdatum(session, konto_id=konten.hauptforderung) == heute
+
+
+@pytest.mark.parametrize(
+    "zeitzone", ["Pacific/Kiritimati", "Etc/GMT+12"], ids=["plus_14", "minus_12"]
+)
+def test_heute_ist_der_tag_der_datenbanksitzung(
+    session: Session, konten: Konten, zeitzone: str
+) -> None:
+    """Vorabprüfung und Datenbank messen heute gleich: current_date in der Zeitzone der Sitzung.
+
+    Die beiden Zeitzonen liegen 26 Stunden auseinander. Zu jeder Uhrzeit ist deshalb in
+    mindestens einer von ihnen ein anderer Tag als in UTC; eine Vorabprüfung nach dem Tag in
+    Python lehnte dort eine zulässige Sperre ab oder ließe eine unzulässige zur Datenbank durch.
+    """
+    session.execute(text(f"SET LOCAL TIME ZONE '{zeitzone}'"))
+    heute = datenbankdatum(session)
+    with pytest.raises(SperreUngueltigError) as fehler:
+        sperre_konten(session, konto_ids=[konten.hauptforderung], bis=heute + timedelta(days=1))
+    assert fehler.value.__cause__ is None
+    sperre_konten(session, konto_ids=[konten.hauptforderung], bis=heute)
+    assert sperrdatum(session, konto_id=konten.hauptforderung) == heute
+
+
 @pytest.mark.parametrize("buchungsdatum", [DAVOR, STICHTAG], ids=["davor", "am_sperrdatum"])
 def test_buchung_in_gesperrten_zeitraum(
     session: Session, konten: Konten, buchungsdatum: date
@@ -262,6 +302,25 @@ def test_fallendes_sperrdatum_im_wettlauf(
     with pytest.raises(SperreUngueltigError) as fehler:
         sperre_konten(session, konto_ids=[konten.hauptforderung], bis=DAVOR)
     assert constraint_name(fehler.value.__cause__ or fehler.value) == "konto_sperre_steigt"
+
+
+def heute_ohne_grenze(session: Session) -> date:
+    """Ersetzt den heutigen Tag der Vorabprüfung, damit erst die Datenbank ablehnt."""
+    return date.max
+
+
+def test_sperrdatum_in_der_zukunft_lehnt_auch_die_datenbank_ab(
+    session: Session, konten: Konten, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """E-29 auch am API vorbei; der Fehler nennt kein Konto."""
+    morgen = datenbankdatum(session) + timedelta(days=1)
+    monkeypatch.setattr(sperre, "heute", heute_ohne_grenze)
+    with pytest.raises(SperreUngueltigError, match="höchstens bis heute") as fehler:
+        sperre_konten(session, konto_ids=[konten.hauptforderung], bis=morgen)
+    assert (
+        constraint_name(fehler.value.__cause__ or fehler.value) == "konto_sperre_nicht_in_zukunft"
+    )
+    assert str(konten.hauptforderung) not in str(fehler.value)
 
 
 def test_erfasst_am_der_sperre_setzt_die_datenbank() -> None:

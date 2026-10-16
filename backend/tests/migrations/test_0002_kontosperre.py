@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""Migration 0002: Buchungsdatum, stornierbar, Kontosperre (E-26 bis E-28, Fachkonzept 4.4).
+"""Migration 0002: Buchungsdatum, stornierbar, Kontosperre (E-26 bis E-29, Fachkonzept 4.4).
 
 Die Migration füllt das Buchungsdatum bestehender Buchungen ohne UPDATE: Die Spalte entsteht
 als generierte Spalte aus der Wertstellung und wird danach zu einer normalen Spalte. Bis zur

@@ -4,7 +4,8 @@
 Der Kern sperrt Konten bis zu einem Datum. Er kennt dabei weder Akte noch Festschreibung,
 nur Konto und Datum (E-17); wann gesperrt wird, entscheidet ein Modul. Ein Posting auf ein
 gesperrtes Konto, dessen Buchung ein Buchungsdatum am oder vor dem Sperrdatum hat, lehnt die
-Datenbank ab.
+Datenbank ab. Das Sperrdatum liegt höchstens auf dem heutigen Tag der Datenbanksitzung
+(E-29); eine Sperre lässt sich nicht zurücknehmen.
 
 Nebenläufigkeit: Jedes Posting hält sein Konto gemeinsam mit anderen Postings, eine Sperre
 hält es allein, jeweils bis zum Ende der Transaktion. Wer das Konto nicht bekommt, scheitert
@@ -69,6 +70,9 @@ def uebersetze_sperrfehler() -> Generator[None]:
         if regel == "konto_sperre_steigt":
             msg = "Das Sperrdatum eines Kontos steigt nur."
             raise SperreUngueltigError(msg) from fehler
+        if regel == "konto_sperre_nicht_in_zukunft":
+            msg = "Ein Konto lässt sich höchstens bis heute sperren."
+            raise SperreUngueltigError(msg) from fehler
         raise
 
 
@@ -86,6 +90,15 @@ def sperrdaten(session: Session, konto_ids: Collection[uuid.UUID]) -> dict[uuid.
         .group_by(KontoSperre.konto_id)
     )
     return dict(session.execute(abfrage).all())
+
+
+def heute(session: Session) -> date:
+    """Heutiger Tag der Datenbanksitzung (``current_date``), nach dem auch der Trigger prüft.
+
+    Nicht der Tag in Python: Vorabprüfung und Datenbank sollen denselben Tag meinen. Die
+    Anwendung verbindet sich in UTC (``kern.db``).
+    """
+    return session.execute(select(func.current_date())).scalar_one()
 
 
 def sperrdatum(session: Session, *, konto_id: uuid.UUID) -> date | None:
@@ -116,19 +129,25 @@ def halte_konten(session: Session, *, konto_ids: Collection[uuid.UUID]) -> None:
 def sperre_konten(session: Session, *, konto_ids: Collection[uuid.UUID], bis: date) -> None:
     """Konten bis einschließlich ``bis`` sperren (ohne Commit).
 
-    Das Sperrdatum eines Kontos steigt nur. Die Konten werden zuerst gehalten
-    (``halte_konten``), dann wird das bisherige Sperrdatum gelesen und die Sperre geschrieben.
+    ``bis`` liegt höchstens auf dem heutigen Tag der Datenbanksitzung (E-29), weil sich eine
+    Sperre nicht zurücknehmen lässt. Das Sperrdatum eines Kontos steigt nur. Die Konten werden
+    zuerst gehalten (``halte_konten``), dann wird das bisherige Sperrdatum gelesen und die
+    Sperre geschrieben.
 
     Raises:
         TypeError: wenn ``bis`` kein ``date`` ist.
         KontoUnbekanntError: wenn ein Konto fehlt.
-        SperreUngueltigError: wenn ``bis`` nicht nach dem bisherigen Sperrdatum liegt.
+        SperreUngueltigError: wenn ``bis`` nach dem heutigen Tag oder nicht nach dem bisherigen
+            Sperrdatum liegt.
         KontoBelegtError: wenn eine andere Transaktion auf einem der Konten bucht oder es hält.
     """
     # datetime ist eine Unterklasse von date, aber kein fachliches Datum (CLAUDE.md).
     if type(bis) is not date:
         msg = "Sperrdatum muss ein datetime.date sein."
         raise TypeError(msg)
+    if bis > (tag := heute(session)):
+        msg = f"Ein Konto lässt sich höchstens bis heute ({tag}) sperren, nicht bis {bis}."
+        raise SperreUngueltigError(msg)
     reihenfolge = sorted(set(konto_ids))
     halte_konten(session, konto_ids=reihenfolge)
     bisher = sperrdaten(session, reihenfolge)

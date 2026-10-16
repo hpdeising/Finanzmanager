@@ -48,7 +48,8 @@ class KontoGesperrtError(BuchungUngueltigError):
 
 
 class SperreUngueltigError(EingabeUngueltigError):
-    """Eine Kontosperre verletzt eine Regel, etwa ein Sperrdatum, das nicht steigt (E-27)."""
+    """Eine Kontosperre verletzt eine Regel: Das Sperrdatum steigt nicht (E-27) oder liegt nach
+    dem heutigen Tag (E-29)."""
 
 
 class StornoNichtMoeglichError(LedgerError):

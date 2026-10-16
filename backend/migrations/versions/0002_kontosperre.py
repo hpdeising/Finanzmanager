@@ -4,7 +4,7 @@
 Revision: 0002
 Vorgänger: 0001
 
-Umsetzung von Fachkonzept 4.4, E-26, E-27 und E-28:
+Umsetzung von Fachkonzept 4.4 und E-26 bis E-29:
 
 - buchung.buchungsdatum ordnet eine Buchung einem Zeitraum zu; es liegt nie vor der
   Wertstellung. Bestehende Buchungen bekommen ihre Wertstellung als Buchungsdatum, ohne
@@ -16,7 +16,11 @@ Umsetzung von Fachkonzept 4.4, E-26, E-27 und E-28:
   Ein Storno setzt voraus, dass die Ursprungsbuchung stornierbar ist, und sein
   Buchungsdatum liegt nicht vor dem der Ursprungsbuchung (E-28).
 - konto_sperre: je Konto ein Sperrdatum, nur anhängend. Ein Posting auf ein Konto, dessen
-  Buchung ein Buchungsdatum am oder vor dem Sperrdatum hat, wird abgelehnt (E-27).
+  Buchung ein Buchungsdatum am oder vor dem Sperrdatum hat, wird abgelehnt (E-27). Das
+  Sperrdatum liegt höchstens auf dem heutigen Tag der Sitzung, current_date (E-29).
+- Postings an die Buchung ihrer Transaktion: Zur Transaktionsnummer (0001) muss auch
+  erfasst_am der Buchung passen, now(). Nach einem Restore in einen neuen Cluster kann sich
+  die Nummer einer alten Buchung wiederholen, ihr erfasst_am nicht (Fachkonzept 4.4, T-03).
 
 Nebenläufigkeit (Fachkonzept 4.4): Jedes Posting hält sein Konto mit einer geteilten,
 jede Sperre mit einer exklusiven Advisory-Sperre bis zum Ende der Transaktion, in der
@@ -84,8 +88,8 @@ BEGIN
 END
 $$
 """,
-    # Vor dem Einfügen einer Sperre: erfasst_am setzen, Konto exklusiv halten, Sperrdatum
-    # steigt nur. Gelesen wird erst nach der Advisory-Sperre.
+    # Vor dem Einfügen einer Sperre: erfasst_am setzen, Sperrdatum höchstens heute (E-29),
+    # Konto exklusiv halten, Sperrdatum steigt nur. Gelesen wird erst nach der Advisory-Sperre.
     """
 CREATE FUNCTION public.ledger_konto_sperre_vor_insert() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
@@ -93,6 +97,13 @@ DECLARE
     v_gesperrt_bis date;
 BEGIN
     NEW.erfasst_am := now();
+    IF NEW.gesperrt_bis > current_date THEN
+        RAISE EXCEPTION USING
+            MESSAGE = 'Konto ' || NEW.konto_id || ' lässt sich höchstens bis heute ('
+                || current_date || ') sperren, nicht bis ' || NEW.gesperrt_bis || '.',
+            ERRCODE = 'check_violation',
+            CONSTRAINT = 'konto_sperre_nicht_in_zukunft', TABLE = 'konto_sperre';
+    END IF;
     PERFORM public.ledger_halte_konto(NEW.konto_id);
     SELECT max(s.gesperrt_bis) INTO v_gesperrt_bis
       FROM public.konto_sperre AS s WHERE s.konto_id = NEW.konto_id;
@@ -185,19 +196,25 @@ BEGIN
 END
 $$
 """,
-    # Wie 0001, dazu die Kontosperre (E-27): erst die geteilte Advisory-Sperre, dann das
-    # Sperrdatum lesen. Eingesetzt werden nur Konstanten dieser Datei.
+    # Wie 0001, dazu zwei Prüfungen. Die Buchung entstand auch zu now(): Nach einem Restore in
+    # einen neuen Cluster kann sich ihre Transaktionsnummer wiederholen, ihr erfasst_am liegt
+    # dann in der Vergangenheit (Fachkonzept 4.4, T-03). Und die Kontosperre (E-27): erst die
+    # geteilte Advisory-Sperre, dann das Sperrdatum lesen. Eingesetzt werden nur Konstanten
+    # dieser Datei.
     f"""
 CREATE OR REPLACE FUNCTION public.ledger_posting_vor_insert() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
 DECLARE
     v_erfasst_txid xid8;
+    v_erfasst_am timestamptz;
     v_buchungsdatum date;
     v_gesperrt_bis date;
 BEGIN
-    SELECT b.erfasst_txid, b.buchungsdatum INTO v_erfasst_txid, v_buchungsdatum
+    SELECT b.erfasst_txid, b.erfasst_am, b.buchungsdatum
+      INTO v_erfasst_txid, v_erfasst_am, v_buchungsdatum
       FROM public.buchung AS b WHERE b.id = NEW.buchung_id;
-    IF v_erfasst_txid IS DISTINCT FROM pg_current_xact_id() THEN
+    IF v_erfasst_txid IS DISTINCT FROM pg_current_xact_id()
+        OR v_erfasst_am IS DISTINCT FROM now() THEN
         RAISE EXCEPTION USING
             MESSAGE = 'Buchung ' || NEW.buchung_id || ' ist nicht in dieser Transaktion'
                 || ' entstanden; Postings entstehen nur mit ihrer Buchung.',

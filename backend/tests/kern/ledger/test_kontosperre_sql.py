@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""PostgreSQL erzwingt Buchungsdatum, Kontosperre und Stornoschutz selbst (E-26 bis E-28).
+"""PostgreSQL erzwingt Buchungsdatum, Kontosperre und Stornoschutz selbst (E-26 bis E-29).
 
 Alle Tests schreiben per Roh-SQL am API vorbei und prüfen SQLSTATE und den Namen der
 verletzten Regel. Die Kontosperre kennt kein Modul, nur Konto und Datum (E-17).
@@ -7,7 +7,7 @@ verletzten Regel. Die Kontosperre kennt kein Modul, nur Konto und Datum (E-17).
 
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 import pytest
 from sqlalchemy import Engine, text
@@ -192,6 +192,21 @@ def test_sperrdatum_steigt_nur(session: Session, k: RohKonten) -> None:
         text("SELECT max(gesperrt_bis) FROM konto_sperre WHERE konto_id = :k"), {"k": k.a}
     ).scalar_one()
     assert bis == DANACH
+
+
+@pytest.mark.parametrize(
+    "abstand", [timedelta(days=1), timedelta(days=36 * 365)], ids=["morgen", "tippfehler"]
+)
+def test_sperrdatum_hoechstens_heute(session: Session, k: RohKonten, abstand: timedelta) -> None:
+    """E-29: Ein Sperrdatum in der Zukunft machte das Konto bis dahin unbebuchbar.
+
+    Heute ist current_date, der Tag in der Zeitzone der Sitzung, nicht der Tag in Python.
+    """
+    heute: date = session.execute(text("SELECT current_date")).scalar_one()
+    with pytest.raises(DBAPIError) as fehler, session.begin_nested():
+        roh_sperre(session, k.a, heute + abstand)
+    erwarte(fehler, "23514", "konto_sperre_nicht_in_zukunft")
+    roh_sperre(session, k.a, heute)
 
 
 def test_sperre_nur_fuer_vorhandene_konten(session: Session) -> None:
