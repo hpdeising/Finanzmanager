@@ -86,7 +86,7 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-31 | Tageszählung `act_act` | Zusätzliche Wahl für den Aktenparameter `tageszaehlung`: `act_act`, taggenau, Tagesbasis 366 für Tage in einem Schaltjahr, sonst 365. Damit kein Abschnitt zwei Tagesbasen hat, wird bei `act_act` zusätzlich an jedem 01.01. geteilt, unabhängig vom Aktenparameter `teilung` (E-32) und auch bei festen Sätzen. Voreinstellung bleibt `act_365`. Ergänzt E-22 (Kap. 5.1, 5.2 Schritt 2) |
 | E-32 | Teilung der Abschnitte | Neuer Aktenparameter `teilung`. Voreinstellung `kalender`: Bei basiszinsabhängigen Zinsregeln wird wie bisher an jedem 01.01. und 01.07. geteilt. Mit `satzwechsel` wird dort nur geteilt, wenn sich der anzuwendende Satz tatsächlich ändert. Dazu kommen je Akte frei eintragbare Teilungstage, etwa die Buchungstage des Gläubigers laut seiner Aufstellung (Tabelle `akte_teilungstag`, Kap. 4.5). Ein Teilungstag ist der erste Tag eines neuen Abschnitts; außerhalb des Zinslaufs wirkt er nicht. Unverändert wird an jeder nicht stornierten Zahlung (E-30) und bei jedem Wechsel der Zinsregel geteilt; der Stichtag einer Festschreibung und eine stornierte Zahlung teilen weiterhin nicht. Zweck: Jede Aufstellung soll sich centgenau nachrechnen lassen, damit echte Abweichungen auffallen; wo geteilt wird, handhaben Gläubiger unterschiedlich (Kap. 5.1, 5.2 Schritt 2) |
 | E-33 | Rundung je Abschnitt | Gerundet wird immer je Abschnitt kaufmännisch auf Cent, über die zentrale Funktion in `kern/geld`. `am_ende` und der Aktenparameter `rundung` entfallen. Eine Zahlung wird auf die gerundeten Zinsen der Abschnitte vor ihrer Abschnittsgrenze angerechnet (E-30). Schließt P-13, ändert E-23 (Kap. 5.1, 5.2 Schritt 2) |
-| E-34 | Tageszählung `30_360` | Jeder Monat hat 30 Tage, der Teiler ist 360, und wie bei den taggenauen Arten zählt der erste Tag eines Abschnitts mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind 360·(J2−J1) + 30·(M2−M1) + (T2−T1). Dabei ist D1 der Vortag des ersten Tags und D2 der letzte Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Ein Tag 31 zählt bei D1 und D2 als 30. Damit zählen der 30. und der 31. eines Monats zusammen als ein Tag, und endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Beim Teilen eines Abschnitts addieren sich die Tage auf; ein Kalenderjahr hat 360 Tage. Beispiele in Kap. 5.1. Eigene Festlegung, keine Rechtsregel und keine Primärquelle: Eine verbindliche Quelle für die Zählung in Forderungsaufstellungen gibt es nicht. Weicht ein realer Fall ab, wird daraus ein neuer Prüfpunkt. Schließt P-15, ergänzt E-22 (Kap. 5.1) |
+| E-34 | Tageszählung `30_360` | Jeder Monat hat 30 Tage, der Teiler ist 360, und wie bei den taggenauen Arten zählt der erste Tag eines Abschnitts mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind 360·(J2−J1) + 30·(M2−M1) + (T2−T1). Dabei ist D1 der Vortag des ersten Tags und D2 der letzte Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Nur für den ersten Abschnitt eines Zinslaufs ist D1 der erste Tag selbst, und die Formel bekommt + 1: 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1. Erster Abschnitt eines Zinslaufs ist der, der am Zinsbeginn des Bestandteils beginnt (Kap. 5.2 Schritt 1); ein Wechsel der Zinsregel schließt lückenlos an und beginnt keinen neuen Zinslauf. So zählen keine Tage vor dem Zinsbeginn mit. In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Damit zählen der 30. und der 31. eines Monats zusammen als ein Tag, und endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Teilen ändert die Summe nicht: Der erste Abschnitt nach seiner Formel und alle weiteren nach der allgemeinen ergeben zusammen dieselben Tage wie der ungeteilte Zinslauf. Ein Kalenderjahr hat 360 Tage. Beispiele in Kap. 5.1. Eigene Festlegung, keine Rechtsregel und keine Primärquelle: Eine verbindliche Quelle für die Zählung in Forderungsaufstellungen gibt es nicht. Weicht ein realer Fall ab, wird daraus ein neuer Prüfpunkt. Schließt P-15, ergänzt E-22 (Kap. 5.1) |
 
 ---
 
@@ -340,21 +340,31 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 
 **Tage = 360·(J2−J1) + 30·(M2−M1) + (T2−T1)**
 
-mit D1 = Vortag des ersten Tags und D2 = letzter Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Ein Tag 31 zählt bei D1 und D2 als 30. Eine eigene Februarregel gibt es nicht: Endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Der 30. und der 31. eines Monats zählen zusammen als ein Tag. „Der erste Tag zählt mit“ heißt: Gezählt wird ab dem Vortag D1, ausschließlich. Ein erster Tag am 31. bringt deshalb keinen eigenen Tag mit, und ein Abschnitt, der am 01.03. beginnt, zählt die Februartage bis zum 30. mit (siehe Tabelle). Beim Teilen eines Abschnitts addieren sich die Tage der Teile zu denen des ganzen Abschnitts auf. Ein Kalenderjahr hat 360 Tage, ebenso jeder Zeitraum von zwölf Monaten, außer D1 oder D2 ist ein 29. Februar (dann 359 oder 361 Tage). Diese Festlegung ist keine Rechtsregel und hat keine Primärquelle.
+mit D1 = Vortag des ersten Tags und D2 = letzter Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für den ersten Abschnitt eines Zinslaufs, also den, der am Zinsbeginn des Bestandteils beginnt (Kap. 5.2 Schritt 1), ist D1 der erste Tag selbst:
 
-| Abschnitt | Tage | Hinweis |
-|---|---|---|
-| 01.01.–30.01. | 30 | |
-| 01.01.–31.01. | 30 | Der 31. zählt mit dem 30. als ein Tag |
-| 30.01.–31.01. | 1 | |
-| 31.01.–28.02.2027 | 28 | Beginnt ein Abschnitt am 31., zählt dieser Tag nicht; er gehört zum 30. Das gilt auch, wenn der Zinslauf am 31. beginnt |
-| 01.02.–28.02.2027 | 28 | Endet am Februarende: tatsächliche Tage |
-| 01.02.–29.02.2028 | 29 | Ebenso im Schaltjahr |
-| 01.03.–31.03.2027 | 32 | Beginnt ein Abschnitt am 01.03., ist D1 das Februarende; er zählt die zwei Tage bis zum 30. Februar mit. Das gilt auch, wenn der Zinslauf am 01.03. beginnt |
-| 01.02.–31.03.2027 | 60 | Ungeteilt: Februar mit 30 Tagen; ebenso 28 + 32 nach Teilung am 01.03. |
-| 28.02.–31.03.2027 | 33 | |
-| 31.03.–30.04.2027 | 30 | |
-| 01.01.–31.12.2027 | 360 | |
+**Tage = 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1**
+
+In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Ein Wechsel der Zinsregel schließt lückenlos an und beginnt keinen neuen Zinslauf. Eine eigene Februarregel gibt es nicht: Endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Der 30. und der 31. eines Monats zählen zusammen als ein Tag.
+
+In weiteren Abschnitten wird ab dem Vortag D1 gezählt, ausschließlich. Beginnt ein weiterer Abschnitt am 31., bringt dieser Tag keinen eigenen Tag mit, weil der vorige Abschnitt den 30. schon gezählt hat. Beginnt er am 01.03., holt er die Februartage bis zum 30. nach, die im vorigen Abschnitt gefehlt haben. Vor dem Zinsbeginn fehlt nichts; deshalb gilt für den ersten Abschnitt die zweite Formel, und es zählen keine Tage vor dem Zinsbeginn mit. Teilen ändert die Summe nicht: Der erste Abschnitt nach seiner Formel und alle weiteren nach der allgemeinen ergeben zusammen dieselben Tage wie der ungeteilte Zinslauf. Ein Kalenderjahr hat 360 Tage; andere Zeiträume von zwölf Monaten können um bis zu zwei Tage davon abweichen, etwa wenn sie am Februarende enden oder an einem 31. beginnen. Diese Festlegung ist keine Rechtsregel und hat keine Primärquelle.
+
+| Abschnitt | als erster Abschnitt (Zinsbeginn am ersten Tag) | als weiterer Abschnitt | Hinweis |
+|---|---|---|---|
+| 01.01.–30.01. | 30 | 30 | |
+| 01.01.–31.01. | 30 | 30 | Der 31. zählt mit dem 30. als ein Tag |
+| 30.01.–31.01. | 1 | 1 | |
+| 31.01.–31.01. | 1 | 0 | Zinsbeginn am 31.: ein Tag. Als weiterer Abschnitt hat der vorige den 30. schon gezählt |
+| 31.01.–28.02.2027 | 29 | 28 | Ebenso, dazu der Februar bis zu seinem Ende |
+| 01.02.–28.02.2027 | 28 | 28 | Endet am Februarende: tatsächliche Tage |
+| 01.02.–29.02.2028 | 29 | 29 | Ebenso im Schaltjahr |
+| 01.03.–01.03.2027 | 1 | 3 | Zinsbeginn am 01.03.: ein Tag. Als weiterer Abschnitt holt er die zwei Februartage bis zum 30. nach |
+| 01.03.–31.03.2027 | 30 | 32 | Ebenso, dazu der ganze März |
+| 01.02.–31.03.2027 | 60 | 60 | Ungeteilt: Februar mit 30 Tagen; geteilt am 01.03.: 28 + 32 |
+| 28.02.–31.03.2027 | 33 | 33 | |
+| 31.03.–30.04.2027 | 31 | 30 | |
+| 01.01.–31.12.2027 | 360 | 360 | Kalenderjahr |
+| 01.03.2027–29.02.2028 | 359 | 361 | Als erster Abschnitt elf Monate zu 30 Tagen und ein Februar mit 29 |
+| 31.01.2027–30.01.2028 | 361 | 360 | Als erster Abschnitt zählen der 31.01.2027 und der 30.01.2028 je als 30. ihres Monats |
 
 ### 5.2 Zinsen
 
@@ -647,6 +657,7 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
   - Eine stornierte Zahlung ergibt dieselben Zinsen, dieselbe Anrechnung und dieselben Fristen einschließlich Verjährung wie ein Fall, in dem es die Zahlung nie gab
   - Eine Festschreibung ändert kein Rechenergebnis
   - Nach dem Setzen einer Kontosperre ändert sich der Saldo des Kontos bis zum Sperrdatum nicht mehr
+  - Teilt man einen Zinslauf an beliebigen Tagen in Abschnitte, ändert sich die Summe der Zinstage nicht, für jede Tageszählung (Kap. 5.1)
 - **Statische Prüfung:** Ruff, Pyright im Strict-Modus, Verbot von `float` in Fachmodulen.
 - **Review:** Jeder Pull Request wird von einer zweiten KI gegen dieses Dokument, `CLAUDE.md` und den Diff geprüft. Das Ergebnis erscheint als PR-Kommentar.
 - **Community:** `SECURITY.md` mit Meldeweg für Sicherheitslücken; Issue-Vorlage für fachliche Fehler mit anonymisiertem Beispiel.
