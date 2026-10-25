@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+id: GK-0001
+sorte: konstruiert
+beschreibung: Vollstreckungsbescheid, gesetzlicher Verzugszins über drei
+  Basiszinswechsel, unverzinste vorgerichtliche Kosten, zwei Zahlungen
+erwartungswerte:
+  quelle: berechnung
+  berechnet_am: 2026-10-25
+  verfahren:
+    - art: tabellenkalkulation
+      beleg: "GK-0001_Rechentabelle.xlsx"
+    - art: dezimalrechnung
+dateien:
+  rechenweg: GK-0001.rechenweg.csv
+  anrechnung: GK-0001.anrechnung.csv
+akte:
+  titelart: vollstreckungsbescheid
+  verbraucherdarlehen: false
+  anrechnung: bgb_367
+  tageszaehlung: act_365
+  zinsbeginn: genannter_tag
+  zahltag: alter_betrag
+  teilung: kalender
+  teilungstage: []
+bestandteile:
+  - art: hauptforderung
+    betrag: "2400.00"
+    zinsregel:
+      typ: gesetzlich_288_1
+      ab: 2024-04-16
+  - art: kosten_vorgerichtlich
+    betrag: "159.40"
+    zinsregel:
+      typ: keine
+zahlungen:
+  - datum: 2024-09-20
+    betrag: "200.00"
+  - datum: 2025-03-14
+    betrag: "800.00"
+erwartung:
+  stichtag: 2025-08-31
+  hauptforderung: "1738.65"
+  zinsen: "55.92"
+  kosten: "0.00"
+  gesamt: "1794.57"
+toleranz: "0.00"
