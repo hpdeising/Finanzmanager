@@ -15,7 +15,7 @@
 - [ ] `ruff check`, `ruff format --check`, `pyright`, `pytest` grün (sobald es Code gibt)
 - [ ] Rechenlogik: Test vor Code, Normzitat im Docstring
 - [ ] Kein `float` und keine Rundung außerhalb von `kern/geld`
-- [ ] Keine geänderten Erwartungswerte in `tests/golden/`
+- [ ] Keine geänderten Erwartungswerte in `tests/golden/`; bei konstruierten Fällen nur durch neue Berechnung auf beiden Wegen, mit Begründung
 - [ ] Keine hartkodierten Stammdaten
 - [ ] Keine echten personenbezogenen Daten in Code, Tests, Logs oder Beispielen
 - [ ] Neue Abhängigkeiten mit Lizenz genannt, auch mitgebrachte native Bibliotheken; Lizenz laut CLAUDE.md erlaubt

@@ -651,9 +651,9 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 
 - **Golden Files** (`tests/golden/<modul>/`, hier `tests/golden/verbindlichkeiten/`) in zwei Sorten mit getrennten Ordnern:
   - `real/`, Kennung `GR-nnnn`: je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers. Wo die Aufstellung nachweislich falsch rechnet, gilt der vom Maintainer nachgerechnete Wert, und die Abweichung wird vermerkt (Abweichungen von der Aufstellung, unten).
-  - `konstruiert/`, Kennung `GK-nnnn`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
+  - `konstruiert/`, Kennung `GK-nnnn`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte berechnet eine KI außerhalb der Sitzung, die den Programmcode schreibt, auf zwei voneinander unabhängigen Wegen, etwa Tabellenkalkulation mit Formeln und exakte Dezimalrechnung. Beide müssen centgenau übereinstimmen, der ungerundete Zins im Rechenweg (`zins_ungerundet`) in allen angegebenen Stellen. Nie mit dem Programm. Konstruierte Fälle brauchen keine Prüfung und keine Freigabe durch den Maintainer.
 
-  Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte; ihre CSV-Dateien tragen dieselbe Kennung. Pflichtangaben jeder YAML-Datei sind `id` (die Kennung, zugleich der Dateiname), `sorte` und der Block `erwartungswerte` mit `quelle`, `stand`, `freigegeben_von` und `freigegeben_am`, bei konstruierten Fällen zusätzlich `rechentabelle` (Beispiele unten). Erwartungswerte stammen nie aus dem Programm selbst. Erwartungswerte ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
+  Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte; ihre CSV-Dateien tragen dieselbe Kennung. Pflichtangaben jeder YAML-Datei sind `id` (die Kennung, zugleich der Dateiname), `sorte` und der Block `erwartungswerte` mit `quelle`. Bei realen Fällen enthält er dazu `stand`, `freigegeben_von` und `freigegeben_am`, bei konstruierten `berechnet_am` (Tag der Berechnung) und `verfahren`: genau zwei voneinander unabhängige Rechenwege, je mit `art` (kurze Bezeichnung, etwa `tabellenkalkulation` oder `dezimalrechnung`, beide verschieden) und optional `beleg`, der Datei oder Bezeichnung des Rechenwegs, etwa dem Namen der Rechentabelle. Beispiele unten. Erwartungswerte stammen nie aus dem Programm selbst. Erwartungswerte realer Fälle ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe. Erwartungswerte konstruierter Fälle ändern sich nur durch eine neue Berechnung auf beiden Wegen wie oben, mit Begründung im Pull Request. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
 - **Rechenweg und Anrechnung** liegen als CSV-Dateien neben der YAML-Datei, benannt nach ihrer Kennung. Sie gehören zu den Erwartungswerten. Bei realen Fällen stammen auch ihre Werte aus der Aufstellung des Gläubigers, bis auf vermerkte Abweichungen (unten); was die Aufstellung nicht nennt, bleibt leer.
   - `<id>.rechenweg.csv`: je Bestandteil und Abschnitt eine Zeile. Pflicht bei konstruierten Fällen, freiwillig bei realen.
   - `<id>.anrechnung.csv`: je Zahlung eine Zeile je Bestandteil und Gruppe, auf die etwas angerechnet wird. Ein Betrag, der sich nicht mehr anrechnen lässt (Kap. 5.3), steht in einer Zeile mit `gruppe = ueberzahlung` und leerem `bestandteil`. Pflicht bei konstruierten Fällen mit Zahlungen, freiwillig bei realen.
@@ -687,8 +687,8 @@ id: GR-0001
 sorte: real                       # real | konstruiert
 beschreibung: Vollstreckungsbescheid, Verbraucher, gesetzlicher Verzugszins, zwei Raten
 erwartungswerte:
-  quelle: aufstellung             # real: aufstellung; konstruiert: rechentabelle
-  stand: 2026-09-30               # Stand der Aufstellung bzw. der Rechentabelle
+  quelle: aufstellung             # real: aufstellung; konstruiert: berechnung
+  stand: 2026-09-30               # Stand der Aufstellung
   freigegeben_von: "<Name>"
   freigegeben_am: "<Datum>"
 akte:
@@ -740,15 +740,16 @@ abweichungen:
     grund: "<warum die Aufstellung falsch rechnet>"
 ```
 
-Ein konstruierter Fall nennt zusätzlich die Rechentabelle und seine CSV-Dateien:
+Ein konstruierter Fall nennt statt Stand und Freigabe den Tag der Berechnung und die beiden Rechenwege, dazu seine CSV-Dateien:
 
 ```yaml
 erwartungswerte:
-  quelle: rechentabelle
-  stand: "<Datum>"
-  rechentabelle: "<Bezeichnung>, Version <n>"
-  freigegeben_von: "<Name>"
-  freigegeben_am: "<Datum>"
+  quelle: berechnung
+  berechnet_am: "<Datum>"
+  verfahren:                          # genau zwei, voneinander unabhängig, nie das Programm
+    - art: tabellenkalkulation
+      beleg: "<Datei oder Bezeichnung>"
+    - art: dezimalrechnung
 dateien:
   rechenweg: GK-0001.rechenweg.csv    # Pflicht bei konstruierten Fällen, freiwillig bei realen
   anrechnung: GK-0001.anrechnung.csv  # Pflicht bei konstruierten Fällen mit Zahlungen
