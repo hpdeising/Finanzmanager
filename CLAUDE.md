@@ -65,9 +65,9 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 ### Golden Files
 
 - `tests/golden/<modul>/` enthält zwei Sorten in getrennten Ordnern:
-  - `real/`: anonymisierte reale Fälle. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers.
+  - `real/`: anonymisierte reale Fälle. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers. Wo die Aufstellung nachweislich falsch rechnet, gilt der vom Maintainer nachgerechnete Wert; die YAML-Datei vermerkt jede solche Abweichung im Block `abweichungen`. Das Programm bildet Rechenfehler von Gläubigern nicht nach.
   - `konstruiert/`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
-- Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte. Rechenweg und Anrechnung in den CSV-Dateien neben der YAML-Datei tragen dieselbe Kennung und gehören zu den Erwartungswerten (Fachkonzept Kap. 12).
+- Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte. Rechenweg und Anrechnung in den CSV-Dateien neben der YAML-Datei tragen dieselbe Kennung und gehören zu den Erwartungswerten, ebenso der Block `abweichungen` (Fachkonzept Kap. 12).
 - Erwartungswerte ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe.
 - Schlägt ein Golden-File-Test fehl, wird der Code korrigiert, nie die Erwartung. Hältst du die Erwartung für falsch: anhalten, Begründung schreiben, auf Entscheidung warten.
 - Tests nicht überspringen, nicht als `xfail` markieren, Toleranzen nicht erhöhen.
@@ -155,7 +155,7 @@ Prüfe den Pull Request gegen `docs/fachkonzept.md` und diese Datei. Melde minde
 
 1. `float` oder Rundung außerhalb von `kern/geld`
 2. Rechtsregel ohne Normzitat oder abweichend vom Fachkonzept
-3. Geänderte Erwartungswerte in `tests/golden/`, auch in den CSV-Dateien zu Rechenweg und Anrechnung
+3. Geänderte Erwartungswerte in `tests/golden/`, auch in den CSV-Dateien zu Rechenweg und Anrechnung und im Block `abweichungen`
 4. Änderung bestehender Buchungen statt Storno oder Korrekturbuchung; Storno einer Buchung, die eine Festschreibung erzeugt hat
 5. Hartkodierte Stammdaten (Zinssätze, Freigrenzen, Stichtage)
 6. Personenbezogene Daten in Logs, Tests oder Beispielen

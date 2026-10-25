@@ -650,16 +650,23 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 ## 12 Qualitätssicherung
 
 - **Golden Files** (`tests/golden/<modul>/`, hier `tests/golden/verbindlichkeiten/`) in zwei Sorten mit getrennten Ordnern:
-  - `real/`, Kennung `GR-nnnn`: je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers.
+  - `real/`, Kennung `GR-nnnn`: je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers. Wo die Aufstellung nachweislich falsch rechnet, gilt der vom Maintainer nachgerechnete Wert, und die Abweichung wird vermerkt (Abweichungen von der Aufstellung, unten).
   - `konstruiert/`, Kennung `GK-nnnn`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
 
   Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte; ihre CSV-Dateien tragen dieselbe Kennung. Pflichtangaben jeder YAML-Datei sind `id` (die Kennung, zugleich der Dateiname), `sorte` und der Block `erwartungswerte` mit `quelle`, `stand`, `freigegeben_von` und `freigegeben_am`, bei konstruierten Fällen zusätzlich `rechentabelle` (Beispiele unten). Erwartungswerte stammen nie aus dem Programm selbst. Erwartungswerte ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
-- **Rechenweg und Anrechnung** liegen als CSV-Dateien neben der YAML-Datei, benannt nach ihrer Kennung. Sie gehören zu den Erwartungswerten. Bei realen Fällen stammen auch ihre Werte aus der Aufstellung des Gläubigers; was die Aufstellung nicht nennt, bleibt leer.
+- **Rechenweg und Anrechnung** liegen als CSV-Dateien neben der YAML-Datei, benannt nach ihrer Kennung. Sie gehören zu den Erwartungswerten. Bei realen Fällen stammen auch ihre Werte aus der Aufstellung des Gläubigers, bis auf vermerkte Abweichungen (unten); was die Aufstellung nicht nennt, bleibt leer.
   - `<id>.rechenweg.csv`: je Bestandteil und Abschnitt eine Zeile. Pflicht bei konstruierten Fällen, freiwillig bei realen.
   - `<id>.anrechnung.csv`: je Zahlung eine Zeile je Bestandteil und Gruppe, auf die etwas angerechnet wird. Ein Betrag, der sich nicht mehr anrechnen lässt (Kap. 5.3), steht in einer Zeile mit `gruppe = ueberzahlung` und leerem `bestandteil`. Pflicht bei konstruierten Fällen mit Zahlungen, freiwillig bei realen.
   - Format beider Dateien: UTF-8 ohne BOM, Zeilenende LF, Komma als Trennzeichen, Dezimalpunkt, keine Tausendertrennzeichen, Datum als JJJJ-MM-TT, eine Kopfzeile, Anführungszeichen nur bei Bedarf und dann wie in RFC 4180. Beträge in Euro mit zwei Nachkommastellen, außer `zins_ungerundet`; Sätze in Prozent.
   - Reihenfolge der Zeilen: im Rechenweg je Bestandteil in der Reihenfolge der YAML-Datei, darin nach `von`; in der Anrechnung nach der Wertstellung der Zahlung, darin in der Reihenfolge, in der angerechnet wird.
-  - Der Golden-Test vergleicht die Abschnitte und die Anrechnung des Programms Zeile für Zeile mit den CSV-Dateien; ein Fehlschlag nennt die erste abweichende Zeile.
+  - Der Golden-Test vergleicht die Abschnitte und die Anrechnung des Programms Zeile für Zeile mit den CSV-Dateien; ein Fehlschlag nennt die erste abweichende Zeile. Zeilen werden gezählt wie im Editor; die Kopfzeile ist Zeile 1.
+- **Abweichungen von der Aufstellung** (nur bei realen Fällen): Rechnet die Aufstellung nachweislich falsch, gilt der vom Maintainer nachgerechnete Wert. Die YAML-Datei vermerkt jede solche Abweichung im Block `abweichungen`, je Eintrag mit:
+  - `ort`: entweder `feld`, der Pfad eines Felds der YAML-Datei (`erwartung.zinsen`), oder `datei`, `zeile` und `spalte` eines Werts in einer CSV-Datei, die Zeile gezählt wie oben;
+  - `laut_aufstellung`: der Wert laut Aufstellung;
+  - `erwartet`: der nachgerechnete Wert;
+  - `grund`: warum die Aufstellung falsch rechnet.
+
+  Beide Werte stehen als String in der Schreibweise des Orts. Am Ort selbst steht der erwartete Wert. Jeder Wert, der deshalb von der Aufstellung abweicht, bekommt einen eigenen Eintrag, auch ein Folgewert wie `erwartung.gesamt`. Der Block gehört zu den Erwartungswerten; fehlt er, gibt es keine Abweichung. Der Golden-Test prüft das Programm gegen den erwarteten Wert und prüft, dass am Ort der Wert aus `erwartet` steht. Sobald der Abgleich mit der Aufstellung (Kap. 5.3) gebaut ist, prüft der Fall zusätzlich, dass der Abgleich genau diese Abweichungen meldet. Sonst müsste das Programm Rechenfehler von Gläubigern nachbilden, und Fälle aus der Issue-Vorlage „Rechenfehler“ wären unbrauchbar.
 - **Property-Tests:**
   - Summe der Postings je Buchung = 0
   - Die Anrechnung verteilt exakt den Zahlbetrag, höchstens bis zur Restschuld; der Rest ist die berechnete Überzahlung
@@ -713,6 +720,24 @@ erwartung:
   kosten: "<aus Aufstellung>"
   gesamt: "<aus Aufstellung>"
 toleranz: "0.00"
+```
+
+Rechnet die Aufstellung nachweislich falsch, vermerkt der reale Fall jede Abweichung, hier mit Platzhaltern:
+
+```yaml
+abweichungen:
+  - ort:
+      feld: erwartung.zinsen
+    laut_aufstellung: "<aus Aufstellung>"
+    erwartet: "<vom Maintainer nachgerechnet>"
+    grund: "<warum die Aufstellung falsch rechnet>"
+  - ort:
+      datei: GR-0001.rechenweg.csv
+      zeile: 3
+      spalte: zins_gerundet
+    laut_aufstellung: "<aus Aufstellung>"
+    erwartet: "<vom Maintainer nachgerechnet>"
+    grund: "<warum die Aufstellung falsch rechnet>"
 ```
 
 Ein konstruierter Fall nennt zusätzlich die Rechentabelle und seine CSV-Dateien:
