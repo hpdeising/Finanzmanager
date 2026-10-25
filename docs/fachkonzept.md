@@ -49,7 +49,7 @@ Der Kern enthält keine Fachlogik eines Moduls. Module hängen vom Kern ab, nie 
 
 ## 2 Entscheidungsprotokoll
 
-E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026.
+E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026; die Ergänzung in E-24 vom 25.10.2026.
 
 | Nr. | Thema | Entscheidung |
 |---|---|---|
@@ -76,7 +76,7 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-21 | Zinsen und Anrechnung berechnet statt gebucht | Zinsen und die Anrechnung von Zahlungen werden nicht laufend gebucht, sondern bei jeder Abfrage zum Stichtag neu berechnet, aus Titel, Zahlungen, Ereignissen, Aktenparametern und Stammdaten. Eine Zahlung wird ungeteilt auf das Zahlungskonto der Akte gebucht (Rolle `verbindlichkeiten.zahlungen`, passiv), die Gegenbuchung geht auf Externe Mittel. Gebucht werden Zinsen und Anrechnung nur bei einer Festschreibung (E-25). Ein rückwirkendes Storno (E-18) wirkt damit automatisch richtig, ohne dass Folgebuchungen storniert und neu gebucht werden; betrifft es einen festgeschriebenen Zeitraum, bucht die nächste Festschreibung die Differenz als Korrekturbuchung (E-25). Schließt P-12 (Folgebuchungen nach rückwirkendem Storno): Statt Folgebuchungen automatisch zu stornieren und neu zu buchen, wird berechnet und nur bei Bedarf festgeschrieben (Kap. 4.3, 5.2, 5.3) |
 | E-22 | Tageszählung | Voreinstellung `act_365`: Zinstage taggenau, Tagesbasis immer 365 Tage, auch im Schaltjahr. Je Akte umstellbar auf `act_360` oder `30_360`. Schließt P-04 (Kap. 5.1). Ergänzt durch E-31 (`act_act`) und E-34 (Definition von `30_360`) |
 | E-23 | Rundung | Voreinstellung `je_periode`: kaufmännisch auf Cent je Abschnitt (Kap. 5.2 Schritt 2). Je Akte umstellbar auf `am_ende`. Schließt P-05 (Kap. 5.1). Geändert durch E-33: `am_ende` und der Aktenparameter `rundung` entfallen; gerundet wird immer je Abschnitt |
-| E-24 | Zinsbeginn | Voreinstellung `genannter_tag`: Der als Zinsbeginn genannte Tag („seit dem …“) ist der erste Zinstag. Je Akte umstellbar auf `folgetag`: Erster Zinstag ist der Tag danach. Der Parameter gilt nur für den Beginn der Verzinsung; wechselt die Zinsregel, schließt die neue lückenlos an. Schließt P-06 (Kap. 5.1, 5.2) |
+| E-24 | Zinsbeginn | Voreinstellung `genannter_tag`: Der als Zinsbeginn genannte Tag („seit dem …“) ist der erste Zinstag. Je Akte umstellbar auf `folgetag`: Erster Zinstag ist der Tag danach. Der Parameter gilt für den ersten Zinstag jedes Zinslaufs, auch nach einer Pause ohne Verzinsung, nicht nur für den allerersten. Folgt eine verzinsliche Zinsregel ohne Lücke auf eine andere verzinsliche, schließt sie lückenlos an; dort wirkt der Parameter nicht. Schließt P-06 (Kap. 5.1, 5.2) |
 | E-25 | Festschreibung | Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung in der Zeitzone der Installation. Die Festschreibung bucht die bis zum Stichtag berechneten Zinsen und die Anrechnung, soweit sie noch nicht gebucht sind. Ein festgeschriebener Zeitraum ist abgeschlossen: Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Ändert sich nachträglich die Berechnung für einen festgeschriebenen Zeitraum, fällt die Differenz in den offenen Zeitraum; die nächste Festschreibung bucht sie als Korrekturbuchung mit maschinenlesbarem Bezug auf den korrigierten Zeitraum. Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung, keine Rechtsregel (Kap. 5.2 Schritt 7) |
 | E-26 | Buchungsdatum und Wertstellung | Jede Buchung hat zwei Daten. Das Buchungsdatum ordnet sie einem Zeitraum zu und bestimmt die Salden, die Wertstellung bestimmt, ab wann sie fachlich wirkt (Zinsen, Anrechnung, Fristen). Liegt die Wertstellung im offenen Zeitraum der Akte, sind beide gleich. Liegt sie in einem festgeschriebenen Zeitraum der Akte, wird die Buchung im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum. Das gilt für ein Storno wie für jede neue Buchung (Neubuchung einer Korrektur, nachträglich erfasste Zahlung oder Kosten), nicht aber für die Buchungen einer Festschreibung selbst (E-25). Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den gebuchten Vorgang, etwa die Zahlung, hat es nie gegeben. Für Zinsen, Anrechnung und Fristen gilt die stornierte Buchung deshalb ab ihrer ursprünglichen Wertstellung als nie geschehen. Eine Rücklastschrift ist kein Storno, sondern ein tatsächliches Ereignis. Ergänzt E-18 (Kap. 4.1, 4.4, 5.2 Schritt 7) |
 | E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten (die Konten je Haushalt, Kap. 4.2) werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4). Ergänzt durch E-28: Das Modul legt Festschreibungsbuchungen mit `stornierbar = false` an, der Storno-Trigger lehnt ihr Storno ab; der Kern prüft zusätzlich, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt. Ergänzt durch E-29: Das Sperrdatum liegt höchstens auf dem heutigen Tag |
@@ -330,7 +330,7 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 
 - Intern wird mit `Decimal` ohne Zwischenrundung gerechnet. Gerundet wird immer je Abschnitt (Kap. 5.2 Schritt 2) kaufmännisch auf Cent, über die zentrale Funktion in `kern/geld` (E-33).
 - Tageszählung laut Aktenparameter `tageszaehlung`: `act_365` (Default; taggenau, Tagesbasis immer 365, auch im Schaltjahr), `act_act` (taggenau, Tagesbasis 366 für Tage in einem Schaltjahr, sonst 365; E-31), `act_360` oder `30_360` (Definition unten, E-34) (E-22). Bei den taggenauen Arten zählt jeder Kalendertag eines Abschnitts, der erste wie der letzte.
-- Zinsbeginn laut Aktenparameter `zinsbeginn`: `genannter_tag` (Default; der als Zinsbeginn genannte Tag „seit dem …“ ist der erste Zinstag) oder `folgetag` (erster Zinstag ist der Tag danach) (E-24).
+- Zinsbeginn laut Aktenparameter `zinsbeginn`: `genannter_tag` (Default; der als Zinsbeginn genannte Tag „seit dem …“ ist der erste Zinstag) oder `folgetag` (erster Zinstag ist der Tag danach) (E-24). Er gilt für den ersten Zinstag jedes Zinslaufs, auch nach einer Pause ohne Verzinsung (Kap. 5.2 Schritt 1).
 - Zahltag laut Aktenparameter `zahltag`: `alter_betrag` (Default; am Tag einer Zahlung wird noch der Betrag vor der Zahlung verzinst, der verminderte ab dem Folgetag) oder `verminderter_betrag` (der verminderte Betrag gilt ab dem Zahltag) (E-30, Kap. 5.2 Schritte 2 und 3).
 - Teilung laut Aktenparameter `teilung`: `kalender` (Default; bei basiszinsabhängigen Regeln an jedem 01.01. und 01.07.) oder `satzwechsel` (dort nur, wenn sich der anzuwendende Satz ändert), dazu die Teilungstage der Akte (E-32, Kap. 5.2 Schritt 2).
 - Zinsen und Anrechnung werden bei jeder Abfrage neu berechnet (E-21). Eingaben sind Titel, Bestandteile und ihre Zinsregeln, die Buchungen der Akte mit ihrer Wertstellung (ohne stornierte Buchungen samt ihren Stornos und ohne die Buchungen, die eine Festschreibung erzeugt), dazu Ereignisse, Aktenparameter, die Teilungstage der Akte (Kap. 4.5) und Stammdaten.
@@ -340,11 +340,11 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 
 **Tage = 360·(J2−J1) + 30·(M2−M1) + (T2−T1)**
 
-mit D1 = Vortag des ersten Tags und D2 = letzter Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst. Das ist der Abschnitt mit dem ersten Zinstag (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` der Tag nach dem genannten Tag, E-24) und jeder Abschnitt nach einer Pause ohne Verzinsung, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt:
+mit D1 = Vortag des ersten Tags und D2 = letzter Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst. Das ist der erste Abschnitt jedes Zinslaufs, also der Abschnitt mit dem ersten Zinstag und jeder Abschnitt nach einer Pause ohne Verzinsung, auch wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` beginnt er jeweils am Tag nach dem genannten Tag, E-24):
 
 **Tage = 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1**
 
-In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Ein Regelwechsel ohne Lücke ist ein weiterer Abschnitt nach der allgemeinen Formel. Eine eigene Februarregel gibt es nicht: Endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Der 30. und der 31. eines Monats zählen zusammen als ein Tag.
+In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Ein Wechsel von einer verzinslichen Zinsregel ohne Lücke auf eine andere verzinsliche ist ein weiterer Abschnitt nach der allgemeinen Formel. Eine eigene Februarregel gibt es nicht: Endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Der 30. und der 31. eines Monats zählen zusammen als ein Tag.
 
 In weiteren Abschnitten, deren Vortag also ein verzinster Tag desselben Bestandteils ist, wird ab dem Vortag D1 gezählt, ausschließlich. Beginnt ein weiterer Abschnitt am 31., bringt dieser Tag keinen eigenen Tag mit, weil der vorige Abschnitt den 30. schon gezählt hat. Beginnt er am 01.03., holt er die Februartage bis zum 30. nach, die im vorigen Abschnitt gefehlt haben. Vor dem ersten Zinstag und während einer Pause ohne Verzinsung fehlt nichts; deshalb gilt dort die zweite Formel, und es zählen keine unverzinsten Tage mit. Teilen ändert die Summe nicht: Innerhalb verzinster Tage ohne Pause ergeben der Abschnitt nach der zweiten Formel und alle folgenden nach der allgemeinen zusammen dieselben Tage wie ungeteilt. Ein Kalenderjahr hat 360 Tage; andere Zeiträume von zwölf Monaten können um bis zu zwei Tage davon abweichen, etwa wenn sie am Februarende enden oder an einem 31. beginnen. Diese Festlegung ist keine Rechtsregel und hat keine Primärquelle.
 
@@ -380,15 +380,15 @@ In weiteren Abschnitten, deren Vortag also ein verzinster Tag desselben Bestandt
 
 Ablauf:
 
-1. Der Zinslauf je verzinslichem Bestandteil beginnt am `ab`-Datum der Zinsregel und endet am Stichtag. Ob der genannte Tag des Zinsbeginns selbst verzinst wird, bestimmt der Aktenparameter `zinsbeginn` (Kap. 5.1, E-24). Er gilt nur für den Beginn der Verzinsung; wechselt die Zinsregel, schließt die neue lückenlos an die alte an.
-2. Der Zinslauf wird in Abschnitte geteilt. Ein neuer Abschnitt beginnt:
+1. Ein Zinslauf umfasst die zusammenhängend verzinsten Tage eines verzinslichen Bestandteils. Der erste beginnt mit dem Zinsbeginn der ersten verzinslichen Zinsregel. Nach jeder Pause ohne Verzinsung beginnt ein neuer mit dem Zinsbeginn der nächsten verzinslichen Zinsregel, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel (`bis`) später eine verzinsliche folgt. Genannter Tag des Zinsbeginns ist jeweils das `ab`-Datum dieser Zinsregel. Ob er selbst verzinst wird, bestimmt für jeden Zinslauf der Aktenparameter `zinsbeginn` (Kap. 5.1, E-24): Bei `genannter_tag` ist er der erste Tag des Zinslaufs, bei `folgetag` ist es der Tag danach. Ein Zinslauf endet mit dem Ende der Verzinsung, spätestens am Stichtag. Folgt eine verzinsliche Zinsregel ohne Lücke, also ohne unverzinsten Tag dazwischen, auf eine andere verzinsliche, schließt sie lückenlos an; der Zinslauf geht weiter, und `zinsbeginn` wirkt dort nicht.
+2. Jeder Zinslauf wird in Abschnitte geteilt. Ein neuer Abschnitt beginnt:
    - bei basiszinsabhängigen Regeln an jedem 01.01. und 01.07. (§ 247 Abs. 1 BGB); bei `teilung = satzwechsel` nur, wenn sich der anzuwendende Satz dort ändert (E-32);
    - bei `tageszaehlung = act_act` zusätzlich an jedem 01.01., unabhängig von `teilung` und auch bei festen Sätzen (E-31);
    - an jedem Teilungstag der Akte (E-32);
    - an jeder nicht stornierten Zahlung: bei `zahltag = alter_betrag` am Tag nach ihrer Wertstellung, bei `verminderter_betrag` am Tag ihrer Wertstellung (E-30);
    - bei jedem Wechsel der Zinsregel.
 
-   Der Stichtag einer Festschreibung und eine stornierte Zahlung teilen keinen Abschnitt. Ein Teilungstag außerhalb des Zinslaufs wirkt nicht. Die Zinsen jedes Abschnitts werden kaufmännisch auf Cent gerundet (E-33).
+   Der Stichtag einer Festschreibung und eine stornierte Zahlung teilen keinen Abschnitt. Ein Teilungstag außerhalb eines Zinslaufs wirkt nicht. Die Zinsen jedes Abschnitts werden kaufmännisch auf Cent gerundet (E-33).
 3. Zinsbasis ist der offene Betrag des Bestandteils zu Beginn des Abschnitts, nach der berechneten Anrechnung (Kap. 5.3). Eine Zahlung vermindert die Basis ab dem Abschnitt, den sie beginnt (Schritt 2): bei `zahltag = alter_betrag` ab dem Folgetag, bei `verminderter_betrag` ab dem Zahltag (E-30). Sie wird auf die gerundeten Zinsen der Abschnitte vor dieser Grenze angerechnet, bei `alter_betrag` also einschließlich des Zahltags.
 4. Zinsen eines Abschnitts = Basis × Jahressatz × Tage ÷ Tagesbasis (Tage und Tagesbasis nach Kap. 5.1).
 5. Keine Zinsen auf Zinsen (§ 289 S. 1 BGB). Zinskonten sind nie verzinslich.
@@ -649,7 +649,24 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 
 ## 12 Qualitätssicherung
 
-- **Golden Files** (`tests/golden/<modul>/*.yaml`, hier `tests/golden/verbindlichkeiten/`): je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers oder aus manueller Prüfung, nie aus dem Programm selbst. Nur Menschen ändern Erwartungswerte. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
+- **Golden Files** (`tests/golden/<modul>/`, hier `tests/golden/verbindlichkeiten/`) in zwei Sorten mit getrennten Ordnern:
+  - `real/`, Kennung `GR-nnnn`: je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers. Wo die Aufstellung nachweislich falsch rechnet, gilt der vom Maintainer nachgerechnete Wert, und die Abweichung wird vermerkt (Abweichungen von der Aufstellung, unten).
+  - `konstruiert/`, Kennung `GK-nnnn`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
+
+  Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte; ihre CSV-Dateien tragen dieselbe Kennung. Pflichtangaben jeder YAML-Datei sind `id` (die Kennung, zugleich der Dateiname), `sorte` und der Block `erwartungswerte` mit `quelle`, `stand`, `freigegeben_von` und `freigegeben_am`, bei konstruierten Fällen zusätzlich `rechentabelle` (Beispiele unten). Erwartungswerte stammen nie aus dem Programm selbst. Erwartungswerte ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
+- **Rechenweg und Anrechnung** liegen als CSV-Dateien neben der YAML-Datei, benannt nach ihrer Kennung. Sie gehören zu den Erwartungswerten. Bei realen Fällen stammen auch ihre Werte aus der Aufstellung des Gläubigers, bis auf vermerkte Abweichungen (unten); was die Aufstellung nicht nennt, bleibt leer.
+  - `<id>.rechenweg.csv`: je Bestandteil und Abschnitt eine Zeile. Pflicht bei konstruierten Fällen, freiwillig bei realen.
+  - `<id>.anrechnung.csv`: je Zahlung eine Zeile je Bestandteil und Gruppe, auf die etwas angerechnet wird. Ein Betrag, der sich nicht mehr anrechnen lässt (Kap. 5.3), steht in einer Zeile mit `gruppe = ueberzahlung` und leerem `bestandteil`. Pflicht bei konstruierten Fällen mit Zahlungen, freiwillig bei realen.
+  - Format beider Dateien: UTF-8 ohne BOM, Zeilenende LF, Komma als Trennzeichen, Dezimalpunkt, keine Tausendertrennzeichen, Datum als JJJJ-MM-TT, eine Kopfzeile, Anführungszeichen nur bei Bedarf und dann wie in RFC 4180. Beträge in Euro mit zwei Nachkommastellen, außer `zins_ungerundet`; Sätze in Prozent.
+  - Reihenfolge der Zeilen: im Rechenweg je Bestandteil in der Reihenfolge der YAML-Datei, darin nach `von`; in der Anrechnung nach der Wertstellung der Zahlung, darin in der Reihenfolge, in der angerechnet wird.
+  - Der Golden-Test vergleicht die Abschnitte und die Anrechnung des Programms Zeile für Zeile mit den CSV-Dateien; ein Fehlschlag nennt die erste abweichende Zeile. Zeilen werden gezählt wie im Editor; die Kopfzeile ist Zeile 1.
+- **Abweichungen von der Aufstellung** (nur bei realen Fällen): Rechnet die Aufstellung nachweislich falsch, gilt der vom Maintainer nachgerechnete Wert. Die YAML-Datei vermerkt jede solche Abweichung im Block `abweichungen`, je Eintrag mit:
+  - `ort`: entweder `feld`, der Pfad eines Felds der YAML-Datei (`erwartung.zinsen`), oder `datei`, `zeile` und `spalte` eines Werts in einer CSV-Datei, die Zeile gezählt wie oben;
+  - `laut_aufstellung`: der Wert laut Aufstellung;
+  - `erwartet`: der nachgerechnete Wert;
+  - `grund`: warum die Aufstellung falsch rechnet.
+
+  Beide Werte stehen als String in der Schreibweise des Orts. Am Ort selbst steht der erwartete Wert. Jeder Wert, der deshalb von der Aufstellung abweicht, bekommt einen eigenen Eintrag, auch ein Folgewert wie `erwartung.gesamt`. Der Block gehört zu den Erwartungswerten; fehlt er, gibt es keine Abweichung. Der Golden-Test prüft das Programm gegen den erwarteten Wert und prüft, dass am Ort der Wert aus `erwartet` steht. Sobald der Abgleich mit der Aufstellung (Kap. 5.3) gebaut ist, prüft der Fall zusätzlich, dass der Abgleich genau diese Abweichungen meldet. Sonst müsste das Programm Rechenfehler von Gläubigern nachbilden, und Fälle aus der Issue-Vorlage „Rechenfehler“ wären unbrauchbar.
 - **Property-Tests:**
   - Summe der Postings je Buchung = 0
   - Die Anrechnung verteilt exakt den Zahlbetrag, höchstens bis zur Restschuld; der Rest ist die berechnete Überzahlung
@@ -663,13 +680,17 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 - **Review:** Jeder Pull Request wird von einer zweiten KI gegen dieses Dokument, `CLAUDE.md` und den Diff geprüft. Das Ergebnis erscheint als PR-Kommentar.
 - **Community:** `SECURITY.md` mit Meldeweg für Sicherheitslücken; Issue-Vorlage für fachliche Fehler mit anonymisiertem Beispiel.
 
-Beispiel für ein Golden File:
+Beispiel für einen realen Fall (`real/GR-0001.yaml`):
 
 ```yaml
-id: GF-0001
+id: GR-0001
+sorte: real                       # real | konstruiert
 beschreibung: Vollstreckungsbescheid, Verbraucher, gesetzlicher Verzugszins, zwei Raten
-quelle: anonymisierte Forderungsaufstellung, Stand 2026-09-30
-geprueft_von: "<Name>"
+erwartungswerte:
+  quelle: aufstellung             # real: aufstellung; konstruiert: rechentabelle
+  stand: 2026-09-30               # Stand der Aufstellung bzw. der Rechentabelle
+  freigegeben_von: "<Name>"
+  freigegeben_am: "<Datum>"
 akte:
   titelart: vollstreckungsbescheid
   verbraucherdarlehen: false
@@ -699,6 +720,77 @@ erwartung:
   kosten: "<aus Aufstellung>"
   gesamt: "<aus Aufstellung>"
 toleranz: "0.00"
+```
+
+Rechnet die Aufstellung nachweislich falsch, vermerkt der reale Fall jede Abweichung, hier mit Platzhaltern:
+
+```yaml
+abweichungen:
+  - ort:
+      feld: erwartung.zinsen
+    laut_aufstellung: "<aus Aufstellung>"
+    erwartet: "<vom Maintainer nachgerechnet>"
+    grund: "<warum die Aufstellung falsch rechnet>"
+  - ort:
+      datei: GR-0001.rechenweg.csv
+      zeile: 3
+      spalte: zins_gerundet
+    laut_aufstellung: "<aus Aufstellung>"
+    erwartet: "<vom Maintainer nachgerechnet>"
+    grund: "<warum die Aufstellung falsch rechnet>"
+```
+
+Ein konstruierter Fall nennt zusätzlich die Rechentabelle und seine CSV-Dateien:
+
+```yaml
+erwartungswerte:
+  quelle: rechentabelle
+  stand: "<Datum>"
+  rechentabelle: "<Bezeichnung>, Version <n>"
+  freigegeben_von: "<Name>"
+  freigegeben_am: "<Datum>"
+dateien:
+  rechenweg: GK-0001.rechenweg.csv    # Pflicht bei konstruierten Fällen, freiwillig bei realen
+  anrechnung: GK-0001.anrechnung.csv  # Pflicht bei konstruierten Fällen mit Zahlungen
+```
+
+Spalten von `<id>.rechenweg.csv`:
+
+| Spalte | Inhalt |
+|---|---|
+| `bestandteil` | Art wie in der YAML-Datei; gibt es eine Art mehrfach, trägt das erste Vorkommen keine Nummer und jedes weitere eine laufende Nummer in der Reihenfolge der YAML-Datei (`kosten_vollstreckung_2`) |
+| `von`, `bis` | erster und letzter Tag des Abschnitts, beide eingeschlossen |
+| `grund` | warum der Abschnitt beginnt, nach Kap. 5.2 Schritte 1 und 2: `zinsbeginn` (erster Zinstag eines Zinslaufs, auch nach einer Pause ohne Verzinsung), `halbjahr` (01.01. oder 01.07. bei basiszinsabhängigen Regeln), `jahreswechsel` (01.01. bei `act_act`), `teilungstag`, `zahlung` oder `regelwechsel` (Wechsel von einer verzinslichen Zinsregel ohne Lücke auf eine andere verzinsliche). `grund = zinsbeginn` steht genau dann, wenn der Parameter `zinsbeginn` (E-24) und bei `30_360` die Formel mit + 1 (E-34) greifen; so zeigt schon die CSV, welche Zählweise gilt. `zinsbeginn` steht immer allein. Die übrigen Gründe teilen einen laufenden Zinslauf; treffen mehrere zu, stehen sie in der genannten Reihenfolge, mit `+` verbunden (`halbjahr+jahreswechsel`) |
+| `tage`, `tagesbasis` | ganze Zahlen nach Kap. 5.1 |
+| `basis` | Zinsbasis zu Beginn des Abschnitts |
+| `basiszins` | Basiszinssatz in Prozent; leer bei festem Satz |
+| `satz` | Jahressatz in Prozent |
+| `zins_ungerundet` | mindestens sechs Nachkommastellen, abgeschnitten (Richtung null), nicht gerundet. Nur so zeigt der Wert, ob kaufmännisch auf- oder abgerundet wird; ein auf sechs Stellen gerundetes x,xx4999996 sähe aus wie x,xx5000. Der Test prüft, dass der exakte Wert des Programms mit diesen Stellen beginnt |
+| `zins_gerundet` | kaufmännisch auf Cent (E-33) |
+
+Spalten von `<id>.anrechnung.csv`:
+
+| Spalte | Inhalt |
+|---|---|
+| `zahlung` | Wertstellung der Zahlung |
+| `betrag` | Zahlbetrag |
+| `bestandteil` | wie im Rechenweg; leer bei `gruppe = ueberzahlung` |
+| `gruppe` | `kosten`, `zinsen`, `hauptforderung` oder `ueberzahlung` |
+| `angerechnet` | Betrag, der aus dieser Zahlung auf die Gruppe des Bestandteils entfällt; bei `gruppe = ueberzahlung` der Rest, der sich nicht mehr anrechnen lässt |
+| `offen_danach` | offener Betrag dieser Gruppe des Bestandteils nach der Anrechnung; leer bei `gruppe = ueberzahlung` |
+
+Formatbeispiel mit ausgedachten Werten, kein Testfall: Hauptforderung 1.000,00 € mit festem Jahreszins von 5 % ab 15.03.2025, `act_365`, `zahltag = alter_betrag`, Anrechnung nach `bgb_367`, eine Zahlung von 200,00 € mit Wertstellung 20.05.2025, Stichtag 30.06.2025.
+
+```csv
+bestandteil,von,bis,grund,tage,tagesbasis,basis,basiszins,satz,zins_ungerundet,zins_gerundet
+hauptforderung,2025-03-15,2025-05-20,zinsbeginn,67,365,1000.00,,5,9.178082,9.18
+hauptforderung,2025-05-21,2025-06-30,zahlung,41,365,809.18,,5,4.544709,4.54
+```
+
+```csv
+zahlung,betrag,bestandteil,gruppe,angerechnet,offen_danach
+2025-05-20,200.00,hauptforderung,zinsen,9.18,0.00
+2025-05-20,200.00,hauptforderung,hauptforderung,190.82,809.18
 ```
 
 ---
