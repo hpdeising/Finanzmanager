@@ -66,8 +66,8 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 
 - `tests/golden/<modul>/` enthält zwei Sorten in getrennten Ordnern:
   - `real/`: anonymisierte reale Fälle. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers.
-  - `konstruiert/`: ausgedachte Daten, keine Beträge oder Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
-- Jede Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte. Rechenweg und Anrechnung in den CSV-Dateien neben der YAML-Datei gehören zu den Erwartungswerten (Fachkonzept Kap. 12).
+  - `konstruiert/`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
+- Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte. Rechenweg und Anrechnung in den CSV-Dateien neben der YAML-Datei tragen dieselbe Kennung und gehören zu den Erwartungswerten (Fachkonzept Kap. 12).
 - Erwartungswerte ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe.
 - Schlägt ein Golden-File-Test fehl, wird der Code korrigiert, nie die Erwartung. Hältst du die Erwartung für falsch: anhalten, Begründung schreiben, auf Entscheidung warten.
 - Tests nicht überspringen, nicht als `xfail` markieren, Toleranzen nicht erhöhen.

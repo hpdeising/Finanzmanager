@@ -82,7 +82,7 @@ Die Property-Tests mit Datenbank laufen lokal gründlich (Profil `db-gruendlich`
 
 ## Testfälle (Golden Files)
 
-Die Testfälle unter `tests/golden/` beruhen auf echten, anonymisierten Forderungsaufstellungen. Erwartungswerte ändert nur der Maintainer. Wenn du einen Fall beisteuern möchtest, nutze die Issue-Vorlage „Rechenfehler“ und entferne vorher alle personenbezogenen Daten.
+Die Testfälle unter `tests/golden/` gibt es in zwei Sorten: reale Fälle aus echten, anonymisierten Forderungsaufstellungen und konstruierte Fälle mit ausgedachten Daten (Fachkonzept Kap. 12). Erwartungswerte ändert nur der Maintainer. Wenn du einen realen Fall beisteuern möchtest, nutze die Issue-Vorlage „Rechenfehler“ und entferne vorher alle personenbezogenen Daten.
 
 ## Sprache
 
