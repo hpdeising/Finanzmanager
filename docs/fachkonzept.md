@@ -649,7 +649,16 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 
 ## 12 Qualitätssicherung
 
-- **Golden Files** (`tests/golden/<modul>/*.yaml`, hier `tests/golden/verbindlichkeiten/`): je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers oder aus manueller Prüfung, nie aus dem Programm selbst. Nur Menschen ändern Erwartungswerte. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
+- **Golden Files** (`tests/golden/<modul>/`, hier `tests/golden/verbindlichkeiten/`) in zwei Sorten mit getrennten Ordnern:
+  - `real/`, Kennung `GR-nnnn`: je Fall eine anonymisierte reale Forderungsaufstellung. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers.
+  - `konstruiert/`, Kennung `GK-nnnn`: ausgedachte Daten, keine Beträge oder Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
+
+  Jede Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte (Beispiele unten). Erwartungswerte stammen nie aus dem Programm selbst und ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe. Ziel: 10 bis 20 Fälle vor Release 1, verteilt auf alle Titelarten und beide Anrechnungsregeln.
+- **Rechenweg und Anrechnung** liegen als CSV-Dateien neben der YAML-Datei, benannt nach ihrer Kennung. Sie gehören zu den Erwartungswerten.
+  - `<id>.rechenweg.csv`: je Bestandteil und Abschnitt eine Zeile. Pflicht bei konstruierten Fällen, freiwillig bei realen.
+  - `<id>.anrechnung.csv`: je Zahlung eine Zeile je Bestandteil und Gruppe, auf die etwas angerechnet wird. Ein Betrag, der sich nicht mehr anrechnen lässt (Kap. 5.3), steht in einer Zeile mit `gruppe = ueberzahlung` und leerem `bestandteil`. Pflicht bei konstruierten Fällen mit Zahlungen, freiwillig bei realen.
+  - Format beider Dateien: UTF-8 ohne BOM, Komma als Trennzeichen, Dezimalpunkt, keine Tausendertrennzeichen, Datum als JJJJ-MM-TT, eine Kopfzeile, Anführungszeichen nur bei Bedarf (RFC 4180). Beträge in Euro mit zwei Nachkommastellen, Sätze in Prozent.
+  - Der Golden-Test vergleicht die Abschnitte und die Anrechnung des Programms Zeile für Zeile mit den CSV-Dateien; ein Fehlschlag nennt die erste abweichende Zeile.
 - **Property-Tests:**
   - Summe der Postings je Buchung = 0
   - Die Anrechnung verteilt exakt den Zahlbetrag, höchstens bis zur Restschuld; der Rest ist die berechnete Überzahlung
@@ -663,13 +672,17 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
 - **Review:** Jeder Pull Request wird von einer zweiten KI gegen dieses Dokument, `CLAUDE.md` und den Diff geprüft. Das Ergebnis erscheint als PR-Kommentar.
 - **Community:** `SECURITY.md` mit Meldeweg für Sicherheitslücken; Issue-Vorlage für fachliche Fehler mit anonymisiertem Beispiel.
 
-Beispiel für ein Golden File:
+Beispiel für einen realen Fall (`real/GR-0001.yaml`):
 
 ```yaml
-id: GF-0001
+id: GR-0001
+sorte: real                       # real | konstruiert
 beschreibung: Vollstreckungsbescheid, Verbraucher, gesetzlicher Verzugszins, zwei Raten
-quelle: anonymisierte Forderungsaufstellung, Stand 2026-09-30
-geprueft_von: "<Name>"
+erwartungswerte:
+  quelle: aufstellung             # real: aufstellung; konstruiert: rechentabelle
+  stand: 2026-09-30               # Stand der Aufstellung bzw. der Rechentabelle
+  freigegeben_von: "<Name>"
+  freigegeben_am: "<Datum>"
 akte:
   titelart: vollstreckungsbescheid
   verbraucherdarlehen: false
@@ -699,6 +712,58 @@ erwartung:
   kosten: "<aus Aufstellung>"
   gesamt: "<aus Aufstellung>"
 toleranz: "0.00"
+```
+
+Ein konstruierter Fall nennt zusätzlich die Rechentabelle und seine CSV-Dateien:
+
+```yaml
+erwartungswerte:
+  quelle: rechentabelle
+  stand: "<Datum>"
+  rechentabelle: "<Bezeichnung>, Version <n>"
+  freigegeben_von: "<Name>"
+  freigegeben_am: "<Datum>"
+rechenweg: GK-0001.rechenweg.csv  # Pflicht bei konstruierten Fällen, freiwillig bei realen
+anrechnung: GK-0001.anrechnung.csv  # Pflicht bei konstruierten Fällen mit Zahlungen
+```
+
+Spalten von `<id>.rechenweg.csv`:
+
+| Spalte | Inhalt |
+|---|---|
+| `bestandteil` | Art wie in der YAML-Datei; gibt es eine Art mehrfach, mit laufender Nummer (`kosten_vollstreckung_2`) |
+| `von`, `bis` | erster und letzter Tag des Abschnitts, beide eingeschlossen |
+| `grund` | warum der Abschnitt beginnt: `zinsbeginn`, `halbjahr`, `jahreswechsel`, `teilungstag`, `zahlung` oder `regelwechsel`; mehrere mit `+` verbunden |
+| `tage`, `tagesbasis` | ganze Zahlen nach Kap. 5.1 |
+| `basis` | Zinsbasis zu Beginn des Abschnitts |
+| `basiszins` | Basiszinssatz in Prozent; leer bei festem Satz |
+| `satz` | Jahressatz in Prozent |
+| `zins_ungerundet` | mindestens sechs Nachkommastellen, abgeschnitten (Richtung null), nicht gerundet. Nur so zeigt der Wert, ob kaufmännisch auf- oder abgerundet wird; ein auf sechs Stellen gerundetes x,xx4999996 sähe aus wie x,xx5000. Der Test prüft, dass der exakte Wert des Programms mit diesen Stellen beginnt |
+| `zins_gerundet` | kaufmännisch auf Cent (E-33) |
+
+Spalten von `<id>.anrechnung.csv`:
+
+| Spalte | Inhalt |
+|---|---|
+| `zahlung` | Wertstellung der Zahlung |
+| `betrag` | Zahlbetrag |
+| `bestandteil` | wie im Rechenweg; leer bei `gruppe = ueberzahlung` |
+| `gruppe` | `kosten`, `zinsen`, `hauptforderung` oder `ueberzahlung` |
+| `angerechnet` | Betrag, der aus dieser Zahlung auf die Gruppe des Bestandteils entfällt |
+| `offen_danach` | offener Betrag dieser Gruppe des Bestandteils nach der Anrechnung; leer bei `gruppe = ueberzahlung` |
+
+Formatbeispiel mit ausgedachten Werten, kein Testfall: Hauptforderung 1.000,00 € mit festem Jahreszins von 5 % ab 15.03.2025, `act_365`, `zahltag = alter_betrag`, Anrechnung nach `bgb_367`, eine Zahlung von 200,00 € mit Wertstellung 20.05.2025, Stichtag 30.06.2025.
+
+```csv
+bestandteil,von,bis,grund,tage,tagesbasis,basis,basiszins,satz,zins_ungerundet,zins_gerundet
+hauptforderung,2025-03-15,2025-05-20,zinsbeginn,67,365,1000.00,,5,9.178082,9.18
+hauptforderung,2025-05-21,2025-06-30,zahlung,41,365,809.18,,5,4.544709,4.54
+```
+
+```csv
+zahlung,betrag,bestandteil,gruppe,angerechnet,offen_danach
+2025-05-20,200.00,hauptforderung,zinsen,9.18,0.00
+2025-05-20,200.00,hauptforderung,hauptforderung,190.82,809.18
 ```
 
 ---
