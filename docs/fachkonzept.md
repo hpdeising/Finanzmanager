@@ -1,7 +1,7 @@
 # Finanzmanager – Fachkonzept v0.1
 
 **Modul in Release 1:** Verbindlichkeiten
-**Stand:** 15.10.2026 · **Status:** Entwurf · **Projektlizenz:** AGPL-3.0-or-later
+**Stand:** 24.10.2026 · **Status:** Entwurf · **Projektlizenz:** AGPL-3.0-or-later
 **Rechtsstand der Normzitate:** 11.10.2026. Offene Rechtsfragen stehen in Kapitel 14.
 
 Dieses Dokument ist die fachliche Quelle der Wahrheit. Code, der davon abweicht, ist falsch – oder dieses Dokument wird vorher geändert. Die Software rechnet, erinnert und erzeugt Entwürfe. Sie leistet keine Rechtsberatung im Einzelfall.
@@ -49,7 +49,7 @@ Der Kern enthält keine Fachlogik eines Moduls. Module hängen vom Kern ab, nie 
 
 ## 2 Entscheidungsprotokoll
 
-E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026.
+E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026.
 
 | Nr. | Thema | Entscheidung |
 |---|---|---|
@@ -70,18 +70,23 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-15 | Name und Aufbau | Projektname „Finanzmanager“; modularer Aufbau aus Kern und Fachmodulen; erstes Modul „Verbindlichkeiten“ |
 | E-16 | Lizenzen Dritter | PSF-2.0 zusätzlich erlaubt; die CI prüft Lizenzen bei jedem PR; Lizenzhinweise und SBOM entstehen automatisch je Release (Kap. 11.3) |
 | E-17 | Kern und Module im Datenmodell | Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf Kern-Tabellen verweisen, nie umgekehrt. Einzige Ausnahme ist `audit_log`: Es verweist allgemein über `entitaet_typ` und `entitaet_id`, ohne Fremdschlüssel, weil es jede Tabelle protokollieren muss. `konto` und `buchung` haben deshalb keine Spalte `akte_id`. Das Modul Verbindlichkeiten verknüpft Akten über eigene Tabellen (`akte_konto`, `akte_dokument`); die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten. Kontorollen und Buchungsarten folgen dem Schema `<modul>.<name>`, z. B. `verbindlichkeiten.hauptforderung`, `kern.externe_mittel`, `kern.storno`. Der Kern kennt nur `kern.externe_mittel` und `kern.storno`; die übrigen Rollen und Arten meldet das Modul an (Kap. 4.2, 4.4, 4.5) |
-| E-18 | Storno-Wertstellung | Eine Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; der Zeitpunkt der Korrektur steht in `erfasst_am`. Zinsen, Anrechnung und Fristen werden aus der Historie berechnet. Eine falsch erfasste Zahlung, die erst ab dem Korrekturtag storniert wäre, würde alle Zinsperioden davor weiter verfälschen. Über `erfasst_am` bleibt nachvollziehbar, was zu welchem Zeitpunkt bekannt war. Ergänzt durch E-26: Liegt die Wertstellung der Ursprungsbuchung in einem festgeschriebenen Zeitraum, bekommt das Storno den Tag der Erfassung als Buchungsdatum; seine Wertstellung bleibt die der Ursprungsbuchung |
+| E-18 | Storno-Wertstellung | Eine Stornobuchung hat dieselbe Wertstellung wie die Ursprungsbuchung; der Zeitpunkt der Korrektur steht in `erfasst_am`. Zinsen, Anrechnung und Fristen werden aus der Historie berechnet. Eine falsch erfasste Zahlung, die erst ab dem Korrekturtag storniert wäre, würde alle Abschnitte davor weiter verfälschen. Über `erfasst_am` bleibt nachvollziehbar, was zu welchem Zeitpunkt bekannt war. Ergänzt durch E-26: Liegt die Wertstellung der Ursprungsbuchung in einem festgeschriebenen Zeitraum, bekommt das Storno den Tag der Erfassung als Buchungsdatum; seine Wertstellung bleibt die der Ursprungsbuchung |
 | E-19 | Datenbankrollen | Die Eigentümerrolle führt nur die Migrationen aus. Die Anwendung verbindet sich mit einer Laufzeitrolle, die auf `buchung` und `posting` nur lesen und einfügen darf. Die Rollen legt ein eigenes Bootstrap-Skript an, nicht die Migration (Kap. 11.1) |
 | E-20 | Lizenzen nativer Bibliotheken | Die Lizenzliste in `CLAUDE.md` gilt auch für native Bibliotheken, die ein Paket mitbringt; zusätzlich erlaubt sind PostgreSQL, OLDAP-2.8 und Public Domain. Maßgeblich ist die Lizenz, die das Ursprungsprojekt für die Bibliothek erklärt; einzelne Dateien darin werden nicht gegen die Liste geprüft, ihre Lizenz- und Hinweistexte kommen vollständig in `THIRD-PARTY-LICENSES`. Für das Betriebssystem des Docker-Basis-Images gelten dessen eigene Lizenzhinweise (Kap. 11.3) |
 | E-21 | Zinsen und Anrechnung berechnet statt gebucht | Zinsen und die Anrechnung von Zahlungen werden nicht laufend gebucht, sondern bei jeder Abfrage zum Stichtag neu berechnet, aus Titel, Zahlungen, Ereignissen, Aktenparametern und Stammdaten. Eine Zahlung wird ungeteilt auf das Zahlungskonto der Akte gebucht (Rolle `verbindlichkeiten.zahlungen`, passiv), die Gegenbuchung geht auf Externe Mittel. Gebucht werden Zinsen und Anrechnung nur bei einer Festschreibung (E-25). Ein rückwirkendes Storno (E-18) wirkt damit automatisch richtig, ohne dass Folgebuchungen storniert und neu gebucht werden; betrifft es einen festgeschriebenen Zeitraum, bucht die nächste Festschreibung die Differenz als Korrekturbuchung (E-25). Schließt P-12 (Folgebuchungen nach rückwirkendem Storno): Statt Folgebuchungen automatisch zu stornieren und neu zu buchen, wird berechnet und nur bei Bedarf festgeschrieben (Kap. 4.3, 5.2, 5.3) |
-| E-22 | Tageszählung | Voreinstellung `act_365`: Zinstage taggenau, Tagesbasis immer 365 Tage, auch im Schaltjahr. Je Akte umstellbar auf `act_360` oder `30_360`. Schließt P-04 (Kap. 5.1) |
-| E-23 | Rundung | Voreinstellung `je_periode`: kaufmännisch auf Cent je Zinsperiode (Kap. 5.2 Schritt 2). Je Akte umstellbar auf `am_ende`. Schließt P-05 (Kap. 5.1) |
+| E-22 | Tageszählung | Voreinstellung `act_365`: Zinstage taggenau, Tagesbasis immer 365 Tage, auch im Schaltjahr. Je Akte umstellbar auf `act_360` oder `30_360`. Schließt P-04 (Kap. 5.1). Ergänzt durch E-31 (`act_act`) und E-34 (Definition von `30_360`) |
+| E-23 | Rundung | Voreinstellung `je_periode`: kaufmännisch auf Cent je Abschnitt (Kap. 5.2 Schritt 2). Je Akte umstellbar auf `am_ende`. Schließt P-05 (Kap. 5.1). Geändert durch E-33: `am_ende` und der Aktenparameter `rundung` entfallen; gerundet wird immer je Abschnitt |
 | E-24 | Zinsbeginn | Voreinstellung `genannter_tag`: Der als Zinsbeginn genannte Tag („seit dem …“) ist der erste Zinstag. Je Akte umstellbar auf `folgetag`: Erster Zinstag ist der Tag danach. Der Parameter gilt nur für den Beginn der Verzinsung; wechselt die Zinsregel, schließt die neue lückenlos an. Schließt P-06 (Kap. 5.1, 5.2) |
 | E-25 | Festschreibung | Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung in der Zeitzone der Installation. Die Festschreibung bucht die bis zum Stichtag berechneten Zinsen und die Anrechnung, soweit sie noch nicht gebucht sind. Ein festgeschriebener Zeitraum ist abgeschlossen: Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Ändert sich nachträglich die Berechnung für einen festgeschriebenen Zeitraum, fällt die Differenz in den offenen Zeitraum; die nächste Festschreibung bucht sie als Korrekturbuchung mit maschinenlesbarem Bezug auf den korrigierten Zeitraum. Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung, keine Rechtsregel (Kap. 5.2 Schritt 7) |
 | E-26 | Buchungsdatum und Wertstellung | Jede Buchung hat zwei Daten. Das Buchungsdatum ordnet sie einem Zeitraum zu und bestimmt die Salden, die Wertstellung bestimmt, ab wann sie fachlich wirkt (Zinsen, Anrechnung, Fristen). Liegt die Wertstellung im offenen Zeitraum der Akte, sind beide gleich. Liegt sie in einem festgeschriebenen Zeitraum der Akte, wird die Buchung im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum. Das gilt für ein Storno wie für jede neue Buchung (Neubuchung einer Korrektur, nachträglich erfasste Zahlung oder Kosten), nicht aber für die Buchungen einer Festschreibung selbst (E-25). Ein Storno beseitigt einen Erfassungsfehler: Die Buchung war falsch, den gebuchten Vorgang, etwa die Zahlung, hat es nie gegeben. Für Zinsen, Anrechnung und Fristen gilt die stornierte Buchung deshalb ab ihrer ursprünglichen Wertstellung als nie geschehen. Eine Rücklastschrift ist kein Storno, sondern ein tatsächliches Ereignis. Ergänzt E-18 (Kap. 4.1, 4.4, 5.2 Schritt 7) |
 | E-27 | Kontosperre | Die Datenbank setzt den Abschluss eines festgeschriebenen Zeitraums selbst durch. Der Kern führt je Konto ein Sperrdatum und kennt dabei weder Akte noch Festschreibung, nur Konto und Datum. Ein Trigger lehnt jedes Posting auf ein gesperrtes Konto ab, dessen Buchungsdatum am oder vor dem Sperrdatum liegt. Das Sperrdatum eines Kontos steigt nur; auch das prüft die Datenbank. Bei jeder Festschreibung setzt das Modul die Sperre für die Konten der Akte auf den Stichtag; gemeinsame Haushaltskonten (die Konten je Haushalt, Kap. 4.2) werden nicht gesperrt. Welches Buchungsdatum eine Buchung bekommt und dass Festschreibungsbuchungen nicht storniert werden, entscheidet das Modul. Zusätzlich prüft der Kern, dass das Buchungsdatum nicht vor der Wertstellung liegt (Kap. 4.4). Ergänzt durch E-28: Das Modul legt Festschreibungsbuchungen mit `stornierbar = false` an, der Storno-Trigger lehnt ihr Storno ab; der Kern prüft zusätzlich, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt. Ergänzt durch E-29: Das Sperrdatum liegt höchstens auf dem heutigen Tag |
 | E-28 | Stornoschutz im Kern | Jede Buchung trägt das Merkmal `stornierbar`. Es wird beim Einfügen gesetzt und ist danach unveränderlich. Der Storno-Trigger lehnt das Storno einer Buchung mit `stornierbar = false` ab; der Kern kennt dabei keinen Grund, nur das Merkmal (E-17). Das Modul legt die Buchungen einer Festschreibung mit `stornierbar = false` an, damit setzt auch die Datenbank durch, dass sie nie storniert werden (E-25). Zusätzlich prüft der Kern, dass das Buchungsdatum eines Stornos nicht vor dem der Ursprungsbuchung liegt (E-26). Ergänzt E-27 (Kap. 4.4, 5.2 Schritt 7) |
 | E-29 | Sperrdatum höchstens heute | Die Datenbank lehnt eine Kontosperre ab, deren Sperrdatum nach dem heutigen Tag liegt (`gesperrt_bis > current_date`); die Kern-API prüft das vorab. Ein Sperrdatum steigt nur, und keine Sperre wird gelöscht (E-27). Ein Tipp- oder Modulfehler (2062 statt 2026) machte die Konten sonst bis dahin unbebuchbar, reparieren ließe es sich nur durch einen Eingriff am Trigger vorbei. Heute ist `current_date`, der Tag in der Zeitzone der Datenbanksitzung; die Anwendung verbindet sich in UTC. Bewusst „höchstens heute“ und nicht „höchstens Vortag“: So verträgt sich die Regel mit dem Stichtag einer Festschreibung, der höchstens auf dem Vortag in der Zeitzone der Installation liegt (E-25), auch wenn die Sitzung in einer anderen Zeitzone läuft. Dieser Vortag liegt nie nach dem heutigen Tag der Sitzung, solange deren Zeitzone höchstens 24 Stunden hinter der der Installation liegt. Das gilt für jede Sitzung in UTC und bei einer Installation in Deutschland für jede Zeitzone der Erde (UTC−12 bis UTC+14). Ergänzt E-27 (Kap. 4.4) |
+| E-30 | Zahltag | Neuer Aktenparameter `zahltag`. Voreinstellung `alter_betrag`: Am Tag einer Zahlung wird noch der Betrag vor der Zahlung verzinst, der verminderte Betrag ab dem Folgetag. Mit `verminderter_betrag` gilt der verminderte Betrag schon ab dem Zahltag. Entsprechend beginnt der nächste Abschnitt am Folgetag oder am Zahltag. Die Zahlung wird auf die gerundeten Zinsen der Abschnitte vor dieser Grenze angerechnet, bei `alter_betrag` also einschließlich des Zahltags. Gläubiger handhaben den Zahltag unterschiedlich. Schließt P-14 (Kap. 5.1, 5.2 Schritte 2 und 3) |
+| E-31 | Tageszählung `act_act` | Zusätzliche Wahl für den Aktenparameter `tageszaehlung`: `act_act`, taggenau, Tagesbasis 366 für Tage in einem Schaltjahr, sonst 365. Damit kein Abschnitt zwei Tagesbasen hat, wird bei `act_act` zusätzlich an jedem 01.01. geteilt, unabhängig vom Aktenparameter `teilung` (E-32) und auch bei festen Sätzen. Voreinstellung bleibt `act_365`. Ergänzt E-22 (Kap. 5.1, 5.2 Schritt 2) |
+| E-32 | Teilung der Abschnitte | Neuer Aktenparameter `teilung`. Voreinstellung `kalender`: Bei basiszinsabhängigen Zinsregeln wird wie bisher an jedem 01.01. und 01.07. geteilt. Mit `satzwechsel` wird dort nur geteilt, wenn sich der anzuwendende Satz tatsächlich ändert. Dazu kommen je Akte frei eintragbare Teilungstage, etwa die Buchungstage des Gläubigers laut seiner Aufstellung (Tabelle `akte_teilungstag`, Kap. 4.5). Ein Teilungstag ist der erste Tag eines neuen Abschnitts; außerhalb des Zinslaufs wirkt er nicht. Unverändert wird an jeder nicht stornierten Zahlung (E-30) und bei jedem Wechsel der Zinsregel geteilt; der Stichtag einer Festschreibung und eine stornierte Zahlung teilen weiterhin nicht. Zweck: Jede Aufstellung soll sich centgenau nachrechnen lassen, damit echte Abweichungen auffallen; wo geteilt wird, handhaben Gläubiger unterschiedlich (Kap. 5.1, 5.2 Schritt 2) |
+| E-33 | Rundung je Abschnitt | Gerundet wird immer je Abschnitt kaufmännisch auf Cent, über die zentrale Funktion in `kern/geld`. `am_ende` und der Aktenparameter `rundung` entfallen. Eine Zahlung wird auf die gerundeten Zinsen der Abschnitte vor ihrer Abschnittsgrenze angerechnet (E-30). Schließt P-13, ändert E-23 (Kap. 5.1, 5.2 Schritt 2) |
+| E-34 | Tageszählung `30_360` | Jeder Monat hat 30 Tage, der Teiler ist 360, und wie bei den taggenauen Arten zählt der erste Tag eines Abschnitts mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind 360·(J2−J1) + 30·(M2−M1) + (T2−T1). Dabei ist D1 der Vortag des ersten Tags und D2 der letzte Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst, und die Formel bekommt + 1: 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1. Das gilt am ersten Zinstag (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` ist das der Tag nach dem genannten Tag, E-24) und nach jeder Pause ohne Verzinsung, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt. Ein Regelwechsel ohne Lücke bleibt ein weiterer Abschnitt nach der allgemeinen Formel. So zählen keine unverzinsten Tage mit. In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Damit zählen der 30. und der 31. eines Monats zusammen als ein Tag, und endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Teilen ändert die Summe nicht: Innerhalb verzinster Tage ohne Pause ergeben der Abschnitt nach der Formel mit + 1 und alle folgenden nach der allgemeinen zusammen dieselben Tage wie ungeteilt. Ein Kalenderjahr hat 360 Tage. Beispiele in Kap. 5.1. Eigene Festlegung, keine Rechtsregel und keine Primärquelle: Eine verbindliche Quelle für die Zählung in Forderungsaufstellungen gibt es nicht. Weicht ein realer Fall ab, wird daraus ein neuer Prüfpunkt. Schließt P-15, ergänzt E-22 (Kap. 5.1) |
 
 ---
 
@@ -95,6 +100,8 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | Titel | Vollstreckungsbescheid, Urteil, Versäumnisurteil, Vergleich, notarielle Urkunde |
 | Bestandteil | Teil der Forderung mit eigener Rechtslogik: Hauptforderung, Zinsen, vorgerichtliche Kosten, Verfahrenskosten, Vollstreckungskosten |
 | Zinsregel | Berechnungsvorschrift für die Zinsen eines Bestandteils |
+| Abschnitt | Teil eines Zinslaufs vom ersten Zinstag oder einer Teilung bis zur nächsten Teilung, zum Ende der Verzinsung oder zum Stichtag (Kap. 5.2 Schritt 2). Innerhalb eines Abschnitts bleiben Zinsbasis, Satz und Tagesbasis gleich; seine Zinsen werden auf Cent gerundet |
+| Teilungstag | Frei eintragbarer Tag einer Akte, an dem ein neuer Abschnitt beginnt, etwa ein Buchungstag des Gläubigers laut seiner Aufstellung (E-32) |
 | Ereignis | Datiertes, rechtlich relevantes Geschehen (Zustellung, Rechtskraft, Zahlung, Vollstreckungsantrag …). Fristen werden aus Ereignissen abgeleitet |
 | Buchung | Unveränderlicher Geschäftsvorfall aus mindestens zwei Postings, deren Summe null ist; sie betreffen mindestens zwei verschiedene Konten |
 | Buchungsdatum | Ordnet eine Buchung einem Zeitraum zu; nach ihm richten sich die Salden (Kap. 4.1) |
@@ -293,9 +300,10 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | Tabelle | Wesentliche Felder |
 |---|---|
 | `glaeubiger` | Name, Anschrift, IBAN, Vertreter (Inkasso), Kontaktdaten |
-| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`; bis zur Entscheidung über P-11), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Rundung, Zinsbeginn, Status, Aktenzeichen des Gläubigers |
+| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`; bis zur Entscheidung über P-11), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Zinsbeginn, Zahltag, Teilung, Status, Aktenzeichen des Gläubigers |
 | `akte_konto` | Akte, Konto. Die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten |
 | `akte_dokument` | Akte, Dokument |
+| `akte_teilungstag` | Akte, Tag; je Akte und Tag höchstens eine Zeile. Ein Teilungstag ist der erste Tag eines neuen Abschnitts (E-32, Kap. 5.2 Schritt 2). Er ist eine Rechenvorgabe der Akte, kein Ereignis; ändert er sich, ändert sich die Berechnung wie bei einem umgestellten Aktenparameter (Kap. 5.2 Schritt 7) |
 | `titel` | Art, Gericht, Aktenzeichen, erlassen am, zugestellt am, rechtskräftig am |
 | `bestandteil` | Akte, Art, Konto, Ursprungsbetrag, entstanden am, fällig am |
 | `zinsregel` | Bestandteil, Typ, Aufschlag in Prozentpunkten, fester Satz, ab, bis, Quelle (Titel/Vertrag) |
@@ -320,11 +328,44 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 
 ### 5.1 Grundsätze
 
-- Intern wird mit `Decimal` ohne Zwischenrundung gerechnet. Gerundet wird kaufmännisch auf Cent, laut Aktenparameter `rundung`: `je_periode` (Default, je Zinsperiode nach Kap. 5.2 Schritt 2) oder `am_ende` (E-23). Was `am_ende` bei Zahlungen innerhalb einer Zinsperiode bedeutet, klärt Prüfpunkt P-13.
-- Tageszählung laut Aktenparameter `tageszaehlung`: `act_365` (Default; taggenau, Tagesbasis immer 365, auch im Schaltjahr), `act_360` oder `30_360` (E-22). Welche Variante von `30_360` gilt, klärt Prüfpunkt P-15.
+- Intern wird mit `Decimal` ohne Zwischenrundung gerechnet. Gerundet wird immer je Abschnitt (Kap. 5.2 Schritt 2) kaufmännisch auf Cent, über die zentrale Funktion in `kern/geld` (E-33).
+- Tageszählung laut Aktenparameter `tageszaehlung`: `act_365` (Default; taggenau, Tagesbasis immer 365, auch im Schaltjahr), `act_act` (taggenau, Tagesbasis 366 für Tage in einem Schaltjahr, sonst 365; E-31), `act_360` oder `30_360` (Definition unten, E-34) (E-22). Bei den taggenauen Arten zählt jeder Kalendertag eines Abschnitts, der erste wie der letzte.
 - Zinsbeginn laut Aktenparameter `zinsbeginn`: `genannter_tag` (Default; der als Zinsbeginn genannte Tag „seit dem …“ ist der erste Zinstag) oder `folgetag` (erster Zinstag ist der Tag danach) (E-24).
-- Zinsen und Anrechnung werden bei jeder Abfrage neu berechnet (E-21). Eingaben sind Titel, Bestandteile und ihre Zinsregeln, die Buchungen der Akte mit ihrer Wertstellung (ohne stornierte Buchungen samt ihren Stornos und ohne die Buchungen, die eine Festschreibung erzeugt), dazu Ereignisse, Aktenparameter und Stammdaten.
+- Zahltag laut Aktenparameter `zahltag`: `alter_betrag` (Default; am Tag einer Zahlung wird noch der Betrag vor der Zahlung verzinst, der verminderte ab dem Folgetag) oder `verminderter_betrag` (der verminderte Betrag gilt ab dem Zahltag) (E-30, Kap. 5.2 Schritte 2 und 3).
+- Teilung laut Aktenparameter `teilung`: `kalender` (Default; bei basiszinsabhängigen Regeln an jedem 01.01. und 01.07.) oder `satzwechsel` (dort nur, wenn sich der anzuwendende Satz ändert), dazu die Teilungstage der Akte (E-32, Kap. 5.2 Schritt 2).
+- Zinsen und Anrechnung werden bei jeder Abfrage neu berechnet (E-21). Eingaben sind Titel, Bestandteile und ihre Zinsregeln, die Buchungen der Akte mit ihrer Wertstellung (ohne stornierte Buchungen samt ihren Stornos und ohne die Buchungen, die eine Festschreibung erzeugt), dazu Ereignisse, Aktenparameter, die Teilungstage der Akte (Kap. 4.5) und Stammdaten.
 - Die Berechnung ist deterministisch: gleiche Eingaben ergeben dasselbe Ergebnis. Eine Festschreibung ändert kein Rechenergebnis.
+
+**Tageszählung `30_360`** (E-34): Jeder Monat hat 30 Tage, der Teiler ist 360, und der erste Tag eines Abschnitts zählt mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind
+
+**Tage = 360·(J2−J1) + 30·(M2−M1) + (T2−T1)**
+
+mit D1 = Vortag des ersten Tags und D2 = letzter Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst. Das ist der Abschnitt mit dem ersten Zinstag (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` der Tag nach dem genannten Tag, E-24) und jeder Abschnitt nach einer Pause ohne Verzinsung, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt:
+
+**Tage = 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1**
+
+In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Ein Regelwechsel ohne Lücke ist ein weiterer Abschnitt nach der allgemeinen Formel. Eine eigene Februarregel gibt es nicht: Endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Der 30. und der 31. eines Monats zählen zusammen als ein Tag.
+
+In weiteren Abschnitten, deren Vortag also ein verzinster Tag desselben Bestandteils ist, wird ab dem Vortag D1 gezählt, ausschließlich. Beginnt ein weiterer Abschnitt am 31., bringt dieser Tag keinen eigenen Tag mit, weil der vorige Abschnitt den 30. schon gezählt hat. Beginnt er am 01.03., holt er die Februartage bis zum 30. nach, die im vorigen Abschnitt gefehlt haben. Vor dem ersten Zinstag und während einer Pause ohne Verzinsung fehlt nichts; deshalb gilt dort die zweite Formel, und es zählen keine unverzinsten Tage mit. Teilen ändert die Summe nicht: Innerhalb verzinster Tage ohne Pause ergeben der Abschnitt nach der zweiten Formel und alle folgenden nach der allgemeinen zusammen dieselben Tage wie ungeteilt. Ein Kalenderjahr hat 360 Tage; andere Zeiträume von zwölf Monaten können um bis zu zwei Tage davon abweichen, etwa wenn sie am Februarende enden oder an einem 31. beginnen. Diese Festlegung ist keine Rechtsregel und hat keine Primärquelle.
+
+| Abschnitt | Vortag unverzinst (erster Zinstag oder nach einer Pause) | Vortag verzinst (weiterer Abschnitt) | Hinweis |
+|---|---|---|---|
+| 01.01.–30.01. | 30 | 30 | |
+| 01.01.–31.01. | 30 | 30 | Der 31. zählt mit dem 30. als ein Tag |
+| 30.01.–31.01. | 1 | 1 | |
+| 31.01.–31.01. | 1 | 0 | Zinsbeginn am 31.: ein Tag. Als weiterer Abschnitt hat der vorige den 30. schon gezählt |
+| 31.01.–28.02.2027 | 29 | 28 | Mit unverzinstem Vortag ein Tag für den 31.01. und 28 für den Februar; als weiterer nur der Februar |
+| 01.02.–28.02.2027 | 28 | 28 | Endet am Februarende: tatsächliche Tage |
+| 01.02.–29.02.2028 | 29 | 29 | Ebenso im Schaltjahr |
+| 01.03.–01.03.2027 | 1 | 3 | Zinsbeginn am 01.03.: ein Tag. Als weiterer Abschnitt holt er die zwei Februartage bis zum 30. nach |
+| 01.03.–31.03.2027 | 30 | 32 | Mit unverzinstem Vortag nur der März; als weiterer dazu die zwei Februartage bis zum 30. |
+| 01.03.–31.03.2027 nach einer Pause bis 28.02.2027 | 30 | – | Verzinst ab 01.03. nach einer Pause ohne Verzinsung, etwa nach einer Zinsregel `keine`: Der Vortag ist unverzinst, also zweite Formel |
+| 01.02.–31.03.2027 | 60 | 60 | Ungeteilt: Februar mit 30 Tagen; geteilt am 01.03.: 28 + 32 |
+| 28.02.–31.03.2027 | 33 | 33 | |
+| 31.03.–30.04.2027 | 31 | 30 | |
+| 01.01.–31.12.2027 | 360 | 360 | Kalenderjahr |
+| 01.03.2027–29.02.2028 | 359 | 361 | Mit unverzinstem Vortag elf Monate zu 30 Tagen und ein Februar mit 29 |
+| 31.01.2027–30.01.2028 | 361 | 360 | Mit unverzinstem Vortag zählen der 31.01.2027 und der 30.01.2028 je als 30. ihres Monats |
 
 ### 5.2 Zinsen
 
@@ -340,19 +381,26 @@ Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckung
 Ablauf:
 
 1. Der Zinslauf je verzinslichem Bestandteil beginnt am `ab`-Datum der Zinsregel und endet am Stichtag. Ob der genannte Tag des Zinsbeginns selbst verzinst wird, bestimmt der Aktenparameter `zinsbeginn` (Kap. 5.1, E-24). Er gilt nur für den Beginn der Verzinsung; wechselt die Zinsregel, schließt die neue lückenlos an die alte an.
-2. Perioden werden geteilt an jedem 01.01. und 01.07. (bei basiszinsabhängigen Regeln, § 247 Abs. 1 BGB), an der Wertstellung jeder nicht stornierten Zahlung und bei jeder Änderung der Zinsregel. Der Stichtag einer Festschreibung und eine stornierte Zahlung teilen keine Periode.
-3. Zinsbasis ist der offene Betrag des Bestandteils zu Periodenbeginn, nach der berechneten Anrechnung früherer Zahlungen (Kap. 5.3). Ob am Zahlungstag schon die verminderte Basis gilt, klärt Prüfpunkt P-14.
-4. Zinsen = Basis × Jahressatz × Tage ÷ Tagesbasis.
+2. Der Zinslauf wird in Abschnitte geteilt. Ein neuer Abschnitt beginnt:
+   - bei basiszinsabhängigen Regeln an jedem 01.01. und 01.07. (§ 247 Abs. 1 BGB); bei `teilung = satzwechsel` nur, wenn sich der anzuwendende Satz dort ändert (E-32);
+   - bei `tageszaehlung = act_act` zusätzlich an jedem 01.01., unabhängig von `teilung` und auch bei festen Sätzen (E-31);
+   - an jedem Teilungstag der Akte (E-32);
+   - an jeder nicht stornierten Zahlung: bei `zahltag = alter_betrag` am Tag nach ihrer Wertstellung, bei `verminderter_betrag` am Tag ihrer Wertstellung (E-30);
+   - bei jedem Wechsel der Zinsregel.
+
+   Der Stichtag einer Festschreibung und eine stornierte Zahlung teilen keinen Abschnitt. Ein Teilungstag außerhalb des Zinslaufs wirkt nicht. Die Zinsen jedes Abschnitts werden kaufmännisch auf Cent gerundet (E-33).
+3. Zinsbasis ist der offene Betrag des Bestandteils zu Beginn des Abschnitts, nach der berechneten Anrechnung (Kap. 5.3). Eine Zahlung vermindert die Basis ab dem Abschnitt, den sie beginnt (Schritt 2): bei `zahltag = alter_betrag` ab dem Folgetag, bei `verminderter_betrag` ab dem Zahltag (E-30). Sie wird auf die gerundeten Zinsen der Abschnitte vor dieser Grenze angerechnet, bei `alter_betrag` also einschließlich des Zahltags.
+4. Zinsen eines Abschnitts = Basis × Jahressatz × Tage ÷ Tagesbasis (Tage und Tagesbasis nach Kap. 5.1).
 5. Keine Zinsen auf Zinsen (§ 289 S. 1 BGB). Zinskonten sind nie verzinslich.
 6. Der Satz ist Basiszinssatz plus Aufschlag, auch bei negativem Basiszinssatz. Beispiel: vom 01.07.2016 bis 31.12.2022 lag der Basiszinssatz bei −0,88 %, der Verzugszins nach § 288 Abs. 1 BGB also bei 4,12 %. Altlasten reichen oft in diesen Zeitraum.
 7. Zinsen und Anrechnung werden bei jeder Abfrage zum Stichtag neu berechnet, nicht laufend gebucht (E-21). Gebucht wird nur bei einer Festschreibung (E-25):
    - **Anforderung:** Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung wie in Kap. 4.1 (Zeitzone der Installation); ein Abschluss zum 31.12. wird also frühestens am 01.01. angefordert.
-   - **Zinsen und Anrechnung eines Zeitraums** sind die Berechnung zu seinem Stichtag abzüglich der Berechnung zum vorigen Stichtag. Für eine angebrochene Zinsperiode zählt der bis zum Stichtag berechnete und gerundete Betrag; die Rundungsdifferenz zur ganzen Periode fällt in den nächsten Zeitraum und ist keine Korrektur.
+   - **Zinsen und Anrechnung eines Zeitraums** sind die Berechnung zu seinem Stichtag abzüglich der Berechnung zum vorigen Stichtag. Für einen angebrochenen Abschnitt zählt der bis zum Stichtag berechnete und gerundete Betrag; die Rundungsdifferenz zum ganzen Abschnitt fällt in den nächsten Zeitraum und ist keine Korrektur.
    - **Halten:** Bevor sie rechnet, hält die Festschreibung die Konten der Akte (Kap. 4.4). Bis zum Commit bucht dann keine andere Transaktion auf ihnen; läuft gerade eine Buchung, scheitert die Festschreibung und wird wiederholt.
    - **Buchungen:** Die Festschreibung bucht mit Buchungsdatum und Wertstellung an ihrem Stichtag die Zinsen des Zeitraums (`verbindlichkeiten.zinslauf`), seine Anrechnung als Umbuchung vom Zahlungskonto auf die Bestandteile (`verbindlichkeiten.anrechnung`) und die Korrekturbuchungen für frühere Zeiträume. Die Regel für nachträgliche Buchungen (E-26) gilt für diese Buchungen nicht. Danach setzt das Modul in derselben Transaktion die Sperre der Konten der Akte auf den Stichtag (E-27). Legt das Modul später ein neues Konto für die Akte an, sperrt es dieses in derselben Transaktion bis zum letzten Stichtag der Akte. Die Festschreibung wird auch gespeichert, wenn nichts zu buchen ist; jede ihrer Buchungen steht in `festschreibung_buchung` (Kap. 4.5).
    - **Abschluss:** Ein festgeschriebener Zeitraum ist abgeschlossen. Die Buchungen, die eine Festschreibung erzeugt (Zinsen, Umbuchung der Anrechnung, Korrekturbuchung), werden nie storniert, auch nicht nach Bestätigung; ihr Storno wird auch nicht vorgeschlagen. Das Modul legt sie mit `stornierbar = false` an, sodass auch die Datenbank ihr Storno ablehnt (E-28). Zahlung, Kosten und Entstehung bleiben stornierbar.
    - **Nachträgliche Buchungen:** Eine Buchung, deren Wertstellung in einem festgeschriebenen Zeitraum liegt, wird im offenen Zeitraum gebucht, mit dem Tag der Erfassung als Buchungsdatum (E-26). Das gilt für ein Storno, für die Neubuchung einer Korrektur und für nachträglich erfasste Zahlungen oder Kosten. Für Zinsen, Anrechnung und Fristen zählt ihre Wertstellung; eine stornierte Buchung gilt ab ihrer ursprünglichen Wertstellung als nie geschehen.
-   - **Korrekturbuchung:** Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Als gebuchte Beträge zählen nur die Buchungen, die Festschreibungen erzeugt haben, je Konto und Zeitraum; eine Korrekturbuchung zählt zu dem Zeitraum, den sie korrigiert. Ändert sich die Berechnung für einen festgeschriebenen Zeitraum nachträglich, etwa durch ein Storno, eine nachträgliche Buchung, ein nachgetragenes Ereignis, eine geänderte Zinsregel, einen umgestellten Aktenparameter oder korrigierte Stammdaten, fällt die Differenz in den offenen Zeitraum. Die nächste Festschreibung bucht sie als eigene Korrekturbuchung je betroffenem Zeitraum und Buchungsart (Kap. 4.3). Der Buchungstext nennt den Zeitraum; maschinenlesbar ist der Bezug über `festschreibung_buchung`, sodass sich auch eine zweite Korrektur desselben Zeitraums zuordnen lässt.
+   - **Korrekturbuchung:** Die Berechnung bleibt maßgeblich, gebuchte Beträge werden abgezogen. Als gebuchte Beträge zählen nur die Buchungen, die Festschreibungen erzeugt haben, je Konto und Zeitraum; eine Korrekturbuchung zählt zu dem Zeitraum, den sie korrigiert. Ändert sich die Berechnung für einen festgeschriebenen Zeitraum nachträglich, etwa durch ein Storno, eine nachträgliche Buchung, ein nachgetragenes Ereignis, eine geänderte Zinsregel, einen umgestellten Aktenparameter, geänderte Teilungstage oder korrigierte Stammdaten, fällt die Differenz in den offenen Zeitraum. Die nächste Festschreibung bucht sie als eigene Korrekturbuchung je betroffenem Zeitraum und Buchungsart (Kap. 4.3). Der Buchungstext nennt den Zeitraum; maschinenlesbar ist der Bezug über `festschreibung_buchung`, sodass sich auch eine zweite Korrektur desselben Zeitraums zuordnen lässt.
    - **Begründung:** Selbst gesetzter Grundsatz in Anlehnung an die Grundsätze ordnungsmäßiger Buchführung: Was festgeschrieben ist, bleibt stehen, Fehler werden im offenen Zeitraum berichtigt. Es ist keine Rechtsregel.
 
 ### 5.3 Anrechnung von Zahlungen
@@ -368,9 +416,9 @@ Ablauf:
 - Innerhalb einer Gruppe (Kosten, Zinsen) gilt: älteste Position zuerst. Prüfpunkt P-07.
 - **Mehrere Akten desselben Gläubigers:** Die Zahlung gilt für die Akte, die der Schuldner bei der Zahlung bestimmt, z. B. im Verwendungszweck (§ 366 Abs. 1 BGB). Fehlt eine Bestimmung, legt Release 1 die Zahlung zur manuellen Zuordnung vor. Die gesetzliche Reihenfolge des § 366 Abs. 2 BGB (fällig → geringere Sicherheit → lästiger → älter → verhältnismäßig) wird als Vorschlag angezeigt, nicht automatisch angewandt.
 - **Abweichende Bestimmung des Schuldners:** Lehnt der Gläubiger sie ab (§ 367 Abs. 2 BGB), wird das Ereignis `anrechnung_abgelehnt` erfasst, und es gilt wieder die gesetzliche Reihenfolge.
-- **Warnung:** Ist eine Rate kleiner als der Zinszuwachs der Periode, sinkt die Hauptforderung nie. Das Dashboard zeigt das bei jeder betroffenen Akte an.
+- **Warnung:** Ist eine Rate kleiner als der Zinszuwachs seit der vorigen Rate, sinkt die Hauptforderung nie. Das Dashboard zeigt das bei jeder betroffenen Akte an.
 
-**Abgleich mit der Forderungsaufstellung:** Der Nutzer erfasst die Positionen der Aufstellung: Stichtag, Hauptforderung, Zinsen je Zeitraum, Kosten je Position, verrechnete Zahlungen. Das System vergleicht positionsweise und nennt mögliche Ursachen für Abweichungen: Zinssatz, Tageszählung, Anrechnungsreihenfolge, unbekannte Kosten, fehlende Zahlungen.
+**Abgleich mit der Forderungsaufstellung:** Der Nutzer erfasst die Positionen der Aufstellung: Stichtag, Hauptforderung, Zinsen je Zeitraum, Kosten je Position, verrechnete Zahlungen. Das System vergleicht positionsweise und nennt mögliche Ursachen für Abweichungen: Zinssatz, Tageszählung, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge, unbekannte Kosten, fehlende Zahlungen.
 
 ### 5.4 Fristen
 
@@ -610,6 +658,7 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
   - Eine stornierte Zahlung ergibt dieselben Zinsen, dieselbe Anrechnung und dieselben Fristen einschließlich Verjährung wie ein Fall, in dem es die Zahlung nie gab
   - Eine Festschreibung ändert kein Rechenergebnis
   - Nach dem Setzen einer Kontosperre ändert sich der Saldo des Kontos bis zum Sperrdatum nicht mehr
+  - Teilt man einen Zinslauf an beliebigen Tagen in Abschnitte, ändert sich die Summe der Zinstage nicht, für jede Tageszählung (Kap. 5.1)
 - **Statische Prüfung:** Ruff, Pyright im Strict-Modus, Verbot von `float` in Fachmodulen.
 - **Review:** Jeder Pull Request wird von einer zweiten KI gegen dieses Dokument, `CLAUDE.md` und den Diff geprüft. Das Ergebnis erscheint als PR-Kommentar.
 - **Community:** `SECURITY.md` mit Meldeweg für Sicherheitslücken; Issue-Vorlage für fachliche Fehler mit anonymisiertem Beispiel.
@@ -626,8 +675,10 @@ akte:
   verbraucherdarlehen: false
   anrechnung: bgb_367
   tageszaehlung: act_365
-  rundung: je_periode
   zinsbeginn: genannter_tag
+  zahltag: alter_betrag
+  teilung: kalender
+  teilungstage: []
 bestandteile:
   - art: hauptforderung
     betrag: "<aus Aufstellung>"
@@ -672,7 +723,7 @@ toleranz: "0.00"
 
 ## 14 Offene Prüfpunkte
 
-Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern werden nicht neu vergeben. Geschlossen sind P-04 (E-22), P-05 (E-23), P-06 (E-24) und P-12 (E-21).
+Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern werden nicht neu vergeben. Geschlossen sind P-04 (E-22), P-05 (E-23), P-06 (E-24), P-12 (E-21), P-13 (E-33), P-14 (E-30) und P-15 (E-34).
 
 | Nr. | Frage | Auswirkung |
 |---|---|---|
@@ -684,13 +735,10 @@ Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern
 | P-09 | Wortlaut von Disclaimer und Abgrenzung zur Rechtsdienstleistung | Haftung |
 | P-10 | Löschkonzept: Wie werden eine irrtümlich angelegte Akte oder ein ganzer Haushalt endgültig gelöscht, obwohl Buchungen unveränderlich sind? Entscheidung spätestens mit M8 | Unveränderlichkeit der Buchungen, Datenschutz |
 | P-11 | Gläubigersicht: eigenes Modul mit eigenen Tabellen, oder Teil des Moduls Verbindlichkeiten (dann mit `akte.richtung`)? Wie wird die gemeinsame Rechenlogik (Zinsen, Anrechnung) genutzt, ohne E-17 zu verletzen? Entscheidung vor Beginn der Gläubigersicht | Zuschnitt der Module, Tabelle `akte` |
-| P-13 | Rundung `am_ende` (E-23): Was bedeutet sie bei Zahlungen innerhalb einer Zinsperiode? Ist das Ende der Stichtag der Abfrage bzw. der Festschreibung? Wird der Zinsbetrag gerundet, auf den eine Zahlung angerechnet wird? Entscheidung vor der Umsetzung (M2/M3) | Rundung bei `am_ende`; wird der Zinsbetrag nicht gerundet, entstehen in der Anrechnungsbuchung Beträge unter einem Cent |
-| P-14 | Zinsbasis am Zahlungstag: Gilt am Tag der Zahlung schon die verminderte Zinsbasis oder erst ab dem Folgetag? | Zinstage je Zinsperiode (Kap. 5.2 Schritte 2 und 3) |
-| P-15 | Tageszählung `30_360` (E-22): Welche Variante ist gemeint (z. B. deutsche Methode, US/ISDA)? | Zinsberechnung bei `30_360` |
 | P-16 | Import aus CAMT.053 (M6): Welches Datum des Kontoauszugs wird die Wertstellung der Buchung, Buchungstag oder Valuta? | Wertstellung importierter Zahlungen und damit Zinsen, Anrechnung und Fristen |
 | P-17 | Rücklastschrift und zurückgegebene Zahlungen: Zählt eine zurückgegebene Zahlung für den Neubeginn der Verjährung (§ 212 Abs. 1 Nr. 1 BGB) noch? Das ist eine Rechtsfrage, die das Fachkonzept nicht beantwortet. Wie wird eine Rücklastschrift erfasst und gebucht? Fest steht nur: Sie ist kein Storno, sondern ein tatsächliches Ereignis (E-26) | Verjährung (Kap. 5.5), Ereignistypen, Buchungsarten |
 | P-18 | Ereignis `zahlung` und Buchung: Sind das Datum des Ereignisses und die Wertstellung der Buchung immer gleich? Kap. 3 richtet Fristen nach der Wertstellung, Kap. 5.4 und 5.5 leiten sie aus dem Ereignis ab. Bekommt die Neubuchung nach Storno und Neubuchung ein eigenes Ereignis `zahlung`? Ohne Ereignis gäbe es keinen Neubeginn der Verjährung. Welches Datum für den Neubeginn der Verjährung zählt, berührt eine Rechtsfrage | Fristen, Verjährung |
-| P-19 | Rückweg im Statusmodell: Jede Ursache aus Kap. 5.2 Schritt 7 kann die Restschuld wieder über 0,00 € heben (nachgetragenes Ereignis, geänderte Zinsregel, umgestellter Aktenparameter, korrigierte Stammdaten). Soll der Auslöser des Rückwegs aus `ausgeglichen` und `nachwirkung` „Restschuld > 0,00 €“ heißen statt nur „Storno einer Zahlung oder neue Kosten“? | Statusmodell (Kap. 6), Nachwirkungs-Aufgaben |
+| P-19 | Rückweg im Statusmodell: Jede Ursache aus Kap. 5.2 Schritt 7 kann die Restschuld wieder über 0,00 € heben (nachgetragenes Ereignis, geänderte Zinsregel, umgestellter Aktenparameter, geänderte Teilungstage, korrigierte Stammdaten). Soll der Auslöser des Rückwegs aus `ausgeglichen` und `nachwirkung` „Restschuld > 0,00 €“ heißen statt nur „Storno einer Zahlung oder neue Kosten“? | Statusmodell (Kap. 6), Nachwirkungs-Aufgaben |
 | P-20 | Überzahlung: Wird eine Überzahlung auf Positionen angerechnet, die später entstehen, z. B. neue Vollstreckungskosten? Wenn ja, ab welcher Wertstellung? | Anrechnung, Restschuld, Status |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
 | T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |
