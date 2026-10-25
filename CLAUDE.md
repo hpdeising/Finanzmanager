@@ -66,9 +66,10 @@ Neue Frameworks oder Bibliotheken nur mit Begründung im Pull Request.
 
 - `tests/golden/<modul>/` enthält zwei Sorten in getrennten Ordnern:
   - `real/`: anonymisierte reale Fälle. Die Erwartungswerte stammen aus der Aufstellung des Gläubigers. Wo die Aufstellung nachweislich falsch rechnet, gilt der vom Maintainer nachgerechnete Wert; die YAML-Datei vermerkt jede solche Abweichung im Block `abweichungen`. Das Programm bildet Rechenfehler von Gläubigern nicht nach.
-  - `konstruiert/`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte stammen aus einer Rechentabelle, die der Maintainer geprüft und freigegeben hat.
+  - `konstruiert/`: ausgedachte Daten, keine Daten aus realen Aufstellungen. Die Erwartungswerte berechnet eine KI außerhalb der Sitzung, die den Programmcode schreibt, auf zwei voneinander unabhängigen Wegen, etwa Tabellenkalkulation mit Formeln und exakte Dezimalrechnung. Beide müssen centgenau übereinstimmen, der ungerundete Zins im Rechenweg in allen angegebenen Stellen. Nie mit dem Programm. Konstruierte Fälle brauchen keine Prüfung und keine Freigabe durch den Maintainer.
 - Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte. Rechenweg und Anrechnung in den CSV-Dateien neben der YAML-Datei tragen dieselbe Kennung und gehören zu den Erwartungswerten, ebenso der Block `abweichungen` (Fachkonzept Kap. 12).
-- Erwartungswerte ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe.
+- Erwartungswerte realer Fälle ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe.
+- Erwartungswerte konstruierter Fälle ändern sich nur durch eine neue Berechnung auf beiden Wegen wie oben, mit Begründung im Pull Request.
 - Schlägt ein Golden-File-Test fehl, wird der Code korrigiert, nie die Erwartung. Hältst du die Erwartung für falsch: anhalten, Begründung schreiben, auf Entscheidung warten.
 - Tests nicht überspringen, nicht als `xfail` markieren, Toleranzen nicht erhöhen.
 
