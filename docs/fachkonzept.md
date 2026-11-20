@@ -307,16 +307,16 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | `akte_dokument` | Akte, Dokument |
 | `akte_teilungstag` | Akte, Tag; je Akte und Tag höchstens eine Zeile. Ein Teilungstag ist der erste Tag eines neuen Abschnitts (E-32, Kap. 5.2 Schritt 2). Er ist eine Rechenvorgabe der Akte, kein Ereignis; ändert er sich, ändert sich die Berechnung wie bei einem umgestellten Aktenparameter (Kap. 5.2 Schritt 7) |
 | `titel` | Art, Gericht, Aktenzeichen, erlassen am, zugestellt am, rechtskräftig am |
-| `bestandteil` | Akte, Art, Konto, Ursprungsbetrag, entstanden am, fällig am |
+| `bestandteil` | Akte, Art, Konto, Ursprungsbetrag, entstanden am, fällig am, Kenntnis des Gläubigers am (leer: mit der Fälligkeit gegeben, Kap. 5.5) |
 | `zinsregel` | Bestandteil, Typ, Aufschlag in Prozentpunkten, fester Satz, ab, bis, Quelle (Titel/Vertrag) |
-| `ereignis` | Akte, Typ, Datum, Details (JSON), Beleg; bei `zahlung` die zugehörige Buchung (Datum und Neubuchung: Prüfpunkt P-18) |
+| `ereignis` | Akte, Typ, Datum, Details (JSON), Beleg; bei `zahlung` die zugehörige Buchung (Datum und Neubuchung: Prüfpunkt P-18) und die Angabe, ob sie per Rücklastschrift zurückgegeben wurde (P-17) |
 | `aufgabe` | Akte, Typ, fällig am, erledigt am |
 | `festschreibung` | Akte, Stichtag, erfasst am; nur anhängend. Die Stichtage einer Akte steigen streng. Der Zeitraum einer Festschreibung reicht vom Tag nach dem vorigen Stichtag bis einschließlich ihres Stichtags; bei der ersten Festschreibung umfasst er alles bis einschließlich ihres Stichtags. Der offene Zeitraum einer Akte beginnt am Tag nach ihrem letzten Stichtag; ohne Festschreibung ist alles offen. Sie wird auch gespeichert, wenn nichts zu buchen ist (Kap. 5.2 Schritt 7) |
 | `festschreibung_buchung` | Festschreibung, Buchung, korrigierter Zeitraum (Verweis auf die Festschreibung, deren Zeitraum die Buchung korrigiert; leer bei den Buchungen des eigenen Zeitraums); nur anhängend |
 
 In Meilenstein M1 entstehen davon nur `haushalt`, `konto`, `buchung` und `posting`.
 
-Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`.
+Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`, `einspruch`, `mahnverfahren_ohne_titel_beendet`, `letzte_verfahrenshandlung`, `verzug_eingetreten`. Die letzten vier dienen der Verjährung (Kap. 5.5): `einspruch` gegen den Vollstreckungsbescheid verhindert die berechnete Rechtskraft; `mahnverfahren_ohne_titel_beendet` und `letzte_verfahrenshandlung` beenden die Hemmung durch das Mahnverfahren; `verzug_eingetreten` beginnt die Hemmung bei Verbraucherdarlehen.
 
 ### 4.6 Erweiterbarkeit
 
@@ -452,11 +452,11 @@ Ablauf:
 | Löschung im Schuldnerverzeichnis | Tag der Eintragungsanordnung | 3 Jahre, von Amts wegen | § 882e Abs. 1 ZPO | Information |
 | Vorzeitige Löschung | Ausgleich und Nachweis | auf Antrag | § 882e Abs. 3 Nr. 1 ZPO | Aufgabe |
 | Löschung erledigter Auskunftei-Einträge | Ausgleich | 36 Monate; 18 Monate bei Erfüllung der Bedingungen der 100-Tage-Regel | Verhaltensregeln der Auskunfteien (Code of Conduct) | Information |
-| Verjährung | siehe 5.5 | | | materiell |
+| Verjährung | siehe 5.5 | | | Information |
 
 Zur Tabelle: Bei der Eintragungsanordnung ist das Datum des Ereignisses der Tag der Anordnung; der Tag der Bekanntgabe wird gesondert erfasst, und fehlt er, warnt das System. Die Berufungsfrist erscheint immer, mit dem Hinweis auf eine Beschwer über 600 € oder die Zulassung. Die Löschfristen der Auskunfteien sind zurückgestellt, bis es eine belastbare Quelle gibt.
 
-Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Tage; Informationen 30 Tage. Fehlt bei einer Zustellung das Datum, warnt das System sofort, denn ohne Zustellungsdatum gibt es keine Frist.
+Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Tage; Informationen, auch die Verjährung, 30 Tage. Fehlt bei einer Zustellung das Datum, warnt das System sofort, denn ohne Zustellungsdatum gibt es keine Frist.
 
 ### 5.5 Verjährung
 
@@ -476,7 +476,18 @@ Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Ta
 - **Neubeginn:**
   - durch Anerkenntnis, ausdrücklich auch durch Abschlagszahlung, Zinszahlung oder Sicherheitsleistung (§ 212 Abs. 1 Nr. 1 BGB);
   - durch Vornahme oder Beantragung einer Vollstreckungshandlung (§ 212 Abs. 1 Nr. 2 BGB).
-- **Umsetzung Release 1:** Jede erfasste Zahlung, deren Buchung nicht storniert ist (E-26), und jede erfasste Vollstreckungshandlung löst den Neubeginn für alle Bestandteile der Akte aus. Abweichungen klärt Prüfpunkt P-02. Ob das auch für eine Zahlung gilt, die per Rücklastschrift zurückgegeben wurde, legt dieses Dokument nicht fest (Prüfpunkt P-17).
+- **Umsetzung Release 1:** Jede erfasste Zahlung, deren Buchung nicht storniert ist (E-26), jedes Anerkenntnis und jeder erfasste Antrag auf oder jede Vornahme einer Vollstreckungshandlung löst den Neubeginn für alle Bestandteile der Akte aus. Abweichungen klärt Prüfpunkt P-02; einstellbar ist auch „nur angerechnete Bestandteile“, Voreinstellung „alle“. Eine Zahlung, die per Rücklastschrift zurückgegeben wurde, zählt als Abschlagszahlung und löst den Neubeginn aus (P-17, einstellbar, Voreinstellung nach E-36).
+
+**Umsetzung im Einzelnen (Entscheidungen vom 20.11.2026):**
+
+- **Gegenstände:** Die Verjährung wird je Bestandteil berechnet, Zinsen gesondert: Zinsen bis zur Titulierung verjähren wie der Titel, laufende Zinsen nach der Titulierung je Kalenderjahr ihrer Entstehung mit Ende am 31.12. des dritten Folgejahres (§ 197 Abs. 2 BGB), bei Verbraucherdarlehen in 30 Jahren ab Titulierung (§ 497 Abs. 3 BGB). Zinsen einer nicht titulierten Forderung verjähren je Kalenderjahr nach §§ 195, 199 BGB.
+- **Nicht titulierte Forderung:** Maßgeblich ist `fällig_am`. Die Kenntnis des Gläubigers gilt mit der Fälligkeit als gegeben; ist ein späterer Tag als `kenntnis_am` erfasst, gilt dieser. Fehlt die Fälligkeit, bleibt die Verjährung offen, und das System warnt.
+- **Titel:** Ein erfasstes Ereignis `rechtskraft` hat Vorrang. Sonst wird die Rechtskraft des Vollstreckungsbescheids aus Zustellung und Einspruchsfrist berechnet (§ 700 Abs. 1, § 339 Abs. 1 ZPO): rechtskräftig am Tag nach dem Ende der Einspruchsfrist, berechnet wie in Kap. 5.4. Ist ein `einspruch` erfasst und keine Rechtskraft, bleibt die Verjährung offen, ebenso bei einem Urteil ohne erfasste Rechtskraft; das System warnt. Bei Vergleich und vollstreckbarer Urkunde zählt `errichtung_titel`. Die Frist beginnt mit dem Tag nach dem Ereignis (§ 187 Abs. 1 BGB).
+- **Hemmung durch Mahnbescheid:** Sie beginnt mit der Zustellung des Mahnbescheids und endet mit der Rechtskraft des Vollstreckungsbescheids. Endet das Mahnverfahren ohne Titel (`mahnverfahren_ohne_titel_beendet`) oder gerät es in Stillstand (`letzte_verfahrenshandlung`, § 204 Abs. 2 Satz 3 BGB), endet die Hemmung sechs Monate danach. Ohne eines dieser Ereignisse dauert die Hemmung an; die Verjährung zeigt dann kein Ende, sondern den Hinweis „gehemmt“.
+- **Hemmung bei Verbraucherdarlehen:** ab dem Ereignis `verzug_eingetreten` bis zur Titulierung, höchstens zehn Jahre ab Entstehung des Bestandteils.
+- **Hemmung und Neubeginn zusammen:** Gehemmte Tage zählen nicht (§ 209 BGB); das Ende verschiebt sich um sie. Ein Neubeginn wirkt nur, solange die Verjährung läuft, also nach ihrem Beginn und vor ihrem Ende, und verkürzt sie nie.
+- **§ 193 BGB (P-01):** einstellbar, Voreinstellung: anwenden (E-36). Es zählen Wochenenden und Feiertage des Haushaltslandes, nach E-36 auch Feiertage, die nur in Teilen des Landes gelten. Liegt das Ende nach dem letzten Jahr von `feiertage.yaml`, verschieben nur Wochenenden, und das System weist darauf hin.
+- **Art und Warnung:** Die Verjährung ist eine Information mit Warnung 30 Tage vorher (Kap. 5.4).
 
 **Pflichthinweis in der Oberfläche:** „Verjährung tritt nicht von selbst ein, sie muss als Einrede erhoben werden (§ 214 Abs. 1 BGB). Die Berechnung ist eine Näherung auf Grundlage der erfassten Ereignisse. Fehlt ein Ereignis, ist das Ergebnis falsch.“
 
@@ -838,15 +849,15 @@ Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern
 
 | Nr. | Frage | Auswirkung |
 |---|---|---|
-| P-01 | Gilt § 193 BGB für das Ende der Verjährungsfrist? | Fristende an Wochenenden und Feiertagen |
-| P-02 | Wirkt der Neubeginn durch Teilzahlung (§ 212 Abs. 1 Nr. 1 BGB) für alle Bestandteile oder nur für den angerechneten? | Verjährungsberechnung |
+| P-01 | Gilt § 193 BGB für das Ende der Verjährungsfrist? Einstellbar, Voreinstellung: anwenden (E-36, Kap. 5.5) | Fristende an Wochenenden und Feiertagen |
+| P-02 | Wirkt der Neubeginn durch Teilzahlung (§ 212 Abs. 1 Nr. 1 BGB) für alle Bestandteile oder nur für den angerechneten? Einstellbar, Voreinstellung: alle (Kap. 5.5) | Verjährungsberechnung |
 | P-03 | Verzinsung von Verfahrenskosten aus dem Mahnverfahren: ab wann, zu welchem Satz? | Zinsregel für Kosten |
 | P-08 | Plausibilitätsprüfung der Höhe von Inkassokosten: Release 1 oder später? | Häufigste Abweichungsquelle |
 | P-09 | Wortlaut von Disclaimer und Abgrenzung zur Rechtsdienstleistung | Haftung |
 | P-10 | Löschkonzept: Wie werden eine irrtümlich angelegte Akte oder ein ganzer Haushalt endgültig gelöscht, obwohl Buchungen unveränderlich sind? Entscheidung spätestens mit M8 | Unveränderlichkeit der Buchungen, Datenschutz |
 | P-11 | Gläubigersicht: eigenes Modul mit eigenen Tabellen, oder Teil des Moduls Verbindlichkeiten (dann mit `akte.richtung`)? Wie wird die gemeinsame Rechenlogik (Zinsen, Anrechnung) genutzt, ohne E-17 zu verletzen? Entscheidung vor Beginn der Gläubigersicht | Zuschnitt der Module, Tabelle `akte` |
 | P-16 | Import aus CAMT.053 (M6): Welches Datum des Kontoauszugs wird die Wertstellung der Buchung, Buchungstag oder Valuta? | Wertstellung importierter Zahlungen und damit Zinsen, Anrechnung und Fristen |
-| P-17 | Rücklastschrift und zurückgegebene Zahlungen: Zählt eine zurückgegebene Zahlung für den Neubeginn der Verjährung (§ 212 Abs. 1 Nr. 1 BGB) noch? Das ist eine Rechtsfrage, die das Fachkonzept nicht beantwortet. Wie wird eine Rücklastschrift erfasst und gebucht? Fest steht nur: Sie ist kein Storno, sondern ein tatsächliches Ereignis (E-26) | Verjährung (Kap. 5.5), Ereignistypen, Buchungsarten |
+| P-17 | Rücklastschrift und zurückgegebene Zahlungen: Zählt eine zurückgegebene Zahlung für den Neubeginn der Verjährung (§ 212 Abs. 1 Nr. 1 BGB) noch? Das ist eine Rechtsfrage, die das Fachkonzept nicht beantwortet. Wie wird eine Rücklastschrift erfasst und gebucht? Fest steht nur: Sie ist kein Storno, sondern ein tatsächliches Ereignis (E-26). Für die Verjährung einstellbar, Voreinstellung: zählt als Abschlagszahlung (Neubeginn, E-36, Kap. 5.5); Erfassung und Buchung bleiben offen | Verjährung (Kap. 5.5), Ereignistypen, Buchungsarten |
 | P-18 | Ereignis `zahlung` und Buchung: Sind das Datum des Ereignisses und die Wertstellung der Buchung immer gleich? Kap. 3 richtet Fristen nach der Wertstellung, Kap. 5.4 und 5.5 leiten sie aus dem Ereignis ab. Bekommt die Neubuchung nach Storno und Neubuchung ein eigenes Ereignis `zahlung`? Ohne Ereignis gäbe es keinen Neubeginn der Verjährung. Welches Datum für den Neubeginn der Verjährung zählt, berührt eine Rechtsfrage | Fristen, Verjährung |
 | P-19 | Rückweg im Statusmodell: Jede Ursache aus Kap. 5.2 Schritt 7 kann die Restschuld wieder über 0,00 € heben (nachgetragenes Ereignis, geänderte Zinsregel, umgestellter Aktenparameter, geänderte Teilungstage, korrigierte Stammdaten). Soll der Auslöser des Rückwegs aus `ausgeglichen` und `nachwirkung` „Restschuld > 0,00 €“ heißen statt nur „Storno einer Zahlung oder neue Kosten“? | Statusmodell (Kap. 6), Nachwirkungs-Aufgaben |
 | P-20 | Überzahlung: Wird eine Überzahlung auf Positionen angerechnet, die später entstehen, z. B. neue Vollstreckungskosten? Wenn ja, ab welcher Wertstellung? | Anrechnung, Restschuld, Status |
