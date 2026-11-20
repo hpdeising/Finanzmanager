@@ -33,8 +33,26 @@ KALENDER = Feiertagskalender.aus_daten(
     _daten(
         {"datum": date(2030, 1, 1), "name": "Testtag eins", "laender": ["alle"]},
         {"datum": date(2030, 6, 3), "name": "Testtag zwei", "laender": ["BY", "SH"]},
+        regionale_feiertage=[
+            {"datum": date(2030, 8, 8), "name": "Regionaler Testtag", "laender": ["BY"]}
+        ],
     )
 )
+
+
+@pytest.mark.parametrize(
+    ("tag", "land", "erwartet"),
+    [
+        (date(2030, 8, 8), "BY", "Regionaler Testtag"),
+        (date(2030, 8, 8), "SH", None),
+        (date(2030, 1, 1), "BY", None),
+    ],
+)
+def test_regionaler_feiertag(tag: date, land: str, erwartet: str | None) -> None:
+    """Feiertage nur in Teilen eines Landes sind keine Feiertage des Landes (Kap. 5.4)."""
+    assert KALENDER.regionaler_feiertag(tag, land) == erwartet
+    if erwartet is not None:
+        assert not KALENDER.ist_feiertag(tag, land)
 
 
 def test_laender_sind_die_sechzehn_kuerzel() -> None:
@@ -124,6 +142,12 @@ def test_fehlende_datei_ist_ein_fehler(tmp_path: Path) -> None:
         ),
         pytest.param(_daten({"datum": "2030-01-01", "name": "x", "laender": ["alle"]}), id="Text"),
         pytest.param(_daten({"datum": date(2030, 1, 1), "laender": ["alle"]}), id="ohne Name"),
+        pytest.param(
+            _daten(
+                regionale_feiertage=[{"datum": date(2031, 8, 8), "name": "x", "laender": ["BY"]}]
+            ),
+            id="regional außerhalb der Gültigkeit",
+        ),
     ],
 )
 def test_aus_daten_lehnt_ungueltige_kalender_ab(daten: object) -> None:
