@@ -11,6 +11,7 @@ from datetime import date
 from decimal import Decimal
 from typing import NoReturn
 
+from app.kern.stammdaten import LAENDER
 from app.module.verbindlichkeiten.domain.begriffe import (
     Anrechnungsregel,
     Bestandteilart,
@@ -162,15 +163,19 @@ class Ereignis:
     ``datum`` kann fehlen, etwa wenn bei einer Zustellung das Datum unbekannt ist; dann gibt es
     keine Frist, sondern eine Warnung. ``versaeumnisurteil`` unterscheidet bei
     ``zustellung_urteil`` das Versäumnisurteil vom streitigen Urteil, ``bekanntgabe_am`` nennt
-    bei ``eintragungsanordnung`` den Tag der Bekanntgabe.
+    bei ``eintragungsanordnung`` den Tag der Bekanntgabe. ``gericht_land`` ist das Land des
+    Gerichts, bei dem die Handlung vorzunehmen ist; nach ihm richten sich die Feiertage (Kap. 5.4).
     """
 
     typ: Ereignistyp
     datum: date | None
     versaeumnisurteil: bool = False
     bekanntgabe_am: date | None = None
+    gericht_land: str | None = None
 
     def __post_init__(self) -> None:
+        if self.gericht_land is not None and self.gericht_land not in LAENDER:
+            _fehler("Unbekanntes Land des Gerichts.")
         if self.versaeumnisurteil and self.typ is not Ereignistyp.ZUSTELLUNG_URTEIL:
             _fehler("versaeumnisurteil gibt es nur bei zustellung_urteil.")
         if self.bekanntgabe_am is not None and self.typ is not Ereignistyp.EINTRAGUNGSANORDNUNG:
