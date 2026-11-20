@@ -4,6 +4,7 @@
 from app.module.verbindlichkeiten.domain.begriffe import (
     Anrechnungsregel,
     Bestandteilart,
+    Ereignistyp,
     Grund,
     Gruppe,
     Tageszaehlung,
@@ -15,6 +16,7 @@ from app.module.verbindlichkeiten.domain.begriffe import (
 from app.module.verbindlichkeiten.domain.eingaben import (
     Aktenparameter,
     Bestandteil,
+    Ereignis,
     Zahlung,
     Zinsregel,
 )
@@ -26,6 +28,8 @@ __all__ = [
     "Bestandteil",
     "Bestandteilart",
     "EingabeUngueltigError",
+    "Ereignis",
+    "Ereignistyp",
     "Grund",
     "Gruppe",
     "Tageszaehlung",
