@@ -13,16 +13,19 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from app.kern.geld import als_text, schneide_ab
 from app.kern.stammdaten import lade_basiszinsreihe
+from app.module.verbindlichkeiten.abgleich import Aufstellung, Kostenposition, gleiche_ab
 from app.module.verbindlichkeiten.berechnung import Ergebnis, berechne
 from app.module.verbindlichkeiten.domain import (
     Aktenparameter,
     Anrechnungsregel,
     Bestandteil,
     Bestandteilart,
+    Gruppe,
     Tageszaehlung,
     Teilung,
     Zahltag,
@@ -208,3 +211,58 @@ def test_angerechnet_wird_nur_auf_entstandene_bestandteile(fall: Fall) -> None:
         if zeile.bestandteil is not None:
             entstanden_am = entstehung[zeile.bestandteil]
             assert entstanden_am is None or entstanden_am <= zeile.zahlung.datum
+
+
+def _als_aufstellung(fall: Fall) -> Aufstellung:
+    """Die Werte des Programms als Aufstellung in der Schreibweise von Kap. 12."""
+    _, bestandteile, _, stichtag = fall
+    ergebnis = _rechne(fall)
+    rechenweg = tuple(
+        {
+            "bestandteil": a.bestandteil,
+            "von": a.von.isoformat(),
+            "bis": a.bis.isoformat(),
+            "grund": "+".join(g.value for g in a.gruende),
+            "tage": str(a.tage),
+            "tagesbasis": str(a.tagesbasis),
+            "basis": als_text(a.basis),
+            "basiszins": "" if a.basiszins is None else format(a.basiszins, "f"),
+            "satz": format(a.satz, "f"),
+            "zins_ungerundet": format(schneide_ab(a.zins_exakt, 6), "f"),
+            "zins_gerundet": als_text(a.zins),
+        }
+        for a in ergebnis.abschnitte
+    )
+    anrechnung = tuple(
+        {
+            "zahlung": z.zahlung.datum.isoformat(),
+            "betrag": als_text(z.zahlung.betrag),
+            "bestandteil": z.bestandteil or "",
+            "gruppe": z.gruppe.value if z.gruppe else "ueberzahlung",
+            "angerechnet": als_text(z.angerechnet),
+            "offen_danach": "" if z.offen_danach is None else als_text(z.offen_danach),
+        }
+        for z in ergebnis.anrechnungen
+    )
+    summen = {
+        "hauptforderung": als_text(ergebnis.hauptforderung),
+        "zinsen": als_text(ergebnis.zinsen),
+        "kosten": als_text(ergebnis.kosten),
+        "gesamt": als_text(ergebnis.gesamt),
+    }
+    kosten = tuple(
+        Kostenposition(b.kennung, als_text(b.betrag))
+        for b in bestandteile
+        if b.art.gruppe is Gruppe.KOSTEN
+        and (b.entstanden_am is None or b.entstanden_am <= stichtag)
+    )
+    return Aufstellung(stichtag, summen, rechenweg, anrechnung, kosten)
+
+
+@settings(max_examples=30)
+@given(_faelle())
+def test_aufstellung_mit_den_werten_des_programms_hat_keine_abweichung(fall: Fall) -> None:
+    """Kap. 5.3: Stimmt die Aufstellung mit der Berechnung überein, meldet der Abgleich nichts."""
+    parameter, bestandteile, zahlungen, _ = fall
+    ergebnis = gleiche_ab(parameter, bestandteile, zahlungen, _als_aufstellung(fall), REIHE)
+    assert ergebnis.abweichungen == ()
