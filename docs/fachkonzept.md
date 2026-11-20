@@ -421,18 +421,18 @@ Ablauf:
 - **Abweichende Bestimmung des Schuldners:** Lehnt der Gläubiger sie ab (§ 367 Abs. 2 BGB), wird das Ereignis `anrechnung_abgelehnt` erfasst, und es gilt wieder die gesetzliche Reihenfolge.
 - **Warnung:** Ist eine Rate kleiner als der Zinszuwachs seit der vorigen Rate, sinkt die Hauptforderung nie. Das Dashboard zeigt das bei jeder betroffenen Akte an.
 
-**Abgleich mit der Forderungsaufstellung:** Der Nutzer erfasst die Positionen der Aufstellung: Stichtag, Hauptforderung, Zinsen je Zeitraum, Kosten je Position, verrechnete Zahlungen. Das System vergleicht positionsweise und nennt mögliche Ursachen für Abweichungen: Zinssatz, Tageszählung, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge, unbekannte Kosten, fehlende Zahlungen.
+**Abgleich mit der Forderungsaufstellung:** Der Nutzer erfasst die Positionen der Aufstellung: Stichtag, Hauptforderung, Zinsen je Zeitraum, Kosten je Position, verrechnete Zahlungen. Das System vergleicht positionsweise und nennt mögliche Ursachen für Abweichungen: Zinssatz, Tageszählung, Zinsbeginn, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge, unbekannte Kosten, fehlende Zahlungen.
 
 - **Form der Aufstellung:** wie die Erwartungswerte eines Golden Files (Kap. 12): Summen zum Stichtag (Hauptforderung, Zinsen, Kosten, Gesamtbetrag), Zinsen je Zeitraum in den Spalten von `<id>.rechenweg.csv`, verrechnete Zahlungen in den Spalten von `<id>.anrechnung.csv`, Kosten je Position mit dem erfassten Bestandteil, falls es ihn gibt. Was die Aufstellung nicht nennt, bleibt leer und wird nicht verglichen. Nennt sie Zeilen der Zinsen oder der Zahlungen, gelten diese als vollständig.
 - **Vergleich:** Position für Position mit der Berechnung zum Stichtag der Aufstellung, Zeile n der Aufstellung mit Zeile n der Berechnung, jede Kostenposition mit dem Betrag ihres Bestandteils. Zahlen gelten als gleich, wenn ihr Wert gleich ist; der ungerundete Zins, wenn der exakte Wert mit den angegebenen Stellen beginnt.
 - **Mögliche Ursachen** einer Abweichung:
   - Zinssatz: Basiszinssatz oder Satz der Zeile weichen ab.
   - Teilung der Abschnitte: Beginn, Ende oder Grund der Zeile weichen ab, oder die Zahl der Zeilen.
-  - Tageszählung, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge: wenn die Berechnung mit genau einer anderen Wahl für `tageszaehlung`, `zahltag`, `teilung` oder die Reihenfolge der Gruppen an dieser Position den Wert der Aufstellung ergibt.
+  - Tageszählung, Zinsbeginn, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge: wenn die Berechnung mit genau einer anderen Wahl für `tageszaehlung`, `zinsbeginn`, `zahltag`, `teilung` oder die Reihenfolge der Gruppen an dieser Position den Wert der Aufstellung ergibt.
   - Unbekannte Kosten: eine Kostenposition ohne erfassten Bestandteil, dann auch für die Summen Kosten und Gesamtbetrag.
   - Fehlende Zahlungen: Die Aufstellung verrechnet andere Zahlungen (Wertstellung und Betrag) als die erfassten bis zum Stichtag, dann für alle Positionen außer den Kosten.
 
-  Trifft keine Ursache zu, steht die Abweichung ohne Ursache, etwa bei einem Rechenfehler der Aufstellung.
+  Trifft keine Ursache zu, zeigt das Programm „keine Ursache gefunden“, etwa bei einem Rechenfehler der Aufstellung; eine eigene Ursache „Rechenfehler“ gibt es nicht.
 
 ### 5.4 Fristen
 
