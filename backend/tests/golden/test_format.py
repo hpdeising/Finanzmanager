@@ -208,7 +208,7 @@ def test_realer_fall_mit_abweichungen_ist_gueltig(tmp_path: Path) -> None:
             "erwartete Wert",
         ),
         ("      zeile: 2", "      zeile: 3", "Zeile gibt es nicht"),
-        ("      feld: erwartung.zinsen", "      feld: erwartung.zins", "gibt es nicht"),
+        ("      feld: erwartung.zinsen", "      feld: erwartung.zins", "keine Position"),
         ("quelle: aufstellung", "quelle: berechnung", "aufstellung"),
         ('  freigegeben_von: "Test"\n', "", "freigegeben_von"),
     ],

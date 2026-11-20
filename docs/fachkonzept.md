@@ -423,6 +423,17 @@ Ablauf:
 
 **Abgleich mit der Forderungsaufstellung:** Der Nutzer erfasst die Positionen der Aufstellung: Stichtag, Hauptforderung, Zinsen je Zeitraum, Kosten je Position, verrechnete Zahlungen. Das System vergleicht positionsweise und nennt mögliche Ursachen für Abweichungen: Zinssatz, Tageszählung, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge, unbekannte Kosten, fehlende Zahlungen.
 
+- **Form der Aufstellung:** wie die Erwartungswerte eines Golden Files (Kap. 12): Summen zum Stichtag (Hauptforderung, Zinsen, Kosten, Gesamtbetrag), Zinsen je Zeitraum in den Spalten von `<id>.rechenweg.csv`, verrechnete Zahlungen in den Spalten von `<id>.anrechnung.csv`, Kosten je Position mit dem erfassten Bestandteil, falls es ihn gibt. Was die Aufstellung nicht nennt, bleibt leer und wird nicht verglichen. Nennt sie Zeilen der Zinsen oder der Zahlungen, gelten diese als vollständig.
+- **Vergleich:** Position für Position mit der Berechnung zum Stichtag der Aufstellung, Zeile n der Aufstellung mit Zeile n der Berechnung, jede Kostenposition mit dem Betrag ihres Bestandteils. Zahlen gelten als gleich, wenn ihr Wert gleich ist; der ungerundete Zins, wenn der exakte Wert mit den angegebenen Stellen beginnt.
+- **Mögliche Ursachen** einer Abweichung:
+  - Zinssatz: Basiszinssatz oder Satz der Zeile weichen ab.
+  - Teilung der Abschnitte: Beginn, Ende oder Grund der Zeile weichen ab, oder die Zahl der Zeilen.
+  - Tageszählung, Zahltag, Teilung der Abschnitte, Anrechnungsreihenfolge: wenn die Berechnung mit genau einer anderen Wahl für `tageszaehlung`, `zahltag`, `teilung` oder die Reihenfolge der Gruppen an dieser Position den Wert der Aufstellung ergibt.
+  - Unbekannte Kosten: eine Kostenposition ohne erfassten Bestandteil, dann auch für die Summen Kosten und Gesamtbetrag.
+  - Fehlende Zahlungen: Die Aufstellung verrechnet andere Zahlungen (Wertstellung und Betrag) als die erfassten bis zum Stichtag, dann für alle Positionen außer den Kosten.
+
+  Trifft keine Ursache zu, steht die Abweichung ohne Ursache, etwa bei einem Rechenfehler der Aufstellung.
+
 ### 5.4 Fristen
 
 - Fristen werden aus Ereignissen abgeleitet und nie gespeichert. Ändert sich ein Ereignis, ändern sich die Fristen. Ein Ereignis `zahlung`, dessen Buchung storniert ist, gilt als nie geschehen (E-26).
@@ -664,12 +675,12 @@ Die Lizenzen der Abhängigkeiten verlangen, dass ihre Lizenztexte und Copyright-
   - Reihenfolge der Zeilen: im Rechenweg je Bestandteil in der Reihenfolge der YAML-Datei, darin nach `von`; in der Anrechnung nach der Wertstellung der Zahlung, darin in der Reihenfolge, in der angerechnet wird.
   - Der Golden-Test vergleicht die Abschnitte und die Anrechnung des Programms Zeile für Zeile mit den CSV-Dateien; ein Fehlschlag nennt die erste abweichende Zeile. Zeilen werden gezählt wie im Editor; die Kopfzeile ist Zeile 1.
 - **Abweichungen von der Aufstellung** (nur bei realen Fällen): Rechnet die Aufstellung nachweislich falsch, gilt der vom Maintainer nachgerechnete Wert. Die YAML-Datei vermerkt jede solche Abweichung im Block `abweichungen`, je Eintrag mit:
-  - `ort`: entweder `feld`, der Pfad eines Felds der YAML-Datei (`erwartung.zinsen`), oder `datei`, `zeile` und `spalte` eines Werts in einer CSV-Datei, die Zeile gezählt wie oben;
-  - `laut_aufstellung`: der Wert laut Aufstellung;
+  - `ort`: eine Position des Abgleichs (Kap. 5.3), entweder `feld`, der Pfad eines Felds der YAML-Datei, oder `datei`, `zeile` und `spalte` eines Werts in einer CSV-Datei, die Zeile gezählt wie oben. Als `feld` gibt es `erwartung.<summe>` (`hauptforderung`, `zinsen`, `kosten`, `gesamt`) und `bestandteile.<n>.betrag` für die Kostenposition des Kostenbestandteils an Stelle n der YAML-Datei, gezählt ab 1;
+  - `laut_aufstellung`: der Wert laut Aufstellung, verschieden vom erwarteten;
   - `erwartet`: der nachgerechnete Wert;
   - `grund`: warum die Aufstellung falsch rechnet.
 
-  Beide Werte stehen als String in der Schreibweise des Orts. Am Ort selbst steht der erwartete Wert. Jeder Wert, der deshalb von der Aufstellung abweicht, bekommt einen eigenen Eintrag, auch ein Folgewert wie `erwartung.gesamt`. Der Block gehört zu den Erwartungswerten; fehlt er, gibt es keine Abweichung. Der Golden-Test prüft das Programm gegen den erwarteten Wert und prüft, dass am Ort der Wert aus `erwartet` steht. Sobald der Abgleich mit der Aufstellung (Kap. 5.3) gebaut ist, prüft der Fall zusätzlich, dass der Abgleich genau diese Abweichungen meldet. Sonst müsste das Programm Rechenfehler von Gläubigern nachbilden, und Fälle aus der Issue-Vorlage „Rechenfehler“ wären unbrauchbar.
+  Beide Werte stehen als String in der Schreibweise des Orts. Am Ort selbst steht der erwartete Wert. Jeder Wert, der deshalb von der Aufstellung abweicht, bekommt einen eigenen Eintrag, auch ein Folgewert wie `erwartung.gesamt`. Jeder Ort steht nur einmal. Der Block gehört zu den Erwartungswerten; fehlt er, gibt es keine Abweichung. Der Golden-Test prüft das Programm gegen den erwarteten Wert und prüft, dass am Ort der Wert aus `erwartet` steht. Zusätzlich gleicht er die Aufstellung ab (Kap. 5.3): Sie besteht aus den Werten der Datei, an jedem Ort des Blocks mit dem Wert aus `laut_aufstellung`, und der Abgleich muss genau die Orte des Blocks mit genau diesen Werten melden; bei konstruierten Fällen keinen. Sonst müsste das Programm Rechenfehler von Gläubigern nachbilden, und Fälle aus der Issue-Vorlage „Rechenfehler“ wären unbrauchbar.
 - **Property-Tests:**
   - Summe der Postings je Buchung = 0
   - Die Anrechnung verteilt exakt den Zahlbetrag, höchstens bis zur Restschuld; der Rest ist die berechnete Überzahlung

@@ -12,6 +12,7 @@ Regeln aus [CLAUDE.md](../../../CLAUDE.md) und dem Fachkonzept:
 - Jede YAML-Datei nennt ihre Sorte und die Quelle ihrer Erwartungswerte. Rechenweg und Anrechnung in den CSV-Dateien tragen dieselbe Kennung und gehören zu den Erwartungswerten, ebenso der Block `abweichungen`.
 - Erwartungswerte stammen nie aus dem Programm selbst.
 - Das Programm bildet Rechenfehler von Gläubigern nicht nach: Der Golden-Test prüft gegen den nachgerechneten Wert, nicht gegen den falschen aus der Aufstellung.
+- Der Abgleich mit der Aufstellung (Fachkonzept Kap. 5.3) meldet bei realen Fällen genau die Orte aus `abweichungen`, bei konstruierten keinen. Als `ort` sind deshalb nur Positionen des Abgleichs erlaubt: `erwartung.<summe>`, `bestandteile.<n>.betrag` eines Kostenbestandteils (n ab 1) und jeder Wert der CSV-Dateien.
 - Erwartungswerte realer Fälle ändern ausschließlich Menschen. Eine KI überträgt nur freigegebene Werte, berechnet sie nie mit dem Programm und ändert sie nie ohne neue Freigabe.
 - Erwartungswerte konstruierter Fälle ändern sich nur durch eine neue Berechnung auf beiden Wegen wie oben, mit Begründung im Pull Request.
 - Schlägt ein Fall fehl, wird der Code korrigiert, nicht die Erwartung.

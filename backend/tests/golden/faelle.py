@@ -56,6 +56,7 @@ ZINSREGELTYPEN = {
 # Gründe in der Reihenfolge aus Kap. 12; zinsbeginn steht immer allein.
 GRUENDE = ("halbjahr", "jahreswechsel", "teilungstag", "zahlung", "regelwechsel")
 GRUPPEN = {"kosten", "zinsen", "hauptforderung", "ueberzahlung"}
+SUMMEN = ("hauptforderung", "zinsen", "kosten", "gesamt")
 
 KOPF_RECHENWEG = [
     "bestandteil",
@@ -173,10 +174,10 @@ def lies_fall(pfad: Path) -> Fall:
     rechenweg = anrechnung = None
     if "rechenweg" in namen:
         rechenweg = _lies_csv(pfad.parent / namen["rechenweg"], KOPF_RECHENWEG)
-        _pruefe_rechenweg(rechenweg, kennung)
+        _pruefe_rechenweg(rechenweg, kennung, sorte == "real")
     if "anrechnung" in namen:
         anrechnung = _lies_csv(pfad.parent / namen["anrechnung"], KOPF_ANRECHNUNG)
-        _pruefe_anrechnung(anrechnung, kennung, zahlungen)
+        _pruefe_anrechnung(anrechnung, kennung, zahlungen, sorte == "real")
     fall = Fall(pfad, fall_id, sorte, daten, kennung, rechenweg, anrechnung)
 
     if "abweichungen" in daten:
@@ -329,29 +330,87 @@ def _pruefe_dateien(
 
 
 def _pruefe_abweichungen(wert: object, fall: Fall, ort: str) -> None:
-    """Am Ort jeder Abweichung steht der erwartete Wert (Kap. 12)."""
+    """Am Ort jeder Abweichung steht der erwartete Wert (Kap. 12).
+
+    Erlaubte Orte sind die Positionen des Abgleichs (Kap. 5.3): ``erwartung.<summe>``,
+    ``bestandteile.<n>.betrag`` eines Kostenbestandteils (n ab 1) und jeder Wert der CSV-Dateien.
+    Der Wert laut Aufstellung unterscheidet sich vom erwarteten; jeder Ort steht nur einmal.
+    """
+    gesehen: set[Ort] = set()
     for nummer, eintrag in enumerate(_liste(wert, ort), 1):
         o = f"{ort} {nummer}"
         felder = _zuordnung(eintrag, o, pflicht={"ort", "laut_aufstellung", "erwartet", "grund"})
-        _text(felder["laut_aufstellung"], f"{o}, laut_aufstellung")
+        laut = _text(felder["laut_aufstellung"], f"{o}, laut_aufstellung")
         erwartet = _text(felder["erwartet"], f"{o}, erwartet")
         _text(felder["grund"], f"{o}, grund")
+        if laut == erwartet:
+            raise FormatError(f"{o}: laut_aufstellung und erwartet sind gleich.")
         stelle = _zuordnung(
             felder["ort"], f"{o}, ort", pflicht=set(), erlaubt={"feld", "datei", "zeile", "spalte"}
         )
-        if set(stelle) == {"feld"}:
-            istwert = _feldwert(fall.daten, _text(stelle["feld"], f"{o}, ort, feld"), o)
-        elif set(stelle) == {"datei", "zeile", "spalte"}:
-            istwert = _csvwert(fall, stelle, o)
+        schluessel = _ort(stelle, o)
+        if schluessel in gesehen:
+            raise FormatError(f"{o}, ort: steht schon in einem anderen Eintrag.")
+        gesehen.add(schluessel)
+        if schluessel[0] == "feld":
+            pfad = str(schluessel[1])
+            if not _abgleichbares_feld(fall, pfad):
+                raise FormatError(
+                    f"{o}, ort: Feld {pfad} ist keine Position des Abgleichs (erwartung.<summe> "
+                    "oder bestandteile.<n>.betrag eines Kostenbestandteils)."
+                )
+            istwert = _feldwert(fall.daten, pfad, o)
         else:
-            raise FormatError(f"{o}, ort: feld oder datei, zeile und spalte erwartet.")
+            istwert = _csvwert(fall, stelle, o)
         if istwert != erwartet:
             raise FormatError(f"{o}: am Ort steht nicht der erwartete Wert.")
 
 
+Ort = tuple[str | int, ...]
+
+
+def _ort(stelle: dict[str, object], o: str) -> Ort:
+    if set(stelle) == {"feld"}:
+        return ("feld", _text(stelle["feld"], f"{o}, ort, feld"))
+    if set(stelle) == {"datei", "zeile", "spalte"}:
+        zeile = stelle["zeile"]
+        if not isinstance(zeile, int) or isinstance(zeile, bool):
+            raise FormatError(f"{o}, ort, zeile: ganze Zahl erwartet.")
+        return ("datei", str(stelle["datei"]), zeile, str(stelle["spalte"]))
+    raise FormatError(f"{o}, ort: feld oder datei, zeile und spalte erwartet.")
+
+
+def _abgleichbares_feld(fall: Fall, pfad: str) -> bool:
+    if pfad in {f"erwartung.{summe}" for summe in SUMMEN}:
+        return True
+    teile = pfad.split(".")
+    if len(teile) != 3 or teile[0] != "bestandteile" or teile[2] != "betrag":
+        return False
+    if not teile[1].isdigit() or not 1 <= int(teile[1]) <= len(fall.kennungen):
+        return False
+    art = cast("list[dict[str, object]]", fall.daten["bestandteile"])[int(teile[1]) - 1]["art"]
+    return str(art).startswith("kosten_")
+
+
+def abweichungen(fall: Fall) -> dict[Ort, str]:
+    """Orte und Werte laut Aufstellung aus dem Block ``abweichungen`` eines geprüften Falls."""
+    eintraege = cast("list[dict[str, object]]", fall.daten.get("abweichungen") or [])
+    return {
+        _ort(cast("dict[str, object]", e["ort"]), fall.id): str(e["laut_aufstellung"])
+        for e in eintraege
+    }
+
+
 def _feldwert(daten: dict[str, object], pfad: str, ort: str) -> str:
+    """Wert eines Felds; Listen werden ab 1 gezählt (``bestandteile.2.betrag``)."""
     wert: object = daten
     for teil in pfad.split("."):
+        if isinstance(wert, list) and teil.isdigit():
+            liste = cast("list[object]", wert)
+            if not 1 <= int(teil) <= len(liste):
+                raise FormatError(f"{ort}, ort: Feld {pfad} gibt es nicht.")
+            wert = liste[int(teil) - 1]
+            continue
         if not isinstance(wert, dict) or teil not in wert:
             raise FormatError(f"{ort}, ort: Feld {pfad} gibt es nicht.")
         wert = cast("dict[object, object]", wert)[teil]
@@ -400,26 +459,35 @@ def _lies_csv(pfad: Path, kopf: list[str]) -> Csv:
     return Csv(pfad.name, daten)
 
 
-def _pruefe_rechenweg(datei: Csv, kennungen: list[str]) -> None:
+def _pruefe_rechenweg(datei: Csv, kennungen: list[str], real: bool) -> None:
+    """Spalten des Rechenwegs; bei realen Fällen darf jeder Wert leer sein (Kap. 12)."""
     vorige: tuple[int, date] | None = None
     for nummer, z in enumerate(datei.zeilen, 2):
         o = f"{datei.name}, Zeile {nummer}"
-        if z["bestandteil"] not in kennungen:
+        z = {s: w for s, w in z.items() if w or not real}
+        if "bestandteil" in z and z["bestandteil"] not in kennungen:
             raise FormatError(f"{o}, bestandteil: unbekannte Kennung.")
-        von = _csv_datum(z["von"], f"{o}, von")
-        bis = _csv_datum(z["bis"], f"{o}, bis")
-        if bis < von:
+        von = _csv_datum(z["von"], f"{o}, von") if "von" in z else None
+        bis = _csv_datum(z["bis"], f"{o}, bis") if "bis" in z else None
+        if von is not None and bis is not None and bis < von:
             raise FormatError(f"{o}: bis liegt vor von.")
-        _pruefe_grund(z["grund"], f"{o}, grund")
+        if "grund" in z:
+            _pruefe_grund(z["grund"], f"{o}, grund")
         for spalte in ("tage", "tagesbasis"):
-            if not _GANZ.fullmatch(z[spalte]):
+            if spalte in z and not _GANZ.fullmatch(z[spalte]):
                 raise FormatError(f"{o}, {spalte}: ganze Zahl erwartet.")
-        _csv_muster(z["basis"], _BETRAG, f"{o}, basis")
-        if z["basiszins"]:
+        for spalte, muster in (
+            ("basis", _BETRAG),
+            ("satz", _SATZ),
+            ("zins_ungerundet", _UNGERUNDET),
+            ("zins_gerundet", _BETRAG),
+        ):
+            if spalte in z:
+                _csv_muster(z[spalte], muster, f"{o}, {spalte}")
+        if z.get("basiszins"):
             _csv_muster(z["basiszins"], _SATZ, f"{o}, basiszins")
-        _csv_muster(z["satz"], _SATZ, f"{o}, satz")
-        _csv_muster(z["zins_ungerundet"], _UNGERUNDET, f"{o}, zins_ungerundet")
-        _csv_muster(z["zins_gerundet"], _BETRAG, f"{o}, zins_gerundet")
+        if "bestandteil" not in z or von is None:
+            continue
         position = (kennungen.index(z["bestandteil"]), von)
         if vorige is not None and position <= vorige:
             raise FormatError(
@@ -438,29 +506,36 @@ def _pruefe_grund(wert: str, ort: str) -> None:
         raise FormatError(f"{ort}: Gründe in der Reihenfolge {'+'.join(GRUENDE)}, ohne Doppelte.")
 
 
-def _pruefe_anrechnung(datei: Csv, kennungen: list[str], zahlungen: list[tuple[date, str]]) -> None:
+def _pruefe_anrechnung(
+    datei: Csv, kennungen: list[str], zahlungen: list[tuple[date, str]], real: bool
+) -> None:
+    """Spalten der Anrechnung; bei realen Fällen darf jeder Wert leer sein (Kap. 12)."""
     vorige: date | None = None
     for nummer, z in enumerate(datei.zeilen, 2):
         o = f"{datei.name}, Zeile {nummer}"
-        zahlung = _csv_datum(z["zahlung"], f"{o}, zahlung")
-        _csv_muster(z["betrag"], _BETRAG, f"{o}, betrag")
-        if (zahlung, z["betrag"]) not in zahlungen:
-            raise FormatError(f"{o}: Zahlung steht nicht unter zahlungen.")
-        if vorige is not None and zahlung < vorige:
-            raise FormatError(f"{o}: Zeilen nach der Wertstellung der Zahlung ordnen.")
-        vorige = zahlung
-        if z["gruppe"] not in GRUPPEN:
+        ueberzahlung = z["gruppe"] == "ueberzahlung"
+        if ueberzahlung and (z["bestandteil"] or z["offen_danach"]):
+            raise FormatError(f"{o}: bei ueberzahlung bleiben bestandteil und offen_danach leer.")
+        z = {s: w for s, w in z.items() if w or not (real or ueberzahlung)}
+        zahlung = _csv_datum(z["zahlung"], f"{o}, zahlung") if "zahlung" in z else None
+        if "betrag" in z:
+            _csv_muster(z["betrag"], _BETRAG, f"{o}, betrag")
+            if zahlung is not None and (zahlung, z["betrag"]) not in zahlungen:
+                raise FormatError(f"{o}: Zahlung steht nicht unter zahlungen.")
+        if zahlung is not None:
+            if vorige is not None and zahlung < vorige:
+                raise FormatError(f"{o}: Zeilen nach der Wertstellung der Zahlung ordnen.")
+            vorige = zahlung
+        if "gruppe" in z and z["gruppe"] not in GRUPPEN:
             raise FormatError(f"{o}, gruppe: {', '.join(sorted(GRUPPEN))} erwartet.")
-        _csv_muster(z["angerechnet"], _BETRAG, f"{o}, angerechnet")
-        if z["gruppe"] == "ueberzahlung":
-            if z["bestandteil"] or z["offen_danach"]:
-                raise FormatError(
-                    f"{o}: bei ueberzahlung bleiben bestandteil und offen_danach leer."
-                )
+        if "angerechnet" in z:
+            _csv_muster(z["angerechnet"], _BETRAG, f"{o}, angerechnet")
+        if ueberzahlung:
             continue
-        if z["bestandteil"] not in kennungen:
+        if "bestandteil" in z and z["bestandteil"] not in kennungen:
             raise FormatError(f"{o}, bestandteil: unbekannte Kennung.")
-        _csv_muster(z["offen_danach"], _BETRAG, f"{o}, offen_danach")
+        if "offen_danach" in z:
+            _csv_muster(z["offen_danach"], _BETRAG, f"{o}, offen_danach")
 
 
 # --- Grundtypen ------------------------------------------------------------------------------
