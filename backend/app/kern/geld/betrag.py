@@ -12,9 +12,16 @@ Grundlage: CLAUDE.md (Abschnitt Geld) und Fachkonzept Kapitel 5.1.
 """
 
 import re
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_EVEN, ROUND_HALF_UP, Decimal, localcontext
 
 CENT = Decimal("0.01")
+
+# Stellen für Zwischenergebnisse, die nicht endlich sind (etwa ein Zins mit Teiler 365).
+# Weit mehr, als eine Rundung auf Cent oder ein auf sechs Stellen abgeschnittener Zins
+# braucht: Liegt der exakte Wert eines Bruchs aus Cent-Beträgen, Sätzen mit zwei
+# Nachkommastellen und Tagen nicht genau auf einer Rundungsgrenze, ist er mindestens etwa
+# 10^-11 von ihr entfernt. Ein Fehler in der 50. Stelle kann die Rundung daher nie kippen.
+RECHENGENAUIGKEIT = 50
 
 # NUMERIC(19,4): vier Nachkommastellen, also höchstens 15 Stellen vor dem Komma.
 SPEICHER_NACHKOMMASTELLEN = 4
@@ -64,6 +71,41 @@ def runde_auf_cent(wert: Decimal) -> Decimal:
     _pruefe_endlich(wert)
     gerundet = wert.quantize(CENT, rounding=ROUND_HALF_UP)
     return gerundet.copy_abs() if gerundet.is_zero() else gerundet
+
+
+def teile(zaehler: Decimal, nenner: Decimal) -> Decimal:
+    """Genau teilen, ohne Rundung auf Cent (Fachkonzept 5.1: ohne Zwischenrundung).
+
+    Gerechnet wird mit ``RECHENGENAUIGKEIT`` Stellen, unabhängig vom Decimal-Kontext des
+    Aufrufers. Ist das Ergebnis endlich darstellbar, ist es exakt.
+
+    Raises:
+        ZeroDivisionError: bei ``nenner == 0``.
+    """
+    _pruefe_endlich(zaehler)
+    _pruefe_endlich(nenner)
+    if nenner.is_zero():
+        msg = "Division durch null."
+        raise ZeroDivisionError(msg)
+    with localcontext(prec=RECHENGENAUIGKEIT, rounding=ROUND_HALF_EVEN):
+        return zaehler / nenner
+
+
+def schneide_ab(wert: Decimal, stellen: int) -> Decimal:
+    """Auf ``stellen`` Nachkommastellen abschneiden, Richtung null, nicht runden.
+
+    Für den ungerundeten Zins im Rechenweg der Golden Files (Fachkonzept Kap. 12): Nur
+    abgeschnitten zeigt der Wert, ob kaufmännisch auf- oder abgerundet wird.
+
+    Raises:
+        ValueError: bei negativer Stellenzahl.
+    """
+    _pruefe_endlich(wert)
+    if stellen < 0:
+        msg = "Stellen müssen mindestens null sein."
+        raise ValueError(msg)
+    with localcontext(prec=RECHENGENAUIGKEIT):
+        return wert.quantize(Decimal(1).scaleb(-stellen), rounding=ROUND_DOWN)
 
 
 def als_text(wert: Decimal) -> str:

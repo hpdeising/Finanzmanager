@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Basiszinssatz nach § 247 BGB, ein Eintrag je Halbjahr, lückenlos (Fachkonzept Kap. 7).
+# Sätze in Prozent, als Text in Anführungszeichen.
+quelle: Deutsche Bundesbank, Bekanntgabe nach § 247 Abs. 2 BGB
+geprueft_von: "noch offen"
+hinweis: >-
+  Vollständige Reihe ab 2002-01-01 aus der Bundesbank-Zeitreihe ergänzen. Bisher stehen nur
+  die Sätze ab 2024-01-01: 2024-01-01 bis 2025-07-01 wie vom Maintainer zu GK-0001 aus der
+  Übersicht der Bundesbank angegeben, 2025-07-01 bis 2026-07-01 wie in Fachkonzept Kap. 7.
+eintraege:
+  - gueltig_ab: 2024-01-01
+    satz: "3.62"
+  - gueltig_ab: 2024-07-01
+    satz: "3.37"
+  - gueltig_ab: 2025-01-01
+    satz: "2.27"
+  - gueltig_ab: 2025-07-01
+    satz: "1.27"
+  - gueltig_ab: 2026-01-01
+    satz: "1.27"
+  - gueltig_ab: 2026-07-01
+    satz: "1.52"
