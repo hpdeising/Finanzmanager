@@ -124,6 +124,11 @@ class Ereignistyp(StrEnum):
     LOESCHUNG_SCHULDNERVERZEICHNIS = "loeschung_schuldnerverzeichnis"
     ERLEDIGT_GEMELDET_AUSKUNFTEI = "erledigt_gemeldet_auskunftei"
     VERJAEHRUNG_EINGEWANDT = "verjaehrung_eingewandt"
+    # Ergänzt am 20.11.2026 für die Verjährung (Kap. 5.5)
+    EINSPRUCH = "einspruch"
+    MAHNVERFAHREN_OHNE_TITEL_BEENDET = "mahnverfahren_ohne_titel_beendet"
+    LETZTE_VERFAHRENSHANDLUNG = "letzte_verfahrenshandlung"
+    VERZUG_EINGETRETEN = "verzug_eingetreten"
 
     @property
     def ist_zustellung(self) -> bool:
