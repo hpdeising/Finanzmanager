@@ -4,6 +4,7 @@
 from app.module.verbindlichkeiten.domain.begriffe import (
     Anrechnungsregel,
     Bestandteilart,
+    Grund,
     Gruppe,
     Tageszaehlung,
     Teilung,
@@ -25,6 +26,7 @@ __all__ = [
     "Bestandteil",
     "Bestandteilart",
     "EingabeUngueltigError",
+    "Grund",
     "Gruppe",
     "Tageszaehlung",
     "Teilung",

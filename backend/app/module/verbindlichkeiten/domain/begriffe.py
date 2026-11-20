@@ -12,6 +12,20 @@ class Gruppe(StrEnum):
     HAUPTFORDERUNG = "hauptforderung"
 
 
+class Grund(StrEnum):
+    """Warum ein Abschnitt beginnt (Kap. 5.2 Schritte 1 und 2, Kap. 12 Spalte ``grund``).
+
+    Die Reihenfolge der Werte ist die, in der mehrere Gründe stehen; ``zinsbeginn`` steht allein.
+    """
+
+    ZINSBEGINN = "zinsbeginn"
+    HALBJAHR = "halbjahr"
+    JAHRESWECHSEL = "jahreswechsel"
+    TEILUNGSTAG = "teilungstag"
+    ZAHLUNG = "zahlung"
+    REGELWECHSEL = "regelwechsel"
+
+
 class Bestandteilart(StrEnum):
     """Art eines Bestandteils (Kap. 3, Kontenrahmen Kap. 4.2)."""
 
