@@ -46,6 +46,19 @@ def test_basiszinsabhaengige_saetze(regel: Zinsregel, tag: date, basiszins: str,
     assert ergebnis.satz == Decimal(satz)
 
 
+def test_negativer_jahressatz_wird_null() -> None:
+    """Kap. 5.2 Schritt 6: Ergibt Basiszinssatz plus Aufschlag einen negativen Wert, ist der
+    Jahressatz 0; der Basiszinssatz bleibt wie in den Stammdaten."""
+    regel = Zinsregel(Zinsregeltyp.BASISZINS_PLUS, ab=AB, aufschlag=Decimal("0.5"))
+    ergebnis = jahressatz(regel, date(2022, 12, 31), REIHE)
+    assert (ergebnis.basiszins, ergebnis.satz) == (Decimal("-0.88"), Decimal(0))
+
+
+def test_jahressatz_genau_null_bleibt_null() -> None:
+    regel = Zinsregel(Zinsregeltyp.BASISZINS_PLUS, ab=AB, aufschlag=Decimal("0.88"))
+    assert jahressatz(regel, date(2022, 12, 31), REIHE).satz == Decimal(0)
+
+
 def test_fester_satz_braucht_keinen_basiszins() -> None:
     regel = Zinsregel(Zinsregeltyp.FEST, ab=AB, satz=Decimal(5))
     # Außerhalb der Reihe: ein fester Satz fragt die Stammdaten nicht ab.

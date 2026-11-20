@@ -15,6 +15,21 @@ from typing import cast
 
 import yaml
 
+from app.kern.geld import betrag
+from app.module.verbindlichkeiten.domain import (
+    Aktenparameter,
+    Anrechnungsregel,
+    Bestandteil,
+    Bestandteilart,
+    Tageszaehlung,
+    Teilung,
+    Zahltag,
+    Zahlung,
+    Zinsbeginn,
+    Zinsregel,
+    Zinsregeltyp,
+)
+
 GOLDEN = Path(__file__).resolve().parent
 SORTEN = {"real": "GR", "konstruiert": "GK"}
 
@@ -513,3 +528,60 @@ def _csv_datum(wert: str, ort: str) -> date:
 def _csv_muster(wert: str, muster: re.Pattern[str], ort: str) -> None:
     if not muster.fullmatch(wert):
         raise FormatError(f"{ort}: Format verletzt.")
+
+
+# --- Eingaben für das Programm ------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Eingaben:
+    """Die Angaben eines Golden Files als Eingaben der Berechnung."""
+
+    parameter: Aktenparameter
+    bestandteile: list[Bestandteil]
+    zahlungen: list[Zahlung]
+    stichtag: date
+
+
+def eingaben(fall: Fall) -> Eingaben:
+    """Akte, Bestandteile und Zahlungen eines geprüften Falls für ``berechne``."""
+    akte = cast("dict[str, object]", fall.daten["akte"])
+    parameter = Aktenparameter(
+        anrechnung=Anrechnungsregel(str(akte["anrechnung"])),
+        tageszaehlung=Tageszaehlung(str(akte["tageszaehlung"])),
+        zinsbeginn=Zinsbeginn(str(akte["zinsbeginn"])),
+        zahltag=Zahltag(str(akte["zahltag"])),
+        teilung=Teilung(str(akte["teilung"])),
+        teilungstage=frozenset(cast("list[date]", akte["teilungstage"])),
+    )
+    bestandteile: list[Bestandteil] = []
+    roh_bestandteile = cast("list[dict[str, object]]", fall.daten["bestandteile"])
+    for kennung, roh in zip(fall.kennungen, roh_bestandteile, strict=True):
+        regel = cast("dict[str, object]", roh["zinsregel"])
+        bestandteile.append(
+            Bestandteil(
+                kennung,
+                Bestandteilart(str(roh["art"])),
+                betrag(roh["betrag"]),
+                (
+                    Zinsregel(
+                        Zinsregeltyp(str(regel["typ"])),
+                        ab=cast("date | None", regel.get("ab")),
+                        bis=cast("date | None", regel.get("bis")),
+                        aufschlag=_dezimal_oder_nichts(regel.get("aufschlag")),
+                        satz=_dezimal_oder_nichts(regel.get("satz")),
+                    ),
+                ),
+                entstanden_am=cast("date | None", roh.get("entstanden_am")),
+            )
+        )
+    zahlungen = [
+        Zahlung(cast("date", z["datum"]), betrag(z["betrag"]))
+        for z in cast("list[dict[str, object]]", fall.daten.get("zahlungen") or [])
+    ]
+    erwartung = cast("dict[str, object]", fall.daten["erwartung"])
+    return Eingaben(parameter, bestandteile, zahlungen, cast("date", erwartung["stichtag"]))
+
+
+def _dezimal_oder_nichts(wert: object) -> Decimal | None:
+    return None if wert is None else Decimal(str(wert))
