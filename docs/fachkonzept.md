@@ -89,6 +89,8 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-34 | Tageszählung `30_360` | Jeder Monat hat 30 Tage, der Teiler ist 360, und wie bei den taggenauen Arten zählt der erste Tag eines Abschnitts mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind 360·(J2−J1) + 30·(M2−M1) + (T2−T1). Dabei ist D1 der Vortag des ersten Tags und D2 der letzte Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst, und die Formel bekommt + 1: 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1. Das gilt am ersten Zinstag (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` ist das der Tag nach dem genannten Tag, E-24) und nach jeder Pause ohne Verzinsung, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt. Ein Regelwechsel ohne Lücke bleibt ein weiterer Abschnitt nach der allgemeinen Formel. So zählen keine unverzinsten Tage mit. In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Damit zählen der 30. und der 31. eines Monats zusammen als ein Tag, und endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Teilen ändert die Summe nicht: Innerhalb verzinster Tage ohne Pause ergeben der Abschnitt nach der Formel mit + 1 und alle folgenden nach der allgemeinen zusammen dieselben Tage wie ungeteilt. Ein Kalenderjahr hat 360 Tage. Beispiele in Kap. 5.1. Eigene Festlegung, keine Rechtsregel und keine Primärquelle: Eine verbindliche Quelle für die Zählung in Forderungsaufstellungen gibt es nicht. Weicht ein realer Fall ab, wird daraus ein neuer Prüfpunkt. Schließt P-15, ergänzt E-22 (Kap. 5.1) |
 | E-35 | Reihenfolge innerhalb einer Gruppe | Bei der Anrechnung gilt innerhalb einer Gruppe: älteste Position zuerst. Kosten nach dem Tag ihrer Entstehung (`entstanden_am`); Bestandteile ohne diesen Tag kommen zuerst, in der Reihenfolge der Eingabe. Zinsen nach dem letzten Tag ihres Abschnitts, auch über Bestandteile hinweg: Zinsen eines früher endenden Abschnitts sind älter. Kein Aktenparameter. Schließt P-07 (Kap. 5.3) |
 | E-36 | Schutz des Schuldners bei Unsicherheit | Wo eine Rechtslage oder ein Datum unsicher ist, rechnet das Programm zum Schutz des Schuldners: Fristen, die der Schuldner wahren muss, im Zweifel früher, Verjährung im Zweifel später. Der Grundsatz bestimmt die Voreinstellungen offener Prüfpunkte und den Umgang mit unsicheren Stammdaten, etwa Feiertagen, die nur in Teilen eines Landes gelten (Kap. 5.4, 5.5) |
+| E-37 | Rückweg im Statusmodell | Steigt die Restschuld einer ausgeglichenen oder geschlossenen Akte wieder über 0,00 €, gleich aus welcher Ursache (Kap. 5.2 Schritt 7), gilt wieder der Status, den die Ereignisse ergeben. Schließt P-19 (Kap. 6) |
+| E-38 | Status wird berechnet | Status, Merkmale und Nachwirkungs-Aufgaben werden aus Ereignissen und der Restschuld berechnet, nie gespeichert; die Spalte `akte.status` wird nie geschrieben. `geschlossen` setzt der Nutzer mit dem Ereignis `akte_geschlossen` (Kap. 6) |
 
 ---
 
@@ -302,7 +304,7 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | Tabelle | Wesentliche Felder |
 |---|---|
 | `glaeubiger` | Name, Anschrift, IBAN, Vertreter (Inkasso), Kontaktdaten |
-| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`; bis zur Entscheidung über P-11), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Zinsbeginn, Zahltag, Teilung, Status, Aktenzeichen des Gläubigers |
+| `akte` | Eigentümer, Freigaben, Richtung (`verbindlichkeit`, `forderung`; bis zur Entscheidung über P-11), Gläubiger, Titelart, Verbraucherdarlehen ja/nein, Anrechnungsregel, Tageszählung, Zinsbeginn, Zahltag, Teilung, Status (wird nie geschrieben, E-38), Aktenzeichen des Gläubigers |
 | `akte_konto` | Akte, Konto. Die Buchungen einer Akte ergeben sich aus den Postings auf ihren Konten |
 | `akte_dokument` | Akte, Dokument |
 | `akte_teilungstag` | Akte, Tag; je Akte und Tag höchstens eine Zeile. Ein Teilungstag ist der erste Tag eines neuen Abschnitts (E-32, Kap. 5.2 Schritt 2). Er ist eine Rechenvorgabe der Akte, kein Ereignis; ändert er sich, ändert sich die Berechnung wie bei einem umgestellten Aktenparameter (Kap. 5.2 Schritt 7) |
@@ -316,7 +318,7 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 
 In Meilenstein M1 entstehen davon nur `haushalt`, `konto`, `buchung` und `posting`.
 
-Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`, `einspruch`, `mahnverfahren_ohne_titel_beendet`, `letzte_verfahrenshandlung`, `verzug_eingetreten`. Die letzten vier dienen der Verjährung (Kap. 5.5): `einspruch` gegen den Vollstreckungsbescheid verhindert die berechnete Rechtskraft; `mahnverfahren_ohne_titel_beendet` und `letzte_verfahrenshandlung` beenden die Hemmung durch das Mahnverfahren; `verzug_eingetreten` beginnt die Hemmung bei Verbraucherdarlehen.
+Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`, `einspruch`, `mahnverfahren_ohne_titel_beendet`, `letzte_verfahrenshandlung`, `verzug_eingetreten`. Die letzten vier dienen der Verjährung (Kap. 5.5): `einspruch` gegen den Vollstreckungsbescheid verhindert die berechnete Rechtskraft; `mahnverfahren_ohne_titel_beendet` und `letzte_verfahrenshandlung` beenden die Hemmung durch das Mahnverfahren; `verzug_eingetreten` beginnt die Hemmung bei Verbraucherdarlehen. Für das Statusmodell (Kap. 6) kommen dazu: `zustellung_kostenfestsetzungsbeschluss`, `akte_geschlossen`, `ratenplan_vereinbart`, `ratenplan_beendet`, `vollstreckungsmassnahme_begonnen`, `vollstreckungsmassnahme_aufgehoben`, `forderung_bestritten`, `bestreiten_beendet`.
 
 ### 4.6 Erweiterbarkeit
 
@@ -497,27 +499,41 @@ Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Ta
 
 **Status (Lebenszyklus):** `offen` → `mahnverfahren` → `tituliert` → `ausgeglichen` → `nachwirkung` → `geschlossen`
 
+Der Status wird aus Ereignissen und der Restschuld berechnet und nie gespeichert (E-38). Es zählen Ereignisse mit Datum bis zum Stichtag.
+
 **Merkmale (unabhängig vom Status):** `ratenplan_aktiv`, `vollstreckung_aktiv`, `bestritten`, `schuldnerverzeichnis_eingetragen`, `verjaehrung_eingewandt`
 
 | Von | Nach | Auslöser |
 |---|---|---|
 | `offen` | `mahnverfahren` | Ereignis `zustellung_mahnbescheid` |
 | `mahnverfahren` | `tituliert` | Ereignis `zustellung_vollstreckungsbescheid` |
-| `offen` | `tituliert` | Urteil, Vergleich oder Urkunde erfasst |
-| jeder außer `geschlossen` | `ausgeglichen` | Restschuld (Kap. 4.1) = 0,00 € |
-| `ausgeglichen` | `nachwirkung` | automatisch; Nachwirkungs-Aufgaben werden angelegt |
-| `nachwirkung` | `geschlossen` | alle Aufgaben erledigt bzw. Informationsfristen abgelaufen |
-| `ausgeglichen`, `nachwirkung` | vorheriger Status | Storno einer Zahlung oder neue Kosten; weitere Auslöser: Prüfpunkt P-19 |
+| `offen` | `tituliert` | Titel-Ereignis: `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `errichtung_titel` (Vergleich, vollstreckbare Urkunde), `zustellung_kostenfestsetzungsbeschluss` |
+| jeder außer `geschlossen` | `ausgeglichen` | Restschuld (Kap. 4.1) = 0,00 €, erreicht durch Zahlungen; Ausgleichstag ist die Wertstellung der letzten Zahlung, die auf einen Bestandteil angerechnet wurde. Eine Überzahlung ist auch ein Ausgleich. Ohne Zahlung, etwa bei einer Akte ohne Bestandteile, ist eine Restschuld von 0,00 € kein Ausgleich |
+| `ausgeglichen` | `nachwirkung` | automatisch; die Nachwirkungs-Aufgaben entstehen |
+| `nachwirkung` | `geschlossen` | Ereignis `akte_geschlossen`, das der Nutzer erfasst; wirksam frühestens, wenn die Restschuld 0,00 € ist und alle Nachwirkungs-Aufgaben erledigt sind, die keine Information sind. Sonst bleibt der Status, und das System warnt. Informationen bleiben nach dem Schließen sichtbar |
+| `ausgeglichen`, `nachwirkung`, `geschlossen` | Status aus den Ereignissen | Restschuld > 0,00 €, gleich aus welcher Ursache (E-37). Das System warnt, wenn ein `akte_geschlossen` erfasst ist |
+
+**Merkmale aus Ereignissen:**
+
+| Merkmal | Gesetzt durch | Beendet durch |
+|---|---|---|
+| `ratenplan_aktiv` | `ratenplan_vereinbart` | `ratenplan_beendet`; maßgeblich ist das letzte der beiden |
+| `vollstreckung_aktiv` | `vollstreckungsmassnahme_begonnen` | `vollstreckungsmassnahme_aufgehoben`; aktiv, solange mehr Maßnahmen begonnen als aufgehoben sind. Eine einzelne `vollstreckungshandlung` setzt das Merkmal nicht |
+| `bestritten` | `forderung_bestritten` | `bestreiten_beendet`; maßgeblich ist das letzte der beiden |
+| `schuldnerverzeichnis_eingetragen` | `eintragungsanordnung` | `loeschung_schuldnerverzeichnis` oder Ablauf von drei Jahren seit dem Tag der Eintragungsanordnung (§ 882e Abs. 1 ZPO) |
+| `verjaehrung_eingewandt` | `verjaehrung_eingewandt` | – |
 
 **Nachwirkungs-Aufgaben bei Ausgleich:**
 
-1. Quittung anfordern (§ 368 BGB).
-2. Titel herausverlangen (§ 371 BGB analog). Bei Zahlung an den Gerichtsvollzieher liefert dieser den Titel aus (§ 757 Abs. 1 ZPO).
-3. Falls eingetragen: vorzeitige Löschung im Schuldnerverzeichnis beantragen (§ 882e Abs. 3 Nr. 1 ZPO).
-4. Erledigungsmeldung bei Auskunfteien prüfen, per Datenkopie nach Art. 15 DSGVO, frühestens vier Wochen nach Ausgleich.
-5. Löschdatum der Auskunftei überwachen.
+1. Quittung anfordern (§ 368 BGB). Erledigt durch `quittung_erhalten`.
+2. Titel herausverlangen (§ 371 BGB analog), nur bei einem Titel-Ereignis. Bei Zahlung an den Gerichtsvollzieher liefert dieser den Titel aus (§ 757 Abs. 1 ZPO). Erledigt durch `titel_erhalten`.
+3. Falls am Ausgleichstag eingetragen: vorzeitige Löschung im Schuldnerverzeichnis beantragen (§ 882e Abs. 3 Nr. 1 ZPO). Erledigt durch `loeschung_schuldnerverzeichnis` oder die Löschung von Amts wegen (§ 882e Abs. 1 ZPO).
+4. Erledigungsmeldung bei Auskunfteien prüfen, per Datenkopie nach Art. 15 DSGVO, frühestens vier Wochen nach Ausgleich. Erledigt durch `erledigt_gemeldet_auskunftei`.
+5. Löschdatum der Auskunftei überwachen. Information ohne Datum, solange die Löschfristen der Auskunfteien zurückgestellt sind (Kap. 5.4); sie hindert das Schließen nicht.
 
-**Eskalation bei verweigerter Titelherausgabe:** Frist setzen. Vollstreckt der Gläubiger trotz Erfüllung weiter, zeigt das System einen Hinweis auf die Vollstreckungsabwehrklage (§ 767 ZPO) und die einstweilige Einstellung (§ 769 ZPO) und empfiehlt anwaltliche Hilfe. Die Software formuliert diese Schritte nicht selbst.
+Die Aufgaben werden wie der Status berechnet. Erledigt ist eine Aufgabe durch ihr Ereignis am Ausgleichstag oder danach. Nach einem erneuten Ausgleich entstehen die Aufgaben neu.
+
+**Eskalation bei verweigerter Titelherausgabe:** Frist setzen. Vollstreckt der Gläubiger trotz Erfüllung weiter (eine laufende Vollstreckungsmaßnahme oder ein Vollstreckungsantrag, eine Vollstreckungshandlung oder eine begonnene Maßnahme nach dem Ausgleichstag), zeigt das System einen Hinweis auf die Vollstreckungsabwehrklage (§ 767 ZPO) und die einstweilige Einstellung (§ 769 ZPO) und empfiehlt anwaltliche Hilfe. Die Software formuliert diese Schritte nicht selbst.
 
 ---
 
@@ -845,7 +861,7 @@ zahlung,betrag,bestandteil,gruppe,angerechnet,offen_danach
 
 ## 14 Offene Prüfpunkte
 
-Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern werden nicht neu vergeben. Geschlossen sind P-04 (E-22), P-05 (E-23), P-06 (E-24), P-12 (E-21), P-13 (E-33), P-14 (E-30), P-15 (E-34) und P-07 (E-35).
+Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern werden nicht neu vergeben. Geschlossen sind P-04 (E-22), P-05 (E-23), P-06 (E-24), P-12 (E-21), P-13 (E-33), P-14 (E-30), P-15 (E-34), P-07 (E-35) und P-19 (E-37).
 
 | Nr. | Frage | Auswirkung |
 |---|---|---|
@@ -859,7 +875,6 @@ Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern
 | P-16 | Import aus CAMT.053 (M6): Welches Datum des Kontoauszugs wird die Wertstellung der Buchung, Buchungstag oder Valuta? | Wertstellung importierter Zahlungen und damit Zinsen, Anrechnung und Fristen |
 | P-17 | Rücklastschrift und zurückgegebene Zahlungen: Zählt eine zurückgegebene Zahlung für den Neubeginn der Verjährung (§ 212 Abs. 1 Nr. 1 BGB) noch? Das ist eine Rechtsfrage, die das Fachkonzept nicht beantwortet. Wie wird eine Rücklastschrift erfasst und gebucht? Fest steht nur: Sie ist kein Storno, sondern ein tatsächliches Ereignis (E-26). Für die Verjährung einstellbar, Voreinstellung: zählt als Abschlagszahlung (Neubeginn, E-36, Kap. 5.5); Erfassung und Buchung bleiben offen | Verjährung (Kap. 5.5), Ereignistypen, Buchungsarten |
 | P-18 | Ereignis `zahlung` und Buchung: Sind das Datum des Ereignisses und die Wertstellung der Buchung immer gleich? Kap. 3 richtet Fristen nach der Wertstellung, Kap. 5.4 und 5.5 leiten sie aus dem Ereignis ab. Bekommt die Neubuchung nach Storno und Neubuchung ein eigenes Ereignis `zahlung`? Ohne Ereignis gäbe es keinen Neubeginn der Verjährung. Welches Datum für den Neubeginn der Verjährung zählt, berührt eine Rechtsfrage | Fristen, Verjährung |
-| P-19 | Rückweg im Statusmodell: Jede Ursache aus Kap. 5.2 Schritt 7 kann die Restschuld wieder über 0,00 € heben (nachgetragenes Ereignis, geänderte Zinsregel, umgestellter Aktenparameter, geänderte Teilungstage, korrigierte Stammdaten). Soll der Auslöser des Rückwegs aus `ausgeglichen` und `nachwirkung` „Restschuld > 0,00 €“ heißen statt nur „Storno einer Zahlung oder neue Kosten“? | Statusmodell (Kap. 6), Nachwirkungs-Aufgaben |
 | P-20 | Überzahlung: Wird eine Überzahlung auf Positionen angerechnet, die später entstehen, z. B. neue Vollstreckungskosten? Wenn ja, ab welcher Wertstellung? | Anrechnung, Restschuld, Status |
 | T-01 | Heimnetz-Modus: lokale Zertifizierungsstelle oder nur `localhost`? | Bedienbarkeit gegen Sicherheit |
 | T-02 | Docker-Image (M9): psycopg gegen die libpq des Debian-Basis-Images bauen statt das Binary-Wheel `psycopg-binary` zu nutzen? Die nativen Bibliotheken kämen dann aus Debians Hauptarchiv, dessen Lizenzprüfung auf Dateiebene stattfindet | Einzelne Dateien in den gebündelten Bibliotheken des Wheels stehen unter Lizenzen, die nicht auf der Liste stehen (RSA-MD, Brian-Gladman-3-Clause, OLDAP-2.0.1) oder haben keine eigene Lizenzerteilung (`rc4.c` in krb5) |

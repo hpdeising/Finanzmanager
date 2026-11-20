@@ -129,6 +129,15 @@ class Ereignistyp(StrEnum):
     MAHNVERFAHREN_OHNE_TITEL_BEENDET = "mahnverfahren_ohne_titel_beendet"
     LETZTE_VERFAHRENSHANDLUNG = "letzte_verfahrenshandlung"
     VERZUG_EINGETRETEN = "verzug_eingetreten"
+    # Ergänzt am 20.11.2026 für das Statusmodell (Kap. 6)
+    ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS = "zustellung_kostenfestsetzungsbeschluss"
+    AKTE_GESCHLOSSEN = "akte_geschlossen"
+    RATENPLAN_VEREINBART = "ratenplan_vereinbart"
+    RATENPLAN_BEENDET = "ratenplan_beendet"
+    VOLLSTRECKUNGSMASSNAHME_BEGONNEN = "vollstreckungsmassnahme_begonnen"
+    VOLLSTRECKUNGSMASSNAHME_AUFGEHOBEN = "vollstreckungsmassnahme_aufgehoben"
+    FORDERUNG_BESTRITTEN = "forderung_bestritten"
+    BESTREITEN_BEENDET = "bestreiten_beendet"
 
     @property
     def ist_zustellung(self) -> bool:
