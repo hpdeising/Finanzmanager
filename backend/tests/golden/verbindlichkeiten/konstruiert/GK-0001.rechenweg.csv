@@ -1,0 +1,7 @@
+bestandteil,von,bis,grund,tage,tagesbasis,basis,basiszins,satz,zins_ungerundet,zins_gerundet
+hauptforderung,2024-04-16,2024-06-30,zinsbeginn,76,365,2400.00,3.62,8.62,43.076383,43.08
+hauptforderung,2024-07-01,2024-09-20,halbjahr,82,365,2400.00,3.37,8.37,45.129205,45.13
+hauptforderung,2024-09-21,2024-12-31,zahlung,102,365,2400.00,3.37,8.37,56.136328,56.14
+hauptforderung,2025-01-01,2025-03-14,halbjahr,73,365,2400.00,2.27,7.27,34.896000,34.90
+hauptforderung,2025-03-15,2025-06-30,zahlung,108,365,1738.65,2.27,7.27,37.400505,37.40
+hauptforderung,2025-07-01,2025-08-31,halbjahr,62,365,1738.65,1.27,6.27,18.517337,18.52
