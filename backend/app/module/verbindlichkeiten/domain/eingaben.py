@@ -14,6 +14,7 @@ from typing import NoReturn
 from app.module.verbindlichkeiten.domain.begriffe import (
     Anrechnungsregel,
     Bestandteilart,
+    Ereignistyp,
     Gruppe,
     Tageszaehlung,
     Teilung,
@@ -152,3 +153,25 @@ class Aktenparameter:
 
 def _fehler(meldung: str) -> NoReturn:
     raise EingabeUngueltigError(meldung)
+
+
+@dataclass(frozen=True, slots=True)
+class Ereignis:
+    """Datiertes, rechtlich relevantes Geschehen (Kap. 3, 4.5); Fristen folgen daraus (Kap. 5.4).
+
+    ``datum`` kann fehlen, etwa wenn bei einer Zustellung das Datum unbekannt ist; dann gibt es
+    keine Frist, sondern eine Warnung. ``versaeumnisurteil`` unterscheidet bei
+    ``zustellung_urteil`` das Versäumnisurteil vom streitigen Urteil, ``bekanntgabe_am`` nennt
+    bei ``eintragungsanordnung`` den Tag der Bekanntgabe.
+    """
+
+    typ: Ereignistyp
+    datum: date | None
+    versaeumnisurteil: bool = False
+    bekanntgabe_am: date | None = None
+
+    def __post_init__(self) -> None:
+        if self.versaeumnisurteil and self.typ is not Ereignistyp.ZUSTELLUNG_URTEIL:
+            _fehler("versaeumnisurteil gibt es nur bei zustellung_urteil.")
+        if self.bekanntgabe_am is not None and self.typ is not Ereignistyp.EINTRAGUNGSANORDNUNG:
+            _fehler("bekanntgabe_am gibt es nur bei eintragungsanordnung.")

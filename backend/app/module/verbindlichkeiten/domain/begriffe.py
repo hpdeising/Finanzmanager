@@ -101,3 +101,30 @@ class Teilung(StrEnum):
 
     KALENDER = "kalender"
     SATZWECHSEL = "satzwechsel"
+
+
+class Ereignistyp(StrEnum):
+    """Ereignistypen in Release 1 (Kap. 4.5)."""
+
+    ZUSTELLUNG_MAHNBESCHEID = "zustellung_mahnbescheid"
+    ZUSTELLUNG_VOLLSTRECKUNGSBESCHEID = "zustellung_vollstreckungsbescheid"
+    ZUSTELLUNG_URTEIL = "zustellung_urteil"
+    RECHTSKRAFT = "rechtskraft"
+    ERRICHTUNG_TITEL = "errichtung_titel"
+    EINTRAGUNGSANORDNUNG = "eintragungsanordnung"
+    ZAHLUNG = "zahlung"
+    VOLLSTRECKUNGSANTRAG = "vollstreckungsantrag"
+    VOLLSTRECKUNGSHANDLUNG = "vollstreckungshandlung"
+    ANERKENNTNIS = "anerkenntnis"
+    GLAEUBIGERWECHSEL = "glaeubigerwechsel"
+    ANRECHNUNG_ABGELEHNT = "anrechnung_abgelehnt"
+    AUSGLEICH = "ausgleich"
+    QUITTUNG_ERHALTEN = "quittung_erhalten"
+    TITEL_ERHALTEN = "titel_erhalten"
+    LOESCHUNG_SCHULDNERVERZEICHNIS = "loeschung_schuldnerverzeichnis"
+    ERLEDIGT_GEMELDET_AUSKUNFTEI = "erledigt_gemeldet_auskunftei"
+    VERJAEHRUNG_EINGEWANDT = "verjaehrung_eingewandt"
+
+    @property
+    def ist_zustellung(self) -> bool:
+        return self.value.startswith("zustellung_")
