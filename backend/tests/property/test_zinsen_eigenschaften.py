@@ -101,8 +101,10 @@ def _zinsregeln(draw: st.DrawFn) -> tuple[Zinsregel, ...]:
 
 @st.composite
 def _faelle(
-    draw: st.DrawFn,
+    draw: st.DrawFn, mit_entstehung: bool = True
 ) -> tuple[Aktenparameter, list[Bestandteil], list[Zahlung], date]:
+    """Zufällige Akte; ohne ``mit_entstehung`` sind alle Bestandteile von Anfang an da."""
+    entstehung = st.none() | TAGE if mit_entstehung else st.none()
     arten = [
         Bestandteilart.HAUPTFORDERUNG,
         Bestandteilart.KOSTEN_VERFAHREN,
@@ -114,7 +116,7 @@ def _faelle(
         art = draw(st.sampled_from(arten))
         regeln = () if art is Bestandteilart.ZINSEN else draw(_zinsregeln())
         bestandteile.append(
-            Bestandteil(f"b{nummer}", art, draw(BETRAEGE), regeln, draw(st.none() | TAGE))
+            Bestandteil(f"b{nummer}", art, draw(BETRAEGE), regeln, draw(entstehung))
         )
     zahlungen = [Zahlung(draw(TAGE), draw(BETRAEGE)) for _ in range(draw(st.integers(0, 5)))]
     parameter = Aktenparameter(
@@ -155,8 +157,9 @@ def test_anrechnung_verteilt_genau_den_zahlbetrag(fall: Fall) -> None:
             assert all(z.angerechnet > 0 for z in zeilen)
 
 
-@given(_faelle())
+@given(_faelle(mit_entstehung=False))
 def test_ueberzahlung_nur_ohne_restschuld(fall: Fall) -> None:
+    """Gilt, solange keine Bestandteile nach einer Zahlung entstehen (sonst P-20)."""
     ergebnis = _rechne(fall)
     assert ergebnis.ueberzahlung == sum(
         z.angerechnet for z in ergebnis.anrechnungen if z.gruppe is None
@@ -189,6 +192,19 @@ def test_zinsen_werden_nicht_verzinst(fall: Fall) -> None:
 def test_nichts_geht_verloren(fall: Fall) -> None:
     _, bestandteile, _, _ = fall
     ergebnis = _rechne(fall)
-    entstanden = sum(b.betrag for b in bestandteile) + sum(a.zins for a in ergebnis.abschnitte)
+    _, _, _, stichtag = fall
+    zur_akte = [b for b in bestandteile if b.entstanden_am is None or b.entstanden_am <= stichtag]
+    entstanden = sum(b.betrag for b in zur_akte) + sum(a.zins for a in ergebnis.abschnitte)
     angerechnet = sum(z.angerechnet for z in ergebnis.anrechnungen if z.gruppe is not None)
     assert entstanden == ergebnis.gesamt + angerechnet
+
+
+@given(_faelle())
+def test_angerechnet_wird_nur_auf_entstandene_bestandteile(fall: Fall) -> None:
+    """Kap. 5.3: nur auf Bestandteile, die am Tag der Wertstellung schon entstanden sind."""
+    _, bestandteile, _, _ = fall
+    entstehung = {b.kennung: b.entstanden_am for b in bestandteile}
+    for zeile in _rechne(fall).anrechnungen:
+        if zeile.bestandteil is not None:
+            entstanden_am = entstehung[zeile.bestandteil]
+            assert entstanden_am is None or entstanden_am <= zeile.zahlung.datum

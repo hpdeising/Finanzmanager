@@ -460,7 +460,7 @@ def test_ueberzahlung() -> None:
 
 
 def test_aelteste_kosten_zuerst() -> None:
-    """Kap. 5.3, P-07: innerhalb der Gruppe älteste Position zuerst, nach entstanden_am."""
+    """E-35: innerhalb der Gruppe älteste Position zuerst, nach entstanden_am."""
     ergebnis = rechne(
         kosten("kosten_vollstreckung", "20.00", entstanden_am=T(2025, 3, 1)),
         kosten("kosten_verfahren", "20.00", entstanden_am=T(2025, 1, 15)),
@@ -511,9 +511,84 @@ def test_aufgelaufene_zinsen_als_bestandteil() -> None:
 def test_fehlender_basiszins_wirft() -> None:
     """Fehlt ein Stammdatensatz für einen Tag, wird nicht geschätzt (CLAUDE.md)."""
     with pytest.raises(StammdatenFehlenError):
-        rechne(hf("1000.00", gesetzlich(T(2023, 6, 1))), stichtag=T(2024, 6, 30))
+        rechne(hf("1000.00", gesetzlich(T(2001, 6, 1))), stichtag=T(2002, 6, 30))
 
 
 def test_kennungen_muessen_eindeutig_sein() -> None:
     with pytest.raises(EingabeUngueltigError):
         rechne(hf("1.00"), hf("2.00"), stichtag=T(2025, 1, 1))
+
+
+# --- Entstehung der Bestandteile (Review zu #25, Kap. 5.3, P-20 offen) ---------------------------
+
+
+def test_zahlung_geht_nicht_auf_spaeter_entstehende_kosten() -> None:
+    """Angerechnet wird nur auf Bestandteile, die am Tag der Wertstellung schon entstanden sind.
+    Der Rest ist Überzahlung und bleibt es, auch wenn später Kosten entstehen (P-20 offen)."""
+    ergebnis = rechne(
+        hf("100.00"),
+        kosten("kosten_vollstreckung", "50.00", entstanden_am=T(2025, 6, 1)),
+        zahlungen=((T(2024, 9, 20), "120.00"),),
+        stichtag=T(2025, 8, 31),
+    )
+    assert anrechnungen(ergebnis) == [
+        ("2024-09-20", "hauptforderung", "hauptforderung", "100.00", "0.00"),
+        ("2024-09-20", "", "ueberzahlung", "20.00", ""),
+    ]
+    assert (ergebnis.hauptforderung, ergebnis.kosten, ergebnis.gesamt) == (
+        D("0.00"),
+        D("50.00"),
+        D("50.00"),
+    )
+    assert ergebnis.ueberzahlung == D("20.00")
+
+
+def test_am_zahltag_entstandene_kosten_sind_anrechenbar() -> None:
+    ergebnis = rechne(
+        hf("100.00"),
+        kosten("kosten_vollstreckung", "50.00", entstanden_am=T(2024, 9, 20)),
+        zahlungen=((T(2024, 9, 20), "120.00"),),
+        stichtag=T(2024, 9, 30),
+    )
+    assert anrechnungen(ergebnis) == [
+        ("2024-09-20", "kosten_vollstreckung", "kosten", "50.00", "0.00"),
+        ("2024-09-20", "hauptforderung", "hauptforderung", "70.00", "30.00"),
+    ]
+
+
+def test_bestandteile_nach_dem_stichtag_zaehlen_nicht_zur_restschuld() -> None:
+    ergebnis = rechne(
+        hf("1000.00"),
+        kosten("kosten_vollstreckung", "50.00", entstanden_am=T(2025, 9, 1)),
+        Bestandteil(
+            "hauptforderung_2",
+            Bestandteilart.HAUPTFORDERUNG,
+            D("3650.00"),
+            (fest(T(2025, 1, 1)),),
+            T(2025, 9, 1),
+        ),
+        stichtag=T(2025, 8, 31),
+    )
+    assert ergebnis.abschnitte == ()
+    assert (ergebnis.hauptforderung, ergebnis.kosten, ergebnis.gesamt) == (
+        D("1000.00"),
+        D("0.00"),
+        D("1000.00"),
+    )
+
+
+# --- Untergrenze null für den Jahressatz (Kap. 5.2 Schritt 6) ------------------------------------
+
+
+def test_negativer_satz_ergibt_null_und_bleibt_im_rechenweg() -> None:
+    """Basiszinssatz -0,88 % plus 0,5 Prozentpunkte ist negativ: Jahressatz 0, Zins 0,00 €."""
+    regel = Zinsregel(Zinsregeltyp.BASISZINS_PLUS, ab=T(2022, 7, 1), aufschlag=D("0.5"))
+    ergebnis = rechne(hf("1000.00", regel), stichtag=T(2022, 7, 10))
+    (abschnitt,) = ergebnis.abschnitte
+    assert (abschnitt.basiszins, abschnitt.satz, abschnitt.tage, abschnitt.zins) == (
+        D("-0.88"),
+        D(0),
+        10,
+        D("0.00"),
+    )
+    assert ergebnis.zinsen == D("0.00")
