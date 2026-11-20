@@ -12,6 +12,7 @@ from app.module.verbindlichkeiten.domain import Zinsregel, Zinsregeltyp
 AUFSCHLAG_288_1 = Decimal(5)  # § 288 Abs. 1 S. 2 BGB
 AUFSCHLAG_288_2 = Decimal(9)  # § 288 Abs. 2 BGB
 AUFSCHLAG_KOSTENFESTSETZUNG = Decimal(5)  # § 104 Abs. 1 S. 2 ZPO
+NULL = Decimal(0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,7 +33,8 @@ def jahressatz(regel: Zinsregel, tag: date, reihe: Basiszinsreihe) -> Jahressatz
     - ``fest``: fester Satz laut Titel oder Vertrag
 
     Der Basiszinssatz kommt aus den Stammdaten (§ 247 BGB). Der Satz ist Basiszinssatz plus
-    Aufschlag, auch bei negativem Basiszinssatz (Kap. 5.2 Schritt 6).
+    Aufschlag, auch bei negativem Basiszinssatz; ergibt das einen negativen Wert, ist der
+    Jahressatz 0 (Kap. 5.2 Schritt 6). ``basiszins`` bleibt wie in den Stammdaten.
 
     Raises:
         StammdatenFehlenError: wenn für ``tag`` kein Basiszinssatz vorliegt.
@@ -47,7 +49,7 @@ def jahressatz(regel: Zinsregel, tag: date, reihe: Basiszinsreihe) -> Jahressatz
             raise ValueError(msg)
         return Jahressatz(None, regel.satz)
     basiszins = reihe.satz_am(tag)
-    return Jahressatz(basiszins, basiszins + _aufschlag(regel))
+    return Jahressatz(basiszins, max(basiszins + _aufschlag(regel), NULL))
 
 
 def _aufschlag(regel: Zinsregel) -> Decimal:

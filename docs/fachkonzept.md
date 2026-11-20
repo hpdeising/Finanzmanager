@@ -49,7 +49,7 @@ Der Kern enthält keine Fachlogik eines Moduls. Module hängen vom Kern ab, nie 
 
 ## 2 Entscheidungsprotokoll
 
-E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026; die Ergänzung in E-24 vom 25.10.2026.
+E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026; die Ergänzung in E-24 vom 25.10.2026; E-35 sowie die Festlegungen in Kap. 5.2 Schritt 6 und Kap. 5.3 vom 20.11.2026.
 
 | Nr. | Thema | Entscheidung |
 |---|---|---|
@@ -87,6 +87,7 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-32 | Teilung der Abschnitte | Neuer Aktenparameter `teilung`. Voreinstellung `kalender`: Bei basiszinsabhängigen Zinsregeln wird wie bisher an jedem 01.01. und 01.07. geteilt. Mit `satzwechsel` wird dort nur geteilt, wenn sich der anzuwendende Satz tatsächlich ändert. Dazu kommen je Akte frei eintragbare Teilungstage, etwa die Buchungstage des Gläubigers laut seiner Aufstellung (Tabelle `akte_teilungstag`, Kap. 4.5). Ein Teilungstag ist der erste Tag eines neuen Abschnitts; außerhalb des Zinslaufs wirkt er nicht. Unverändert wird an jeder nicht stornierten Zahlung (E-30) und bei jedem Wechsel der Zinsregel geteilt; der Stichtag einer Festschreibung und eine stornierte Zahlung teilen weiterhin nicht. Zweck: Jede Aufstellung soll sich centgenau nachrechnen lassen, damit echte Abweichungen auffallen; wo geteilt wird, handhaben Gläubiger unterschiedlich (Kap. 5.1, 5.2 Schritt 2) |
 | E-33 | Rundung je Abschnitt | Gerundet wird immer je Abschnitt kaufmännisch auf Cent, über die zentrale Funktion in `kern/geld`. `am_ende` und der Aktenparameter `rundung` entfallen. Eine Zahlung wird auf die gerundeten Zinsen der Abschnitte vor ihrer Abschnittsgrenze angerechnet (E-30). Schließt P-13, ändert E-23 (Kap. 5.1, 5.2 Schritt 2) |
 | E-34 | Tageszählung `30_360` | Jeder Monat hat 30 Tage, der Teiler ist 360, und wie bei den taggenauen Arten zählt der erste Tag eines Abschnitts mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind 360·(J2−J1) + 30·(M2−M1) + (T2−T1). Dabei ist D1 der Vortag des ersten Tags und D2 der letzte Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst, und die Formel bekommt + 1: 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1. Das gilt am ersten Zinstag (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` ist das der Tag nach dem genannten Tag, E-24) und nach jeder Pause ohne Verzinsung, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt. Ein Regelwechsel ohne Lücke bleibt ein weiterer Abschnitt nach der allgemeinen Formel. So zählen keine unverzinsten Tage mit. In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Damit zählen der 30. und der 31. eines Monats zusammen als ein Tag, und endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Teilen ändert die Summe nicht: Innerhalb verzinster Tage ohne Pause ergeben der Abschnitt nach der Formel mit + 1 und alle folgenden nach der allgemeinen zusammen dieselben Tage wie ungeteilt. Ein Kalenderjahr hat 360 Tage. Beispiele in Kap. 5.1. Eigene Festlegung, keine Rechtsregel und keine Primärquelle: Eine verbindliche Quelle für die Zählung in Forderungsaufstellungen gibt es nicht. Weicht ein realer Fall ab, wird daraus ein neuer Prüfpunkt. Schließt P-15, ergänzt E-22 (Kap. 5.1) |
+| E-35 | Reihenfolge innerhalb einer Gruppe | Bei der Anrechnung gilt innerhalb einer Gruppe: älteste Position zuerst. Kosten nach dem Tag ihrer Entstehung (`entstanden_am`); Bestandteile ohne diesen Tag kommen zuerst, in der Reihenfolge der Eingabe. Zinsen nach dem letzten Tag ihres Abschnitts, auch über Bestandteile hinweg: Zinsen eines früher endenden Abschnitts sind älter. Kein Aktenparameter. Schließt P-07 (Kap. 5.3) |
 
 ---
 
@@ -392,7 +393,7 @@ Ablauf:
 3. Zinsbasis ist der offene Betrag des Bestandteils zu Beginn des Abschnitts, nach der berechneten Anrechnung (Kap. 5.3). Eine Zahlung vermindert die Basis ab dem Abschnitt, den sie beginnt (Schritt 2): bei `zahltag = alter_betrag` ab dem Folgetag, bei `verminderter_betrag` ab dem Zahltag (E-30). Sie wird auf die gerundeten Zinsen der Abschnitte vor dieser Grenze angerechnet, bei `alter_betrag` also einschließlich des Zahltags.
 4. Zinsen eines Abschnitts = Basis × Jahressatz × Tage ÷ Tagesbasis (Tage und Tagesbasis nach Kap. 5.1).
 5. Keine Zinsen auf Zinsen (§ 289 S. 1 BGB). Zinskonten sind nie verzinslich.
-6. Der Satz ist Basiszinssatz plus Aufschlag, auch bei negativem Basiszinssatz. Beispiel: vom 01.07.2016 bis 31.12.2022 lag der Basiszinssatz bei −0,88 %, der Verzugszins nach § 288 Abs. 1 BGB also bei 4,12 %. Altlasten reichen oft in diesen Zeitraum.
+6. Der Satz ist Basiszinssatz plus Aufschlag, auch bei negativem Basiszinssatz. Beispiel: vom 01.07.2016 bis 31.12.2022 lag der Basiszinssatz bei −0,88 %, der Verzugszins nach § 288 Abs. 1 BGB also bei 4,12 %. Altlasten reichen oft in diesen Zeitraum. Ergibt Basiszinssatz plus Aufschlag einen negativen Wert, etwa bei `basiszins_plus` mit kleinem Aufschlag, ist der Jahressatz 0. Der Abschnitt steht trotzdem im Rechenweg: `basiszins` wie in den Stammdaten, `satz` 0, Zins 0,00 €.
 7. Zinsen und Anrechnung werden bei jeder Abfrage zum Stichtag neu berechnet, nicht laufend gebucht (E-21). Gebucht wird nur bei einer Festschreibung (E-25):
    - **Anforderung:** Festgeschrieben wird nur auf ausdrückliche Anforderung, je Akte und zu einem Stichtag. Der Stichtag liegt nach dem der vorigen Festschreibung und höchstens auf dem Vortag der Festschreibung, gemessen am Tag ihrer Erfassung wie in Kap. 4.1 (Zeitzone der Installation); ein Abschluss zum 31.12. wird also frühestens am 01.01. angefordert.
    - **Zinsen und Anrechnung eines Zeitraums** sind die Berechnung zu seinem Stichtag abzüglich der Berechnung zum vorigen Stichtag. Für einen angebrochenen Abschnitt zählt der bis zum Stichtag berechnete und gerundete Betrag; die Rundungsdifferenz zum ganzen Abschnitt fällt in den nächsten Zeitraum und ist keine Korrektur.
@@ -412,8 +413,10 @@ Ablauf:
 | `individuell` | laut Vereinbarung mit dem Gläubiger | Vereinbarung als Beleg erforderlich |
 
 - Die Anrechnung wird wie die Zinsen bei jeder Abfrage berechnet, aus den nicht stornierten Zahlungen auf dem Zahlungskonto mit ihrer Wertstellung. Gebucht wird sie erst mit einer Festschreibung, als Umbuchung vom Zahlungskonto auf die Bestandteile (E-21, Kap. 5.2 Schritt 7).
+- Angerechnet wird nur auf Bestandteile, die spätestens am Tag der Wertstellung der Zahlung entstanden sind; ein Bestandteil ohne Tag der Entstehung gilt als von Anfang an vorhanden. Bestandteile, die erst nach dem Stichtag entstehen, zählen nicht zur Restschuld.
 - Lässt sich ein Betrag nicht mehr anrechnen, weil die Restschuld null ist, wird er als Überzahlung angezeigt; die Festschreibung bucht ihn nicht auf Bestandteile um. Die Überzahlung ist ein Rechenergebnis, nicht der Saldo des Zahlungskontos (Kap. 4.1). Ob sie auf später entstehende Positionen angerechnet wird, klärt Prüfpunkt P-20.
-- Innerhalb einer Gruppe (Kosten, Zinsen) gilt: älteste Position zuerst. Prüfpunkt P-07.
+- Innerhalb einer Gruppe gilt: älteste Position zuerst. Kosten nach dem Tag ihrer Entstehung, Bestandteile ohne diesen Tag zuerst in der Reihenfolge der Eingabe; Zinsen nach dem letzten Tag ihres Abschnitts, auch über Bestandteile hinweg (E-35).
+- Als Kosten der Rechtsverfolgung im Sinne von § 497 Abs. 3 BGB gelten alle Kostenbestandteile, auch die vorgerichtlichen.
 - **Mehrere Akten desselben Gläubigers:** Die Zahlung gilt für die Akte, die der Schuldner bei der Zahlung bestimmt, z. B. im Verwendungszweck (§ 366 Abs. 1 BGB). Fehlt eine Bestimmung, legt Release 1 die Zahlung zur manuellen Zuordnung vor. Die gesetzliche Reihenfolge des § 366 Abs. 2 BGB (fällig → geringere Sicherheit → lästiger → älter → verhältnismäßig) wird als Vorschlag angezeigt, nicht automatisch angewandt.
 - **Abweichende Bestimmung des Schuldners:** Lehnt der Gläubiger sie ab (§ 367 Abs. 2 BGB), wird das Ereignis `anrechnung_abgelehnt` erfasst, und es gilt wieder die gesetzliche Reihenfolge.
 - **Warnung:** Ist eine Rate kleiner als der Zinszuwachs seit der vorigen Rate, sinkt die Hauptforderung nie. Das Dashboard zeigt das bei jeder betroffenen Akte an.
@@ -816,14 +819,13 @@ zahlung,betrag,bestandteil,gruppe,angerechnet,offen_danach
 
 ## 14 Offene Prüfpunkte
 
-Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern werden nicht neu vergeben. Geschlossen sind P-04 (E-22), P-05 (E-23), P-06 (E-24), P-12 (E-21), P-13 (E-33), P-14 (E-30) und P-15 (E-34).
+Geschlossene Prüfpunkte stehen im Entscheidungsprotokoll (Kap. 2); ihre Nummern werden nicht neu vergeben. Geschlossen sind P-04 (E-22), P-05 (E-23), P-06 (E-24), P-12 (E-21), P-13 (E-33), P-14 (E-30), P-15 (E-34) und P-07 (E-35).
 
 | Nr. | Frage | Auswirkung |
 |---|---|---|
 | P-01 | Gilt § 193 BGB für das Ende der Verjährungsfrist? | Fristende an Wochenenden und Feiertagen |
 | P-02 | Wirkt der Neubeginn durch Teilzahlung (§ 212 Abs. 1 Nr. 1 BGB) für alle Bestandteile oder nur für den angerechneten? | Verjährungsberechnung |
 | P-03 | Verzinsung von Verfahrenskosten aus dem Mahnverfahren: ab wann, zu welchem Satz? | Zinsregel für Kosten |
-| P-07 | Reihenfolge innerhalb der Kosten bei § 367 Abs. 1 BGB | Anrechnung |
 | P-08 | Plausibilitätsprüfung der Höhe von Inkassokosten: Release 1 oder später? | Häufigste Abweichungsquelle |
 | P-09 | Wortlaut von Disclaimer und Abgrenzung zur Rechtsdienstleistung | Haftung |
 | P-10 | Löschkonzept: Wie werden eine irrtümlich angelegte Akte oder ein ganzer Haushalt endgültig gelöscht, obwohl Buchungen unveränderlich sind? Entscheidung spätestens mit M8 | Unveränderlichkeit der Buchungen, Datenschutz |

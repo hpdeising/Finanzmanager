@@ -14,13 +14,18 @@ class Posten:
     """Offener Betrag einer Gruppe eines Bestandteils, etwa die Zinsen eines Abschnitts.
 
     ``alter`` ordnet die Posten einer Gruppe: der kleinste zuerst (älteste Position zuerst,
-    Kap. 5.3). ``offen`` sinkt mit jeder Anrechnung.
+    E-35). ``entstanden_am`` ist der Entstehungstag des Bestandteils; ohne ihn gilt der Posten
+    als von Anfang an vorhanden. ``offen`` sinkt mit jeder Anrechnung.
     """
 
     kennung: str
     gruppe: Gruppe
     alter: tuple[date, int]
     offen: Decimal
+    entstanden_am: date | None = None
+
+    def besteht_am(self, tag: date) -> bool:
+        return self.entstanden_am is None or self.entstanden_am <= tag
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,14 +48,17 @@ def verteile(
     """Zahlung auf die Posten anrechnen; liefert die Zeilen und die Überzahlung.
 
     Die Gruppen kommen in der Folge der Anrechnungsregel (§ 367 Abs. 1 BGB, § 497 Abs. 3 BGB
-    oder individuell), innerhalb einer Gruppe die älteste Position zuerst (Kap. 5.3, Voreinstellung
-    zu Prüfpunkt P-07). Die Zahlung wird genau verteilt; was nach allen Posten übrig bleibt, ist
-    Überzahlung. Ändert ``offen`` der Posten.
+    oder individuell), innerhalb einer Gruppe die älteste Position zuerst (E-35). Angerechnet
+    wird nur auf Posten von Bestandteilen, die spätestens am Tag der Wertstellung entstanden
+    sind (Kap. 5.3). Die Zahlung wird genau verteilt; was übrig bleibt, ist Überzahlung und bleibt
+    es, auch wenn später Bestandteile entstehen (Prüfpunkt P-20 offen). Ändert ``offen`` der
+    Posten.
     """
     rest = zahlung.betrag
     angerechnet: dict[tuple[str, Gruppe], Decimal] = {}
     for gruppe in gruppenfolge:
-        for p in sorted((p for p in posten if p.gruppe is gruppe), key=lambda p: p.alter):
+        anrechenbar = (p for p in posten if p.gruppe is gruppe and p.besteht_am(zahlung.datum))
+        for p in sorted(anrechenbar, key=lambda p: p.alter):
             teil = min(rest, p.offen)
             if teil <= 0:
                 continue

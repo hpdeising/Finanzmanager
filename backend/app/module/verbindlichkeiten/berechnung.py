@@ -91,7 +91,10 @@ def berechne(
     - Ist der offene Betrag eines Bestandteils null, entstehen keine Zinsen mehr; solche
       Abschnitte erscheinen nicht im Rechenweg.
     - Zahlungen nach dem Stichtag zählen nicht. Jede andere wird an ihrer Grenze angerechnet
-      (E-30), in der Gruppenfolge der Akte (§ 367 Abs. 1 BGB, § 497 Abs. 3 BGB oder individuell).
+      (E-30), in der Gruppenfolge der Akte (§ 367 Abs. 1 BGB, § 497 Abs. 3 BGB oder individuell),
+      nur auf Bestandteile, die am Tag ihrer Wertstellung schon entstanden sind (Kap. 5.3).
+    - Bestandteile, die erst nach dem Stichtag entstehen, gehören zum Stichtag nicht zur Akte:
+      keine Abschnitte, nicht in der Restschuld (Kap. 5.3).
 
     Raises:
         EingabeUngueltigError: wenn zwei Bestandteile dieselbe Kennung haben.
@@ -110,7 +113,10 @@ def berechne(
     posten: list[Posten] = []
     rahmen: list[tuple[int, Bestandteil, Abschnittsrahmen]] = []
     for index, b in enumerate(bestandteile):
-        p = Posten(b.kennung, b.art.gruppe, (b.entstanden_am or date.min, index), b.betrag)
+        if b.entstanden_am is not None and b.entstanden_am > stichtag:
+            continue
+        alter = (b.entstanden_am or date.min, index)
+        p = Posten(b.kennung, b.art.gruppe, alter, b.betrag, b.entstanden_am)
         posten.append(p)
         if b.art is not Bestandteilart.ZINSEN:
             kapital[b.kennung] = p
@@ -134,7 +140,9 @@ def berechne(
                 continue
             abschnitt = _verzinse(b.kennung, r, basis, parameter, reihe)
             abschnitte.append((index, abschnitt))
-            posten.append(Posten(b.kennung, Gruppe.ZINSEN, (r.bis, index), abschnitt.zins))
+            posten.append(
+                Posten(b.kennung, Gruppe.ZINSEN, (r.bis, index), abschnitt.zins, b.entstanden_am)
+            )
 
     abschnitte.sort(key=lambda eintrag: (eintrag[0], eintrag[1].von))
     return Ergebnis(
