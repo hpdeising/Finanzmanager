@@ -553,9 +553,16 @@
             "type": "string"
           },
           "entstanden_am": {
-            "format": "date",
-            "title": "Entstanden Am",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entstanden Am"
           },
           "faellig_am": {
             "anyOf": [
@@ -597,8 +604,7 @@
         "required": [
           "kennung",
           "art",
-          "betrag",
-          "entstanden_am"
+          "betrag"
         ],
         "title": "BestandteilEingabe",
         "type": "object"

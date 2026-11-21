@@ -73,7 +73,7 @@ class BestandteilEingabe(_Eingabe):
     kennung: str = Field(min_length=1)
     art: Bestandteilart
     betrag: Betragstext
-    entstanden_am: date
+    entstanden_am: date | None = None
     faellig_am: date | None = None
     kenntnis_am: date | None = None
     zinsregeln: list[ZinsregelSchema] = Field(default_factory=list[ZinsregelSchema])
