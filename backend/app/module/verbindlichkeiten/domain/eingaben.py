@@ -60,6 +60,8 @@ class Bestandteil:
 
     ``kennung`` benennt den Bestandteil in Rechenweg und Anrechnung. ``entstanden_am`` ordnet
     Bestandteile derselben Gruppe für die Anrechnung (älteste Position zuerst, Kap. 5.3).
+    ``faellig_am`` und ``kenntnis_am`` (Kenntnis des Gläubigers, sonst mit der Fälligkeit
+    gegeben) bestimmen den Beginn der Verjährung einer nicht titulierten Forderung (Kap. 5.5).
     """
 
     kennung: str
@@ -67,6 +69,8 @@ class Bestandteil:
     betrag: Decimal
     zinsregeln: tuple[Zinsregel, ...] = ()
     entstanden_am: date | None = None
+    faellig_am: date | None = None
+    kenntnis_am: date | None = None
 
     def __init__(
         self,
@@ -75,6 +79,9 @@ class Bestandteil:
         betrag: Decimal,
         zinsregeln: Iterable[Zinsregel] = (),
         entstanden_am: date | None = None,
+        *,
+        faellig_am: date | None = None,
+        kenntnis_am: date | None = None,
     ) -> None:
         regeln = tuple(sorted(zinsregeln, key=lambda r: r.ab or date.min))
         object.__setattr__(self, "kennung", kennung)
@@ -82,6 +89,8 @@ class Bestandteil:
         object.__setattr__(self, "betrag", betrag)
         object.__setattr__(self, "zinsregeln", regeln)
         object.__setattr__(self, "entstanden_am", entstanden_am)
+        object.__setattr__(self, "faellig_am", faellig_am)
+        object.__setattr__(self, "kenntnis_am", kenntnis_am)
         self._pruefe()
 
     def _pruefe(self) -> None:
@@ -165,6 +174,7 @@ class Ereignis:
     ``zustellung_urteil`` das Versäumnisurteil vom streitigen Urteil, ``bekanntgabe_am`` nennt
     bei ``eintragungsanordnung`` den Tag der Bekanntgabe. ``gericht_land`` ist das Land des
     Gerichts, bei dem die Handlung vorzunehmen ist; nach ihm richten sich die Feiertage (Kap. 5.4).
+    ``zurueckgegeben`` markiert eine Zahlung, die per Rücklastschrift zurückgegeben wurde (P-17).
     """
 
     typ: Ereignistyp
@@ -172,8 +182,11 @@ class Ereignis:
     versaeumnisurteil: bool = False
     bekanntgabe_am: date | None = None
     gericht_land: str | None = None
+    zurueckgegeben: bool = False
 
     def __post_init__(self) -> None:
+        if self.zurueckgegeben and self.typ is not Ereignistyp.ZAHLUNG:
+            _fehler("zurueckgegeben gibt es nur bei zahlung.")
         if self.gericht_land is not None and self.gericht_land not in LAENDER:
             _fehler("Unbekanntes Land des Gerichts.")
         if self.versaeumnisurteil and self.typ is not Ereignistyp.ZUSTELLUNG_URTEIL:
