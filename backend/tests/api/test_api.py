@@ -253,3 +253,15 @@ def test_lizenzen_des_servers(client: TestClient) -> None:
         assert eintraege[paket]["text"], paket
     for werkzeug in ("pytest", "ruff", "pyright", "hypothesis", "httpx2"):
         assert werkzeug not in eintraege, werkzeug
+
+
+def test_bestandteil_ohne_entstehungstag(eingerichtet: TestClient) -> None:
+    """Entscheidung vom 21.11.2026: ohne entstanden_am gegen Eröffnung, am Eröffnungstag."""
+    akte_id = akte_mit_hauptforderung(eingerichtet)
+    antwort = eingerichtet.post(
+        f"{V}/akten/{akte_id}/bestandteile",
+        json={"kennung": "kosten", "art": "kosten_vorgerichtlich", "betrag": "12.00"},
+    )
+    assert antwort.status_code == 201, antwort.text
+    kosten = [b for b in detail(eingerichtet, akte_id)["bestandteile"] if b["kennung"] == "kosten"]
+    assert kosten[0]["entstanden_am"] is None
