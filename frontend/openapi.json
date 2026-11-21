@@ -1033,6 +1033,34 @@
         "title": "Info",
         "type": "object"
       },
+      "Lizenz": {
+        "properties": {
+          "lizenz": {
+            "title": "Lizenz",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "lizenz",
+          "text"
+        ],
+        "title": "Lizenz",
+        "type": "object"
+      },
       "Merkmal": {
         "description": "Merkmale unabhängig vom Status (Kap. 6), abgeleitet aus Ereignissen.",
         "enum": [
@@ -1534,6 +1562,32 @@
           }
         },
         "summary": "Info",
+        "tags": [
+          "kern"
+        ]
+      }
+    },
+    "/api/lizenzen": {
+      "get": {
+        "description": "Python-Pakete des Servers mit Lizenz und Lizenztext (Fachkonzept 11.3).",
+        "operationId": "lizenzen_api_lizenzen_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Lizenz"
+                  },
+                  "title": "Response Lizenzen Api Lizenzen Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Lizenzen",
         "tags": [
           "kern"
         ]

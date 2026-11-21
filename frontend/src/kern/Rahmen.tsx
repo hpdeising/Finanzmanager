@@ -39,6 +39,10 @@ export function Rahmen({ children }: { children: ReactNode }) {
           Lizenz {info?.lizenz ?? "AGPL-3.0-or-later"} ·{" "}
           <a className="kern-link kern-link--small" href={info?.quellcode ?? "#/"}>
             Quellcode dieser Version
+          </a>{" "}
+          ·{" "}
+          <a className="kern-link kern-link--small" href="#/lizenzen">
+            Lizenzen
           </a>
         </p>
       </footer>

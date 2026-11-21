@@ -62,7 +62,7 @@ Voraussetzung ist Node.js in der Version aus `frontend/.nvmrc`. Die Typen der Sc
 cd backend && uv run python -m app.api.openapi > ../frontend/openapi.json
 cd frontend
 npm ci
-npm run typecheck   # erzeugt die Typen, dann TypeScript strict
+npm run typecheck   # kopiert KERN, prüft Lizenzen, erzeugt die Typen, dann TypeScript strict
 npm test            # Tests, einschließlich der Prüfung auf Barrieren (axe-core)
 npm run dev         # Entwicklungsserver an 127.0.0.1:5173; /api geht an 127.0.0.1:8000
 ```

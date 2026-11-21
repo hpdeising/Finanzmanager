@@ -239,3 +239,17 @@ def test_openapi_beschreibt_betraege_als_text(client: TestClient) -> None:
     assert zahlung["type"] == "string"
     berechnung = schema["components"]["schemas"]["Berechnung"]["properties"]
     assert all(berechnung[f]["type"] == "string" for f in ("restschuld", "zinsen"))
+
+
+# --- Lizenzen -----------------------------------------------------------------------------------
+
+
+def test_lizenzen_des_servers(client: TestClient) -> None:
+    """Fachkonzept 11.3: Laufzeit-Abhängigkeiten mit Lizenz und Text, ohne Entwicklungswerkzeuge."""
+    eintraege = {e["name"].lower(): e for e in client.get("/api/lizenzen").json()}
+    for paket in ("fastapi", "sqlalchemy", "pydantic", "psycopg", "alembic", "uvicorn"):
+        assert paket in eintraege, paket
+        assert eintraege[paket]["lizenz"] != "keine Angabe"
+        assert eintraege[paket]["text"], paket
+    for werkzeug in ("pytest", "ruff", "pyright", "hypothesis", "httpx2"):
+        assert werkzeug not in eintraege, werkzeug
