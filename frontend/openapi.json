@@ -785,7 +785,8 @@
           "vollstreckungsmassnahme_aufgehoben",
           "forderung_bestritten",
           "bestreiten_beendet",
-          "sofortige_beschwerde"
+          "sofortige_beschwerde",
+          "erinnerung"
         ],
         "title": "Ereignistyp",
         "type": "string"

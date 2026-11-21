@@ -53,6 +53,9 @@ _NEUBEGINN = {
     Ereignistyp.VOLLSTRECKUNGSANTRAG,
     Ereignistyp.VOLLSTRECKUNGSHANDLUNG,
 }
+# Sofortige Beschwerde (§ 104 Abs. 3, § 567 ZPO) oder Erinnerung (§ 11 Abs. 2 Satz 1 RPflG);
+# beide verhindern die berechnete Rechtskraft (Entscheidung vom 21.11.2026).
+_RECHTSBEHELF_KFB = (Ereignistyp.SOFORTIGE_BESCHWERDE, Ereignistyp.ERINNERUNG)
 _ENDE_MAHNVERFAHREN = {
     Ereignistyp.MAHNVERFAHREN_OHNE_TITEL_BEENDET,
     Ereignistyp.LETZTE_VERFAHRENSHANDLUNG,
@@ -285,8 +288,11 @@ def _titel(
         warnungen.append("Urteil erfasst, Rechtskraft fehlt: Verjährung offen.")
         return _Titel(None, None, unbekannt=True)
     if kfb is not None and kfb.datum is not None:
-        if erstes(Ereignistyp.SOFORTIGE_BESCHWERDE) is not None:
-            warnungen.append("Sofortige Beschwerde erfasst, Rechtskraft fehlt: Verjährung offen.")
+        if any(erstes(t) is not None for t in _RECHTSBEHELF_KFB):
+            warnungen.append(
+                "Rechtsbehelf gegen den Kostenfestsetzungsbeschluss erfasst, Rechtskraft fehlt:"
+                " Verjährung offen."
+            )
             return _Titel(None, None, unbekannt=True)
         ende = fristende(
             kfb.datum,
