@@ -19,6 +19,7 @@ SPDX_FAMILIE: dict[str, str] = {
     "MIT": "MIT",
     "BSD-2-Clause": "BSD",
     "BSD-3-Clause": "BSD",
+    "0BSD": "0BSD",
     "ISC": "ISC",
     "Apache-2.0": "Apache-2.0",
     "MPL-2.0": "MPL-2.0",
@@ -26,6 +27,7 @@ SPDX_FAMILIE: dict[str, str] = {
     "Python-2.0": "PSF-2.0",
     "PostgreSQL": "PostgreSQL",
     "OLDAP-2.8": "OLDAP-2.8",
+    "OFL-1.1": "OFL-1.1",
     "LGPL-2.1-only": "LGPL",
     "LGPL-2.1-or-later": "LGPL",
     "LGPL-3.0-only": "LGPL",
@@ -42,10 +44,12 @@ SPDX_FAMILIE: dict[str, str] = {
 KLASSIFIKATOR_FAMILIE: dict[str, str] = {
     "MIT License": "MIT",
     "BSD License": "BSD",
+    "Zero-Clause BSD (0BSD)": "0BSD",
     "ISC License (ISCL)": "ISC",
     "Apache Software License": "Apache-2.0",
     "Mozilla Public License 2.0 (MPL 2.0)": "MPL-2.0",
     "Python Software Foundation License": "PSF-2.0",
+    "SIL Open Font License 1.1 (OFL-1.1)": "OFL-1.1",
     "Public Domain": "Public Domain",
     "GNU Lesser General Public License v2 (LGPLv2)": "LGPL",
     "GNU Lesser General Public License v2 or later (LGPLv2+)": "LGPL",
@@ -183,6 +187,19 @@ def test_spdx_pruefung(ausdruck: str, erwartet: bool) -> None:
 )
 def test_klassifikator_pruefung(klassen: list[str], erwartet: bool) -> None:
     assert erlaubt_nach_klassifikatoren(klassen, BEISPIEL_ERLAUBT) is erwartet
+
+
+@pytest.mark.parametrize(
+    ("angabe", "klassifikator"),
+    [("0BSD", "Zero-Clause BSD (0BSD)"), ("OFL-1.1", "SIL Open Font License 1.1 (OFL-1.1)")],
+)
+def test_0bsd_und_ofl_sind_erlaubt(
+    erlaubt: frozenset[str], angabe: str, klassifikator: str
+) -> None:
+    """Entscheidung vom 21.11.2026: 0BSD und OFL-1.1 stehen auf der Liste in CLAUDE.md."""
+    assert erlaubt_nach_spdx(angabe, erlaubt)
+    assert erlaubt_nach_klassifikatoren([klassifikator], erlaubt)
+    assert not erlaubt_nach_spdx(angabe, BEISPIEL_ERLAUBT)
 
 
 def test_abbildungen_zeigen_nur_auf_familien_aus_claude_md(erlaubt: frozenset[str]) -> None:
