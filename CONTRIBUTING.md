@@ -54,6 +54,21 @@ uv run pytest              # Tests, einschließlich der Regeln aus CLAUDE.md
 
 Optional führt [pre-commit](https://pre-commit.com/) dieselben Prüfungen vor jedem Commit aus: `uv tool install pre-commit`, dann im Repository `pre-commit install`.
 
+### Oberfläche
+
+Voraussetzung ist Node.js in der Version aus `frontend/.nvmrc`. Die Typen der Schnittstelle entstehen aus `frontend/openapi.json` und werden nie von Hand geschrieben; nach einer Änderung an der API die Datei neu erzeugen.
+
+```bash
+cd backend && uv run python -m app.api.openapi > ../frontend/openapi.json
+cd frontend
+npm ci
+npm run typecheck   # erzeugt die Typen, dann TypeScript strict
+npm test            # Tests, einschließlich der Prüfung auf Barrieren (axe-core)
+npm run dev         # Entwicklungsserver an 127.0.0.1:5173; /api geht an 127.0.0.1:8000
+```
+
+Das Backend dazu: `uv run uvicorn app.api:erzeuge_app --factory --host 127.0.0.1 --port 8000`.
+
 ### Test-Datenbank
 
 Die Tests laufen gegen echtes PostgreSQL 16, weil die Datenbank die Regeln des Buchungskerns selbst erzwingt. Ohne Datenbank schlagen `pytest` und der pre-commit-Hook fehl; Datenbanktests werden nicht übersprungen.

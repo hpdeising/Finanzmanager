@@ -33,3 +33,6 @@ frontend/dist/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Aus frontend/openapi.json erzeugt, nie von Hand geschrieben (CLAUDE.md, Stack)
+frontend/src/kern/api/schema.d.ts
