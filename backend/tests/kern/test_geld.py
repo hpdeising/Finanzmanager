@@ -8,7 +8,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.kern.geld import als_text, betrag, runde_auf_cent, speicherbar
+from app.kern.geld import als_text, betrag, ohne_nullen, runde_auf_cent, speicherbar
 
 # --- betrag(): Beträge nur aus Text, ganzen Zahlen oder Decimal ----------------
 
@@ -127,6 +127,28 @@ def test_als_text_festkomma_mit_mindestens_zwei_nachkommastellen(
 ) -> None:
     """Nie Exponentschreibweise; mindestens zwei Nachkommastellen; nichts wird gerundet."""
     assert als_text(eingabe) == erwartet
+
+
+@pytest.mark.parametrize(
+    ("eingabe", "erwartet"),
+    [
+        ("1000.0000", "1000.00"),
+        ("35.6600", "35.66"),
+        ("0.0000", "0.00"),
+        ("-0.1230", "-0.123"),
+        ("1E+3", "1000.00"),
+        ("12.3456", "12.3456"),
+    ],
+)
+def test_ohne_nullen_kuerzt_exakt(eingabe: str, erwartet: str) -> None:
+    gekuerzt = ohne_nullen(Decimal(eingabe))
+    assert gekuerzt == Decimal(eingabe)
+    assert als_text(gekuerzt) == erwartet
+
+
+def test_ohne_nullen_lehnt_nicht_endliche_werte_ab() -> None:
+    with pytest.raises(ValueError, match="endlich"):
+        ohne_nullen(Decimal("NaN"))
 
 
 def test_als_text_lehnt_nicht_endliche_werte_ab() -> None:
