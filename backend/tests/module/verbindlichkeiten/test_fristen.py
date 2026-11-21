@@ -168,6 +168,28 @@ def test_einspruch_gegen_vollstreckungsbescheid() -> None:
     ]
 
 
+def test_rechtsbehelf_gegen_kostenfestsetzungsbeschluss() -> None:
+    """Entscheidung vom 21.11.2026: sofortige Beschwerde oder Erinnerung, beide zwei Wochen ab
+    Zustellung, ohne Fallunterscheidung nach der Wertgrenze; Warnstufen wie bei einer
+    Notfrist (E-36)."""
+    fristen, warnungen = fristen_aus_ereignissen(
+        [Ereignis(Ereignistyp.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS, T(2025, 3, 5))],
+        KALENDER,
+        "BY",
+    )
+    (frist,) = fristen
+    assert (frist.name, frist.ende, frist.art, frist.norm) == (
+        "Rechtsbehelf gegen Kostenfestsetzungsbeschluss",
+        T(2025, 3, 19),
+        Fristart.NOTFRIST,
+        "§ 104 Abs. 3, § 569 Abs. 1 ZPO; § 11 Abs. 2 Satz 1 RPflG",
+    )
+    assert frist.warnstufen == (T(2025, 3, 12), T(2025, 3, 16), T(2025, 3, 18))
+    assert frist.hinweis is not None
+    assert "Erinnerung" in frist.hinweis
+    assert warnungen == []
+
+
 def test_einspruch_gegen_versaeumnisurteil() -> None:
     ereignis = Ereignis(Ereignistyp.ZUSTELLUNG_URTEIL, T(2025, 3, 5), versaeumnisurteil=True)
     assert _fristen(ereignis) == [
@@ -229,6 +251,7 @@ def test_eintragungsanordnung_ohne_bekanntgabe_warnt() -> None:
         Ereignistyp.ZUSTELLUNG_MAHNBESCHEID,
         Ereignistyp.ZUSTELLUNG_VOLLSTRECKUNGSBESCHEID,
         Ereignistyp.ZUSTELLUNG_URTEIL,
+        Ereignistyp.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS,
     ],
 )
 def test_zustellung_ohne_datum_warnt_sofort(typ: Ereignistyp) -> None:

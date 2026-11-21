@@ -266,11 +266,16 @@ def test_kostenfestsetzungsbeschluss_erfasste_rechtskraft_hat_vorrang() -> None:
     assert e.ende == T(2052, 6, 3)  # 01.06.2052 ist ein Samstag (P-01)
 
 
-def test_kostenfestsetzungsbeschluss_mit_beschwerde_ohne_rechtskraft_warnt() -> None:
+@pytest.mark.parametrize("rechtsbehelf", [E.SOFORTIGE_BESCHWERDE, E.ERINNERUNG])
+def test_kostenfestsetzungsbeschluss_mit_rechtsbehelf_ohne_rechtskraft_warnt(
+    rechtsbehelf: Ereignistyp,
+) -> None:
+    """Entscheidung vom 21.11.2026: Die Erinnerung (§ 11 Abs. 2 Satz 1 RPflG) wirkt wie die
+    sofortige Beschwerde; die berechnete Rechtskraft entfällt, die Verjährung bleibt offen."""
     ergebnis = rechne(
         [hf()],
         Ereignis(E.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS, T(2022, 5, 2)),
-        Ereignis(E.SOFORTIGE_BESCHWERDE, T(2022, 5, 10)),
+        Ereignis(rechtsbehelf, T(2022, 5, 10)),
     )
     assert eintrag(ergebnis).ende is None
     assert any("Rechtskraft" in w for w in ergebnis.warnungen)

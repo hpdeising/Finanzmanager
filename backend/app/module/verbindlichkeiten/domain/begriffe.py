@@ -140,6 +140,8 @@ class Ereignistyp(StrEnum):
     BESTREITEN_BEENDET = "bestreiten_beendet"
     # Ergänzt am 21.11.2026 für die Verjährung des Kostenfestsetzungsbeschlusses (Kap. 5.5)
     SOFORTIGE_BESCHWERDE = "sofortige_beschwerde"
+    # Ergänzt am 21.11.2026: Erinnerung gegen den Kostenfestsetzungsbeschluss (Kap. 5.4, 5.5)
+    ERINNERUNG = "erinnerung"
 
     @property
     def ist_zustellung(self) -> bool:

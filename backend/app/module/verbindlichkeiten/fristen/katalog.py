@@ -111,6 +111,18 @@ def _fristen(
                 tag,
             )
         ], []
+    if typ is Ereignistyp.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS:
+        return [
+            frist(
+                "Rechtsbehelf gegen Kostenfestsetzungsbeschluss",
+                "§ 104 Abs. 3, § 569 Abs. 1 ZPO; § 11 Abs. 2 Satz 1 RPflG",
+                ZWEI_WOCHEN,
+                Fristart.NOTFRIST,
+                tag,
+                "Sofortige Beschwerde oder Erinnerung, je nach Wert des Beschwerdegegenstands;"
+                " die Frist ist für beide dieselbe.",
+            )
+        ], []
     if typ is Ereignistyp.ZUSTELLUNG_URTEIL and ereignis.versaeumnisurteil:
         return [
             frist(
