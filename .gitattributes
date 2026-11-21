@@ -4,3 +4,6 @@
 *.docx binary
 *.pdf binary
 *.png binary
+
+# Lizenztexte Dritter Byte für Byte wie im Ursprungsprojekt, ohne Umwandlung der Zeilenenden
+frontend/lizenzen/** -text
