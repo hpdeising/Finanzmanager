@@ -22,6 +22,7 @@ describe("Lizenzen", () => {
     expect(await screen.findByText("fastapi 1.0.0 – MIT")).toBeTruthy();
     expect(screen.getByText(/react \d+\.\d+\.\d+ – MIT/)).toBeTruthy();
     expect(screen.getByText(/@kern-ux\/native .* – EUPL-1.2/)).toBeTruthy();
+    expect(screen.getByText(/Fira Sans \(Schrift in @kern-ux\/native\) .* – OFL-1.1/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Quellcode dieser Version" })).toBeTruthy();
   });
 
