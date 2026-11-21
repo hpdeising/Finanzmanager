@@ -601,6 +601,7 @@ Die Pfändungsfreigrenzen dienen in Release 1 nur der Information auf dem Dashbo
 - **Zuordnungsregeln:** Gegen-IBAN des Gläubigers, Aktenzeichen im Verwendungszweck, Betrag entspricht der vereinbarten Rate.
 - **Ohne Bestätigung wird nichts gebucht.**
 - **Datenminimierung:** Nicht zugeordnete Zeilen werden nach dem Import verworfen. Die Importdatei wird nicht aufbewahrt.
+- **Umsetzung M6, Leser (Kern):** Die Leser für CSV und CAMT.053 liefern je Zeile Buchungstag, Valuta (falls vorhanden), Betrag, Richtung, Gegen-IBAN, Namen des Gegenübers und Verwendungszweck. Zahlungskandidaten sind Belastungen, die keine Rückbuchung der Bank sind. CAMT.053 zählt nur gebuchte Einträge in Euro und teilt Sammelbuchungen in ihre Teile. Welches Datum die Wertstellung wird, ist eine Einstellung ohne Voreinstellung, bis P-16 entschieden ist; fehlt das gewählte Datum, bricht der Import ab, statt zu schätzen. Der Hash für Duplikate nutzt die Wertstellung, den Betrag mit Richtung, die Gegen-IBAN und den Verwendungszweck mit zusammengefassten Leerzeichen.
 
 ---
 
