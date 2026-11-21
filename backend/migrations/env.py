@@ -16,10 +16,31 @@ from app.kern.db import Basis, erzeuge_engine
 from app.kern.db.bootstrap import MIGRATION_URL_VARIABLE
 from app.kern.haushalt import Haushalt
 from app.kern.ledger import Buchung, Konto, Posting
+from app.module.verbindlichkeiten.db import (
+    Akte,
+    AkteKonto,
+    AkteTeilungstag,
+    BestandteilZeile,
+    EreignisZeile,
+    Glaeubiger,
+    ZinsregelZeile,
+)
 
 # Der Import registriert die Tabellen in Basis.metadata; der Vergleich von Modellen und
 # Migration (tests/migrations) braucht sie.
-MODELLE = (Haushalt, Konto, Buchung, Posting)
+MODELLE = (
+    Haushalt,
+    Konto,
+    Buchung,
+    Posting,
+    Glaeubiger,
+    Akte,
+    AkteKonto,
+    AkteTeilungstag,
+    BestandteilZeile,
+    ZinsregelZeile,
+    EreignisZeile,
+)
 
 
 def _migriere(verbindung: Connection) -> None:
