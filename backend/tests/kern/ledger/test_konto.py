@@ -24,6 +24,27 @@ def test_unbekannte_betriebsart(session: Session) -> None:
         lege_haushalt_an(session, betriebsart="gemeinsam")  # pyright: ignore[reportArgumentType]
 
 
+def test_haushalt_mit_bundesland(session: Session) -> None:
+    """Das Bundesland bestimmt die Feiertage, wenn kein Gericht erfasst ist (Kap. 5.4)."""
+    haushalt = lege_haushalt_an(session, betriebsart="einzel", bundesland="SH")
+    session.expire(haushalt)
+    assert haushalt.bundesland == "SH"
+    assert lege_haushalt_an(session, betriebsart="einzel").bundesland is None
+
+
+def test_unbekanntes_bundesland(session: Session) -> None:
+    with pytest.raises(ValueError, match="Bundesland"):
+        lege_haushalt_an(session, betriebsart="einzel", bundesland="XY")
+
+
+def test_bundesland_prueft_auch_die_datenbank(session: Session) -> None:
+    with pytest.raises(IntegrityError) as fehler:
+        session.execute(
+            text("INSERT INTO haushalt (betriebsart, bundesland) VALUES ('einzel', 'XY')")
+        )
+    assert constraint_name(fehler.value) == "ck_haushalt_bundesland"
+
+
 def test_konto_anlegen(session: Session) -> None:
     haushalt = lege_haushalt_an(session, betriebsart="einzel")
     konto = lege_konto_an(
