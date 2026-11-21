@@ -62,6 +62,7 @@ FUNKTIONEN = {
 CONSTRAINTS = {
     "pk_haushalt",
     "ck_haushalt_betriebsart",
+    "ck_haushalt_bundesland",  # Migration 0003
     "pk_konto",
     "fk_konto_haushalt_id_haushalt",
     "ck_konto_kontoart",
@@ -84,7 +85,7 @@ CONSTRAINTS = {
 }
 
 
-def katalog(engine: Engine, sql: str, **parameter: str) -> list[Any]:
+def katalog(engine: Engine, sql: str, **parameter: object) -> list[Any]:
     with engine.connect() as verbindung:
         return list(verbindung.execute(text(sql), parameter).all())
 
@@ -133,7 +134,9 @@ def test_trigger_sind_angelegt_und_immer_aktiv(owner_engine: Engine) -> None:
         owner_engine,
         "SELECT c.relname, t.tgname, t.tgenabled FROM pg_trigger AS t"
         " JOIN pg_class AS c ON c.oid = t.tgrelid"
-        " WHERE NOT t.tgisinternal AND c.relnamespace = 'public'::regnamespace",
+        " WHERE NOT t.tgisinternal AND c.relnamespace = 'public'::regnamespace"
+        " AND c.relname = ANY(:tabellen)",
+        tabellen=list(TABELLEN),
     )
     assert {(tabelle, name) for tabelle, name, _ in zeilen} == TRIGGER
     assert {aktiv for _, _, aktiv in zeilen} == {"A"}

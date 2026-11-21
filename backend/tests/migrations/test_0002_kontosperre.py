@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from app.kern.db import erzeuge_engine
 from tests.datenbank import (
     BACKEND,
+    HEAD,
     alembic_config,
     migriere,
     neue_testdatenbank,
@@ -193,7 +194,8 @@ def test_rueckweg_bricht_ab_wenn_er_daten_verlieren_wuerde(
             with pytest.raises(DBAPIError) as fehler:
                 zurueck_auf_0001(owner)
             assert sqlstate(fehler.value) == "55000"
-            assert katalog(owner, "SELECT version_num FROM alembic_version") == [("0002",)]
+            # Alles in einer Transaktion: Der Stand bleibt head, auch der von 0003.
+            assert katalog(owner, "SELECT version_num FROM alembic_version") == [(HEAD,)]
         finally:
             app.dispose()
             owner.dispose()
