@@ -46,9 +46,13 @@ class Warnung:
 
 
 def fristen_aus_ereignissen(
-    ereignisse: Iterable[Ereignis], kalender: Feiertagskalender, land: str
+    ereignisse: Iterable[Ereignis], kalender: Feiertagskalender, haushalt_land: str
 ) -> tuple[list[Frist], list[Warnung]]:
     """Fristen und Warnungen aus den Ereignissen einer Akte, in deren Reihenfolge.
+
+    Feiertage richten sich nach dem Land des Gerichts, bei dem die Handlung vorzunehmen ist; ist
+    kein Gericht erfasst, nach dem Land des Haushalts (Kap. 5.4). Fällt ein Fristende auf einen
+    Feiertag, der nur in Teilen des Landes gilt, bekommt die Frist einen Hinweis.
 
     Raises:
         StammdatenFehlenError: wenn der Feiertagskalender für ein Fristende nichts weiß.
@@ -62,6 +66,7 @@ def fristen_aus_ereignissen(
                     Warnung(ereignis, "Zustellungsdatum fehlt: ohne Zustellungsdatum keine Frist.")
                 )
             continue
+        land = ereignis.gericht_land or haushalt_land
         neu, warnung = _fristen(ereignis, ereignis.datum, kalender, land)
         fristen.extend(neu)
         warnungen.extend(warnung)
@@ -75,6 +80,12 @@ def _fristen(
         name: str, norm: str, dauer: Dauer, art: Fristart, start: date, hinweis: str | None = None
     ) -> Frist:
         ende = fristende(start, dauer, art, kalender, land)
+        if art.verschiebung_222_zpo and (regional := kalender.regionaler_feiertag(ende, land)):
+            zusatz = (
+                f"Am Gerichtsort kann die Frist einen Tag später enden: {regional} ist in Teilen "
+                "des Landes Feiertag."
+            )
+            hinweis = f"{hinweis} {zusatz}" if hinweis else zusatz
         return Frist(name, norm, ereignis, ende, art, warnstufen(ende, art), hinweis)
 
     typ = ereignis.typ

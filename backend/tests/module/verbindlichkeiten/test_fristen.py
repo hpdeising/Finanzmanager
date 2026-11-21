@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Tests der Fristberechnung und des Fristenkatalogs (Fachkonzept Kap. 5.4).
 
-Der Feiertagskalender ist ausgedacht (ein Testtag am Montag, 24.03.2025, nur in SH).
+Der Feiertagskalender ist ausgedacht: ein Testtag am Montag, 24.03.2025, nur in SH, und ein
+regionaler Testtag am Montag, 07.04.2025, in Teilen von BY.
 """
 
 from datetime import date
@@ -9,7 +10,7 @@ from datetime import date
 import pytest
 
 from app.kern.stammdaten import Feiertagskalender, StammdatenFehlenError
-from app.module.verbindlichkeiten.domain import Ereignis, Ereignistyp
+from app.module.verbindlichkeiten.domain import EingabeUngueltigError, Ereignis, Ereignistyp
 from app.module.verbindlichkeiten.fristen import (
     Dauer,
     Einheit,
@@ -27,6 +28,9 @@ KALENDER = Feiertagskalender.aus_daten(
         "gueltig_ab": T(2025, 1, 1),
         "gueltig_bis": T(2028, 12, 31),
         "feiertage": [{"datum": T(2025, 3, 24), "name": "Testtag", "laender": ["SH"]}],
+        "regionale_feiertage": [
+            {"datum": T(2025, 4, 7), "name": "Regionaler Testtag", "laender": ["BY"]}
+        ],
     }
 )
 
@@ -79,10 +83,24 @@ def test_prozessuale_frist_an_einem_werktag_bleibt() -> None:
     ) == T(2025, 3, 19)
 
 
-@pytest.mark.parametrize("art", [Fristart.NOTFRIST, Fristart.INFORMATION, Fristart.MATERIELL])
-def test_222_zpo_nur_fuer_prozessuale_fristen_wie_im_fachkonzept(art: Fristart) -> None:
-    """Kap. 5.4 nennt § 222 Abs. 2 ZPO für prozessuale Fristen (offene Frage zu Notfristen)."""
+def test_222_zpo_gilt_auch_fuer_notfristen() -> None:
+    """Notfristen sind prozessuale Fristen (Kap. 5.4, Entscheidung vom 20.11.2026)."""
+    assert fristende(
+        T(2025, 3, 8), Dauer(2, Einheit.WOCHEN), Fristart.NOTFRIST, KALENDER, "BY"
+    ) == T(2025, 3, 24)
+
+
+@pytest.mark.parametrize("art", [Fristart.INFORMATION, Fristart.MATERIELL])
+def test_222_zpo_nicht_fuer_andere_fristen(art: Fristart) -> None:
     assert fristende(T(2025, 3, 8), Dauer(2, Einheit.WOCHEN), art) == T(2025, 3, 22)
+
+
+def test_regionale_feiertage_verschieben_nicht() -> None:
+    """Feiertage nur in Teilen eines Landes zählen nicht (Grundsatz E-36): Die Frist endet eher
+    früher."""
+    assert fristende(
+        T(2025, 3, 24), Dauer(2, Einheit.WOCHEN), Fristart.PROZESSUAL, KALENDER, "BY"
+    ) == T(2025, 4, 7)
 
 
 def test_prozessuale_frist_braucht_kalender_und_land() -> None:
@@ -162,14 +180,18 @@ def test_berufung_mit_hinweis_auf_die_voraussetzungen() -> None:
         [Ereignis(Ereignistyp.ZUSTELLUNG_URTEIL, T(2025, 3, 5))], KALENDER, "BY"
     )
     (frist,) = fristen
+    # 05.04.2025 ist ein Samstag: § 222 Abs. 2 ZPO verschiebt auf Montag, 07.04.2025, der in
+    # Teilen von BY Feiertag ist; dazu der Hinweis.
     assert (frist.name, frist.ende, frist.art, frist.norm) == (
         "Berufung",
-        T(2025, 4, 5),
+        T(2025, 4, 7),
         Fristart.NOTFRIST,
         "§§ 511, 517 ZPO",
     )
     assert frist.hinweis is not None
     assert "600" in frist.hinweis
+    assert "Regionaler Testtag" in frist.hinweis
+    assert "einen Tag später" in frist.hinweis
 
 
 def test_eintragungsanordnung_mit_bekanntgabe() -> None:
@@ -230,3 +252,31 @@ def test_fristen_werden_aus_allen_ereignissen_abgeleitet() -> None:
         )
     ]
     assert namen == ["Widerspruch gegen Mahnbescheid", "Einspruch gegen Vollstreckungsbescheid"]
+
+
+@pytest.mark.parametrize(
+    ("gericht_land", "ende"),
+    [
+        ("SH", T(2025, 3, 25)),  # Mo 24.03. ist in SH Feiertag
+        (None, T(2025, 3, 24)),  # ohne Gericht das Land des Haushalts (BY)
+    ],
+)
+def test_feiertage_nach_dem_land_des_gerichts(gericht_land: str | None, ende: date) -> None:
+    """Kap. 5.4 (Entscheidung vom 20.11.2026): Land des Gerichts, sonst des Haushalts."""
+    ereignis = Ereignis(
+        Ereignistyp.ZUSTELLUNG_VOLLSTRECKUNGSBESCHEID, T(2025, 3, 8), gericht_land=gericht_land
+    )
+    fristen, _ = fristen_aus_ereignissen([ereignis], KALENDER, "BY")
+    assert [f.ende for f in fristen] == [ende]
+
+
+def test_ohne_regionalen_feiertag_kein_hinweis() -> None:
+    fristen, _ = fristen_aus_ereignissen(
+        [Ereignis(Ereignistyp.ZUSTELLUNG_VOLLSTRECKUNGSBESCHEID, T(2025, 3, 5))], KALENDER, "BY"
+    )
+    assert fristen[0].hinweis is None
+
+
+def test_unbekanntes_land_des_gerichts() -> None:
+    with pytest.raises(EingabeUngueltigError):
+        Ereignis(Ereignistyp.ZUSTELLUNG_MAHNBESCHEID, T(2025, 3, 5), gericht_land="XX")

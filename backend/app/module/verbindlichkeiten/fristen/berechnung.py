@@ -47,8 +47,8 @@ class Fristart(StrEnum):
 
     @property
     def verschiebung_222_zpo(self) -> bool:
-        """§ 222 Abs. 2 ZPO, wie Kap. 5.4 ihn nennt: bei prozessualen Fristen."""
-        return self is Fristart.PROZESSUAL
+        """§ 222 Abs. 2 ZPO gilt für prozessuale Fristen, auch für Notfristen (Kap. 5.4)."""
+        return self in {Fristart.PROZESSUAL, Fristart.NOTFRIST}
 
     @property
     def warntage(self) -> tuple[int, ...]:
@@ -80,9 +80,9 @@ def fristende(
       Tages, der durch seine Benennung oder Zahl dem Tag des Ereignisses entspricht.
     - § 188 Abs. 3 BGB: Fehlt dieser Tag im letzten Monat, endet sie mit dem letzten Tag dieses
       Monats.
-    - § 222 Abs. 2 ZPO, bei prozessualen Fristen: Fällt das Ende auf einen Samstag, Sonntag oder
-      allgemeinen Feiertag, endet die Frist mit Ablauf des nächsten Werktags. Feiertage nach
-      ``land`` aus dem ``kalender`` (Kap. 5.4).
+    - § 222 Abs. 2 ZPO, bei prozessualen Fristen einschließlich Notfristen: Fällt das Ende auf
+      einen Samstag, Sonntag oder allgemeinen Feiertag, endet die Frist mit Ablauf des nächsten
+      Werktags. Feiertage nach ``land`` aus dem ``kalender``, nur landesweite (Kap. 5.4, E-36).
 
     Raises:
         ValueError: wenn § 222 Abs. 2 ZPO gilt, aber Kalender oder Land fehlen.

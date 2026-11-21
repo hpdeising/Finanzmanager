@@ -49,7 +49,7 @@ Der Kern enthält keine Fachlogik eines Moduls. Module hängen vom Kern ab, nie 
 
 ## 2 Entscheidungsprotokoll
 
-E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026; die Ergänzung in E-24 vom 25.10.2026; E-35 sowie die Festlegungen in Kap. 5.2 Schritt 6 und Kap. 5.3 vom 20.11.2026.
+E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vom 13.10.2026; E-29 vom 15.10.2026; E-30 bis E-34 vom 24.10.2026; die Ergänzung in E-24 vom 25.10.2026; E-35, E-36 sowie die Festlegungen in Kap. 5.2 Schritt 6, Kap. 5.3 und Kap. 5.4 vom 20.11.2026.
 
 | Nr. | Thema | Entscheidung |
 |---|---|---|
@@ -88,6 +88,7 @@ E-01 bis E-27 vom 11.10.2026; die Präzisierungen in E-25 und E-26 sowie E-28 vo
 | E-33 | Rundung je Abschnitt | Gerundet wird immer je Abschnitt kaufmännisch auf Cent, über die zentrale Funktion in `kern/geld`. `am_ende` und der Aktenparameter `rundung` entfallen. Eine Zahlung wird auf die gerundeten Zinsen der Abschnitte vor ihrer Abschnittsgrenze angerechnet (E-30). Schließt P-13, ändert E-23 (Kap. 5.1, 5.2 Schritt 2) |
 | E-34 | Tageszählung `30_360` | Jeder Monat hat 30 Tage, der Teiler ist 360, und wie bei den taggenauen Arten zählt der erste Tag eines Abschnitts mit. Die Tage eines Abschnitts vom ersten bis zum letzten Tag sind 360·(J2−J1) + 30·(M2−M1) + (T2−T1). Dabei ist D1 der Vortag des ersten Tags und D2 der letzte Tag des Abschnitts; J, M und T sind Jahr, Monat und Tag von D1 bzw. D2. Für jeden Abschnitt, dessen Vortag kein verzinster Tag desselben Bestandteils ist, ist D1 der erste Tag selbst, und die Formel bekommt + 1: 360·(J2−J1) + 30·(M2−M1) + (T2−T1) + 1. Das gilt am ersten Zinstag (Kap. 5.2 Schritt 1; bei `zinsbeginn = folgetag` ist das der Tag nach dem genannten Tag, E-24) und nach jeder Pause ohne Verzinsung, also auch, wenn auf eine Zinsregel `keine` oder auf das Ende einer Zinsregel später eine verzinsliche folgt. Ein Regelwechsel ohne Lücke bleibt ein weiterer Abschnitt nach der allgemeinen Formel. So zählen keine unverzinsten Tage mit. In beiden Formeln zählt ein Tag 31 bei D1 und D2 als 30. Damit zählen der 30. und der 31. eines Monats zusammen als ein Tag, und endet ein Abschnitt am Februarende, zählt der Februar mit seinen tatsächlichen Tagen. Teilen ändert die Summe nicht: Innerhalb verzinster Tage ohne Pause ergeben der Abschnitt nach der Formel mit + 1 und alle folgenden nach der allgemeinen zusammen dieselben Tage wie ungeteilt. Ein Kalenderjahr hat 360 Tage. Beispiele in Kap. 5.1. Eigene Festlegung, keine Rechtsregel und keine Primärquelle: Eine verbindliche Quelle für die Zählung in Forderungsaufstellungen gibt es nicht. Weicht ein realer Fall ab, wird daraus ein neuer Prüfpunkt. Schließt P-15, ergänzt E-22 (Kap. 5.1) |
 | E-35 | Reihenfolge innerhalb einer Gruppe | Bei der Anrechnung gilt innerhalb einer Gruppe: älteste Position zuerst. Kosten nach dem Tag ihrer Entstehung (`entstanden_am`); Bestandteile ohne diesen Tag kommen zuerst, in der Reihenfolge der Eingabe. Zinsen nach dem letzten Tag ihres Abschnitts, auch über Bestandteile hinweg: Zinsen eines früher endenden Abschnitts sind älter. Kein Aktenparameter. Schließt P-07 (Kap. 5.3) |
+| E-36 | Schutz des Schuldners bei Unsicherheit | Wo eine Rechtslage oder ein Datum unsicher ist, rechnet das Programm zum Schutz des Schuldners: Fristen, die der Schuldner wahren muss, im Zweifel früher, Verjährung im Zweifel später. Der Grundsatz bestimmt die Voreinstellungen offener Prüfpunkte und den Umgang mit unsicheren Stammdaten, etwa Feiertagen, die nur in Teilen eines Landes gelten (Kap. 5.4, 5.5) |
 
 ---
 
@@ -437,7 +438,8 @@ Ablauf:
 ### 5.4 Fristen
 
 - Fristen werden aus Ereignissen abgeleitet und nie gespeichert. Ändert sich ein Ereignis, ändern sich die Fristen. Ein Ereignis `zahlung`, dessen Buchung storniert ist, gilt als nie geschehen (E-26).
-- Berechnet wird nach §§ 187, 188 BGB. Bei prozessualen Fristen gilt zusätzlich § 222 Abs. 2 ZPO: Endet die Frist an einem Samstag, Sonntag oder allgemeinen Feiertag, endet sie mit Ablauf des nächsten Werktags. Feiertage richten sich nach dem Bundesland des Haushalts.
+- Berechnet wird nach §§ 187, 188 BGB. Bei prozessualen Fristen, auch bei Notfristen, gilt zusätzlich § 222 Abs. 2 ZPO: Endet die Frist an einem Samstag, Sonntag oder allgemeinen Feiertag, endet sie mit Ablauf des nächsten Werktags. Feiertage richten sich nach dem Land des Gerichts, bei dem die Handlung vorzunehmen ist; ist kein Gericht erfasst, nach dem Land des Haushalts.
+- Es zählen nur landesweite gesetzliche Feiertage (`stammdaten/feiertage.yaml`, Kap. 7). Feiertage, die nur in Teilen eines Landes gelten, etwa das Augsburger Friedensfest, Mariä Himmelfahrt in Teilen Bayerns oder Fronleichnam in Teilen Sachsens und Thüringens, zählen nicht (E-36). Fällt ein Fristende auf einen solchen Tag, zeigt das Programm den Hinweis, dass die Frist am Gerichtsort einen Tag später enden kann.
 - Jede Frist führt: Norm, auslösendes Ereignis, Fristende, Art (Notfrist, prozessual, materiell, Information), Warnstufen.
 
 | Frist | Auslöser | Dauer | Norm | Art |
@@ -451,6 +453,8 @@ Ablauf:
 | Vorzeitige Löschung | Ausgleich und Nachweis | auf Antrag | § 882e Abs. 3 Nr. 1 ZPO | Aufgabe |
 | Löschung erledigter Auskunftei-Einträge | Ausgleich | 36 Monate; 18 Monate bei Erfüllung der Bedingungen der 100-Tage-Regel | Verhaltensregeln der Auskunfteien (Code of Conduct) | Information |
 | Verjährung | siehe 5.5 | | | materiell |
+
+Zur Tabelle: Bei der Eintragungsanordnung ist das Datum des Ereignisses der Tag der Anordnung; der Tag der Bekanntgabe wird gesondert erfasst, und fehlt er, warnt das System. Die Berufungsfrist erscheint immer, mit dem Hinweis auf eine Beschwer über 600 € oder die Zulassung. Die Löschfristen der Auskunfteien sind zurückgestellt, bis es eine belastbare Quelle gibt.
 
 Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Tage; Informationen 30 Tage. Fehlt bei einer Zustellung das Datum, warnt das System sofort, denn ohne Zustellungsdatum gibt es keine Frist.
 
@@ -539,7 +543,7 @@ eintraege:
 ```
 
 Weitere Dateien in Release 1:
-- `feiertage.yaml` (je Bundesland)
+- `feiertage.yaml`: landesweite gesetzliche Feiertage aller 16 Länder für 2000 bis 2040, einmalig erzeugt mit python-holidays aus den Feiertagsgesetzen der Länder. Die Bibliothek ist keine Abhängigkeit des Programms, die Datei ist die Quelle. Feiertage, die nur in Teilen eines Landes gelten, stehen gesondert unter `regionale_feiertage` (Kap. 5.4)
 - `vollstreckungsgerichte.yaml` (Schleswig-Holstein: Zentrales Vollstreckungsgericht beim Amtsgericht Schleswig)
 - `auskunfteien.yaml` (Löschfristen)
 
