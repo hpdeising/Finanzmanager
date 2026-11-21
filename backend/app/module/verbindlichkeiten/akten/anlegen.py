@@ -33,6 +33,7 @@ from app.kern.ledger import (
     lege_konto_an,
     storniere,
 )
+from app.kern.zeit import tag_von
 from app.module.verbindlichkeiten.akten.fehler import (
     AkteUnbekanntError,
     EreignisUnbekanntError,
@@ -51,10 +52,10 @@ from app.module.verbindlichkeiten.db import (
 from app.module.verbindlichkeiten.domain import (
     Aktenparameter,
     Bestandteil,
-    Bestandteilart,
     EingabeUngueltigError,
     Ereignis,
     Ereignistyp,
+    Gruppe,
     Zahlung,
 )
 
@@ -161,19 +162,21 @@ def lege_bestandteil_an(
 ) -> uuid.UUID:
     """Bestandteil mit Konto, Zinsregeln und Buchung seines Ursprungsbetrags anlegen.
 
-    Die Buchung hat die Wertstellung ``entstanden_am``; ohne diesen Tag gibt es keine Buchung.
+    Gebucht wird nach Kap. 4.3 (Entscheidung vom 21.11.2026):
+
+    - Kosten, die nach dem Tag der Eröffnung der Akte entstehen, sind neue Kosten:
+      ``verbindlichkeiten.kosten``, Soll Kostenaufwand, Wertstellung ``entstanden_am``.
+    - Alles andere ist Erfassung einer Altlast: ``verbindlichkeiten.entstehung``, Soll
+      Eröffnung Altlasten, Wertstellung ``entstanden_am`` oder, ohne diesen Tag, der Tag der
+      Eröffnung. Dazu gehören Kosten vom Tag der Eröffnung oder davor, Kosten ohne
+      ``entstanden_am`` sowie Hauptforderung und Zinsen.
 
     Raises:
         AkteUnbekanntError: bei unbekannter Akte.
-        EingabeUngueltigError: ohne ``entstanden_am`` oder bei doppelter Kennung.
+        EingabeUngueltigError: bei doppelter Kennung.
     """
     akte = _akte(session, akte_id)
-    if bestandteil.entstanden_am is None:
-        msg = (
-            "Ein Bestandteil braucht entstanden_am: Sein Ursprungsbetrag wird an diesem Tag"
-            " gebucht."
-        )
-        raise EingabeUngueltigError(msg)
+    eroeffnet = tag_von(akte.angelegt_am)
     vorhanden = session.scalar(
         select(BestandteilZeile.id).where(
             BestandteilZeile.akte_id == akte_id, BestandteilZeile.kennung == bestandteil.kennung
@@ -214,7 +217,11 @@ def lege_bestandteil_an(
                 konto_id=zinskonto.id if zinskonto else None,
             )
         )
-    neue_kosten = bestandteil.art is Bestandteilart.KOSTEN_VOLLSTRECKUNG
+    neue_kosten = (
+        bestandteil.art.gruppe is Gruppe.KOSTEN
+        and bestandteil.entstanden_am is not None
+        and bestandteil.entstanden_am > eroeffnet
+    )
     gegen = _konto_mit_rolle(
         session, akte.haushalt_id, (KOSTENAUFWAND if neue_kosten else EROEFFNUNG)[0]
     )
@@ -222,7 +229,7 @@ def lege_bestandteil_an(
         session,
         haushalt_id=akte.haushalt_id,
         art=ART_KOSTEN if neue_kosten else ART_ENTSTEHUNG,
-        wertstellung=bestandteil.entstanden_am,
+        wertstellung=bestandteil.entstanden_am or eroeffnet,
         postings=[
             PostingEingabe(gegen.id, bestandteil.betrag),
             PostingEingabe(konto.id, -bestandteil.betrag),

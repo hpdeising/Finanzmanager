@@ -8,9 +8,8 @@ Zinsen und Anrechnung, Fristen, Verjährung und Status. Gespeichert wird davon n
 import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date
 from typing import Annotated, Final
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
@@ -19,6 +18,7 @@ from app.kern.ledger import EingabeUngueltigError as LedgerEingabeError
 from app.kern.ledger import KontoBelegtError, StornoNichtMoeglichError
 from app.kern.stammdaten import StammdatenError
 from app.kern.web import HaushaltId, Sitzung, Stammdaten, StammdatenAbh
+from app.kern.zeit import heute
 from app.module.verbindlichkeiten.akten import (
     Akteninhalt,
     AkteUnbekanntError,
@@ -69,8 +69,6 @@ from app.module.verbindlichkeiten.fristen import fristen_aus_ereignissen
 from app.module.verbindlichkeiten.status import status_berechnen
 from app.module.verbindlichkeiten.verjaehrung import PFLICHTHINWEIS, verjaehrung_berechnen
 
-# Zeitzone der Installation für „heute“ (CLAUDE.md: fachliche Daten als date).
-ZEITZONE: Final = ZoneInfo("Europe/Berlin")
 OHNE_BUNDESLAND: Final = (
     "Bundesland des Haushalts fehlt: ohne Feiertage keine Fristen und keine Verjährung."
 )
@@ -78,10 +76,6 @@ OHNE_BUNDESLAND: Final = (
 router = APIRouter(prefix="/api/verbindlichkeiten", tags=["verbindlichkeiten"])
 
 Stichtag = Annotated[date | None, Query(description="Stichtag; ohne Angabe heute")]
-
-
-def heute() -> date:
-    return datetime.now(ZEITZONE).date()
 
 
 @contextmanager
