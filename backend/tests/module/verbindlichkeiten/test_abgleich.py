@@ -287,3 +287,41 @@ def test_ursachen_des_abgleichs_sind_die_vereinigung() -> None:
     aufstellung = Aufstellung(T(2025, 6, 30), {}, zeilen, kosten=(Kostenposition(None, "1.00"),))
     ergebnis = abgleich(*BEISPIEL, aufstellung)
     assert ergebnis.ursachen == {Ursache.ZINSSATZ, Ursache.UNBEKANNTE_KOSTEN}
+
+
+def test_anderer_zinsbeginn() -> None:
+    """Programm: genannter Tag; Aufstellung: Folgetag (erster Zinstag 02.01., 9 Tage, 9,00 €)."""
+    zeile = {"von": "2025-01-02", "tage": "9", "zins_gerundet": "9.00"}
+    ergebnis = abgleich(
+        [hf("3650.00", fest(T(2025, 1, 1)))], [], Aufstellung(T(2025, 1, 10), {}, (zeile,))
+    )
+    assert set(positionen(ergebnis)) == {
+        Position(RW, "von", 1),
+        Position(RW, "tage", 1),
+        Position(RW, "zins_gerundet", 1),
+    }
+    for a in ergebnis.abweichungen:
+        assert Ursache.ZINSBEGINN in a.ursachen
+
+
+def test_anzeige_der_ursachen() -> None:
+    """Ohne Ursache zeigt der Abgleich „keine Ursache gefunden“ (Entscheidung vom 20.11.2026)."""
+    zeilen = ({**BEISPIEL_RECHENWEG[0], "zins_gerundet": "9.20"}, BEISPIEL_RECHENWEG[1])
+    ohne = abgleich(*BEISPIEL, Aufstellung(T(2025, 6, 30), {}, zeilen)).abweichungen[0]
+    assert ohne.ursachen_anzeige == ("keine Ursache gefunden",)
+    zeilen = ({**BEISPIEL_RECHENWEG[0], "satz": "6"}, BEISPIEL_RECHENWEG[1])
+    mit = abgleich(*BEISPIEL, Aufstellung(T(2025, 6, 30), {}, zeilen)).abweichungen[0]
+    assert mit.ursachen_anzeige == ("Zinssatz",)
+
+
+def test_jede_ursache_hat_eine_anzeige() -> None:
+    assert {u.anzeige for u in Ursache} == {
+        "Zinssatz",
+        "Tageszählung",
+        "Zinsbeginn",
+        "Zahltag",
+        "Teilung der Abschnitte",
+        "Anrechnungsreihenfolge",
+        "unbekannte Kosten",
+        "fehlende Zahlungen",
+    }

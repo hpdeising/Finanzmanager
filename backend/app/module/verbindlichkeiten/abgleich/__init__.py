@@ -2,6 +2,7 @@
 """Abgleich mit der Forderungsaufstellung des Gläubigers (Fachkonzept Kap. 5.3)."""
 
 from app.module.verbindlichkeiten.abgleich.aufstellung import (
+    KEINE_URSACHE,
     SPALTEN_ANRECHNUNG,
     SPALTEN_RECHENWEG,
     SUMMEN,
@@ -16,6 +17,7 @@ from app.module.verbindlichkeiten.abgleich.aufstellung import (
 from app.module.verbindlichkeiten.abgleich.vergleich import gleiche_ab
 
 __all__ = [
+    "KEINE_URSACHE",
     "SPALTEN_ANRECHNUNG",
     "SPALTEN_RECHENWEG",
     "SUMMEN",
