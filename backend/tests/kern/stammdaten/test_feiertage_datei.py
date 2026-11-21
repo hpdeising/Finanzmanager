@@ -11,12 +11,12 @@ import pytest
 
 from app.kern.stammdaten import LAENDER, lade_feiertagskalender
 
-JAHRE = range(2000, 2041)
+JAHRE = range(2000, 2081)
 
 
-def test_zeitraum_2000_bis_2040() -> None:
+def test_zeitraum_2000_bis_2080() -> None:
     kalender = lade_feiertagskalender()
-    assert (kalender.gueltig_ab, kalender.gueltig_bis) == (date(2000, 1, 1), date(2040, 12, 31))
+    assert (kalender.gueltig_ab, kalender.gueltig_bis) == (date(2000, 1, 1), date(2080, 12, 31))
     assert "python-holidays" in kalender.quelle
     assert kalender.geprueft_von
 

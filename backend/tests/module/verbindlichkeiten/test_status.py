@@ -76,8 +76,8 @@ def test_reihenfolge_der_status() -> None:
         Status.OFFEN,
         Status.MAHNVERFAHREN,
         Status.TITULIERT,
-        Status.AUSGEGLICHEN,
         Status.NACHWIRKUNG,
+        Status.AUSGEGLICHEN,
         Status.GESCHLOSSEN,
     ]
 
@@ -116,6 +116,39 @@ def test_vollstreckungsbescheid_nach_mahnverfahren_tituliert() -> None:
 )
 def test_titel_ereignis_fuehrt_von_offen_nach_tituliert(typ: Ereignistyp) -> None:
     assert status([Ereignis(typ, T(2025, 3, 3))]).status is Status.TITULIERT
+
+
+def test_mahnverfahren_ohne_titel_beendet_fuehrt_zurueck_nach_offen() -> None:
+    """Entscheidung vom 21.11.2026."""
+    ergebnis = status(
+        [
+            Ereignis(E.ZUSTELLUNG_MAHNBESCHEID, T(2025, 1, 10)),
+            Ereignis(E.MAHNVERFAHREN_OHNE_TITEL_BEENDET, T(2025, 4, 1)),
+        ]
+    )
+    assert ergebnis.status is Status.OFFEN
+
+
+def test_neuer_mahnbescheid_nach_beendetem_mahnverfahren() -> None:
+    ergebnis = status(
+        [
+            Ereignis(E.ZUSTELLUNG_MAHNBESCHEID, T(2025, 1, 10)),
+            Ereignis(E.MAHNVERFAHREN_OHNE_TITEL_BEENDET, T(2025, 4, 1)),
+            Ereignis(E.ZUSTELLUNG_MAHNBESCHEID, T(2025, 6, 2)),
+        ]
+    )
+    assert ergebnis.status is Status.MAHNVERFAHREN
+
+
+def test_beendetes_mahnverfahren_aendert_einen_titel_nicht() -> None:
+    ergebnis = status(
+        [
+            Ereignis(E.ZUSTELLUNG_MAHNBESCHEID, T(2025, 1, 10)),
+            Ereignis(E.MAHNVERFAHREN_OHNE_TITEL_BEENDET, T(2025, 4, 1)),
+            Ereignis(E.ZUSTELLUNG_URTEIL, T(2025, 9, 1)),
+        ]
+    )
+    assert ergebnis.status is Status.TITULIERT
 
 
 def test_mahnbescheid_nach_titel_aendert_nichts() -> None:
@@ -222,8 +255,15 @@ def test_geschlossen_setzt_der_nutzer() -> None:
     assert ergebnis.warnungen == ()
 
 
-def test_ohne_ereignis_bleibt_es_bei_nachwirkung() -> None:
-    assert ausgeglichen(alle_erledigt(T(2026, 4, 1))).status is Status.NACHWIRKUNG
+def test_alle_aufgaben_erledigt_ausgeglichen() -> None:
+    """Entscheidung vom 21.11.2026: ausgeglichen heißt bereit zum Schließen."""
+    ergebnis = ausgeglichen(alle_erledigt(T(2026, 4, 1)))
+    assert ergebnis.status is Status.AUSGEGLICHEN
+
+
+def test_vor_der_erledigung_nachwirkung() -> None:
+    ergebnis = ausgeglichen(alle_erledigt(T(2026, 4, 1)), stichtag=T(2026, 3, 31))
+    assert ergebnis.status is Status.NACHWIRKUNG
 
 
 def test_informationen_bleiben_nach_dem_schliessen_sichtbar() -> None:
@@ -246,7 +286,8 @@ def test_schliessen_vor_erledigung_wirkt_nicht() -> None:
     ergebnis = ausgeglichen(
         [*alle_erledigt(T(2026, 4, 3)), Ereignis(E.AKTE_GESCHLOSSEN, T(2026, 4, 2))]
     )
-    assert ergebnis.status is Status.NACHWIRKUNG
+    assert ergebnis.status is Status.AUSGEGLICHEN  # heute erledigt, aber nicht am 02.04.
+    assert any("offen" in w for w in ergebnis.warnungen)
 
 
 def test_schliessen_mit_restschuld_wirkt_nicht() -> None:

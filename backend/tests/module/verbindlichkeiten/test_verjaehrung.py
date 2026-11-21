@@ -11,7 +11,11 @@ from typing import Any
 
 import pytest
 
-from app.kern.stammdaten import lade_basiszinsreihe, lade_feiertagskalender
+from app.kern.stammdaten import (
+    StammdatenFehlenError,
+    lade_basiszinsreihe,
+    lade_feiertagskalender,
+)
 from app.module.verbindlichkeiten.berechnung import berechne
 from app.module.verbindlichkeiten.domain import (
     Aktenparameter,
@@ -227,7 +231,7 @@ def test_vollstreckungsbescheid_rechtskraft_berechnet() -> None:
     assert e.norm == "§ 197 Abs. 1 Nr. 3, § 201 BGB; § 700 Abs. 1 ZPO"
     assert (e.beginn, e.ende) == (T(2022, 5, 18), T(2052, 5, 17))
     assert any("berechnet" in h for h in e.hinweise)
-    assert any("Feiertage" in h for h in e.hinweise)  # 2052 liegt nach dem Kalender
+    assert not any("Feiertage" in h for h in e.hinweise)  # Kalender reicht bis 2080
 
 
 def test_erfasste_rechtskraft_hat_vorrang() -> None:
@@ -237,6 +241,48 @@ def test_erfasste_rechtskraft_hat_vorrang() -> None:
         Ereignis(E.RECHTSKRAFT, T(2022, 6, 1)),
     )
     assert eintrag(ergebnis).ende == T(2052, 6, 3)  # 01.06.2052 ist ein Samstag (P-01)
+
+
+def test_kostenfestsetzungsbeschluss_rechtskraft_berechnet() -> None:
+    """Entscheidung vom 21.11.2026: 30 Jahre ab Rechtskraft (§ 197 Abs. 1 Nr. 3, § 201 BGB).
+    Zustellung Mo 02.05.2022, Frist der sofortigen Beschwerde bis Mo 16.05.2022 (§ 104 Abs. 3,
+    § 569 Abs. 1 ZPO), rechtskräftig mit dem Folgetag."""
+    ergebnis = rechne([hf()], Ereignis(E.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS, T(2022, 5, 2)))
+    e = eintrag(ergebnis)
+    assert e.fall is Verjaehrungsfall.KOSTENFESTSETZUNGSBESCHLUSS
+    assert e.norm == "§ 197 Abs. 1 Nr. 3, § 201 BGB"
+    assert (e.beginn, e.ende) == (T(2022, 5, 18), T(2052, 5, 17))
+    assert any("berechnet" in h for h in e.hinweise)
+
+
+def test_kostenfestsetzungsbeschluss_erfasste_rechtskraft_hat_vorrang() -> None:
+    ergebnis = rechne(
+        [hf()],
+        Ereignis(E.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS, T(2022, 5, 2)),
+        Ereignis(E.RECHTSKRAFT, T(2022, 6, 1)),
+    )
+    e = eintrag(ergebnis)
+    assert e.fall is Verjaehrungsfall.KOSTENFESTSETZUNGSBESCHLUSS
+    assert e.ende == T(2052, 6, 3)  # 01.06.2052 ist ein Samstag (P-01)
+
+
+def test_kostenfestsetzungsbeschluss_mit_beschwerde_ohne_rechtskraft_warnt() -> None:
+    ergebnis = rechne(
+        [hf()],
+        Ereignis(E.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS, T(2022, 5, 2)),
+        Ereignis(E.SOFORTIGE_BESCHWERDE, T(2022, 5, 10)),
+    )
+    assert eintrag(ergebnis).ende is None
+    assert any("Rechtskraft" in w for w in ergebnis.warnungen)
+
+
+def test_anderer_titel_geht_dem_kostenfestsetzungsbeschluss_vor() -> None:
+    ergebnis = rechne(
+        [hf()],
+        Ereignis(E.ERRICHTUNG_TITEL, T(2022, 4, 1)),
+        Ereignis(E.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS, T(2022, 5, 2)),
+    )
+    assert eintrag(ergebnis).fall is Verjaehrungsfall.VERGLEICH_URKUNDE
 
 
 def test_einspruch_ohne_rechtskraft_warnt() -> None:
@@ -333,6 +379,13 @@ def test_zinsen_nach_titulierung_bei_verbraucherdarlehen_dreissig_jahre() -> Non
         T(2052, 6, 17),
     )
     assert not any("Zinsen 20" in e.gegenstand for e in ergebnis.eintraege)
+
+
+def test_ohne_feiertage_fehler_statt_schaetzung() -> None:
+    """Entscheidung vom 21.11.2026: Der Kalender reicht bis 2080; danach gilt wieder Fehler statt
+    Schätzung. Errichtung 15.06.2051, Ende 15.06.2081."""
+    with pytest.raises(StammdatenFehlenError):
+        rechne([hf()], Ereignis(E.ERRICHTUNG_TITEL, T(2051, 6, 15)), stichtag=T(2052, 1, 1))
 
 
 def test_verjaehrung_ist_eine_information() -> None:
