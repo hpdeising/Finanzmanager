@@ -21,8 +21,16 @@ const lock = JSON.parse(readFileSync(join(FRONTEND, "package-lock.json"), "utf8"
 const verstoesse = [];
 const hinweise = [];
 for (const [pfad, eintrag] of Object.entries(lock.packages)) {
-  // Nur installierte Pakete: optionale Peer- oder Plattformpakete stehen auch in der Lockdatei.
-  if (pfad === "" || !existsSync(join(FRONTEND, pfad, "package.json"))) {
+  // Geprüft wird, wovon das Projekt abhängt:
+  // - Nicht installierte Pakete fehlen, etwa Plattformpakete anderer Systeme.
+  // - Optionale Peer-Abhängigkeiten (peer und optional, etwa jsdom bei vitest) verlangt das
+  //   Projekt nicht; manche npm-Versionen installieren sie trotzdem. Braucht das Projekt eins
+  //   davon, steht es in package.json und ist dann kein optionaler Peer mehr.
+  if (
+    pfad === "" ||
+    (eintrag.peer && eintrag.optional) ||
+    !existsSync(join(FRONTEND, pfad, "package.json"))
+  ) {
     continue;
   }
   const paket = JSON.parse(readFileSync(join(FRONTEND, pfad, "package.json"), "utf8"));
