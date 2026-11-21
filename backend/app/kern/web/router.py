@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict
 from app.kern.haushalt import BETRIEBSARTEN, Betriebsart, lege_haushalt_an
 from app.kern.stammdaten import LAENDER
 from app.kern.web.abhaengigkeiten import Sitzung, installierter_haushalt
+from app.kern.web.lizenzen import lizenzhinweise
 
 QUELLCODE_VARIABLE: Final = "FINANZMANAGER_QUELLCODE_URL"
 QUELLCODE_STANDARD: Final = "https://github.com/hpdeising/Finanzmanager"
@@ -27,6 +28,13 @@ class Info(BaseModel):
     version: str
     lizenz: Literal["AGPL-3.0-or-later"]
     quellcode: str
+
+
+class Lizenz(BaseModel):
+    name: str
+    version: str
+    lizenz: str
+    text: str
 
 
 class HaushaltEingabe(BaseModel):
@@ -56,6 +64,15 @@ def info() -> Info:
         lizenz=LIZENZ,
         quellcode=os.environ.get(QUELLCODE_VARIABLE) or QUELLCODE_STANDARD,
     )
+
+
+@router.get("/lizenzen")
+def lizenzen() -> list[Lizenz]:
+    """Python-Pakete des Servers mit Lizenz und Lizenztext (Fachkonzept 11.3)."""
+    return [
+        Lizenz(name=h.name, version=h.version, lizenz=h.lizenz, text=h.text)
+        for h in lizenzhinweise()
+    ]
 
 
 @router.get("/haushalt")

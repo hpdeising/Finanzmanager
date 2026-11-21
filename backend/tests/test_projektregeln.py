@@ -27,7 +27,7 @@ FRONTEND_KOPFZEILEN = {
     ".css": "/* SPDX-License-Identifier: AGPL-3.0-or-later */",
     ".html": "<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->",
 }
-FRONTEND_ERZEUGT = frozenset({"schema.d.ts"})
+FRONTEND_ERZEUGT = frozenset({"schema.d.ts", "drittanbieter.json"})
 
 SPDX_KOPFZEILE = "# SPDX-License-Identifier: AGPL-3.0-or-later"
 VERBOTENE_PYTEST_AUFRUFE = frozenset({"skip", "skipif", "xfail", "importorskip"})

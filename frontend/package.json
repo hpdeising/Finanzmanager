@@ -6,8 +6,9 @@
   "type": "module",
   "scripts": {
     "kern": "node scripts/kern.mjs",
+    "lizenzen": "node scripts/lizenzen.mjs",
     "api:typen": "openapi-typescript openapi.json --default-non-nullable false -o src/kern/api/schema.d.ts",
-    "vorbereiten": "npm run kern && npm run api:typen",
+    "vorbereiten": "npm run kern && npm run lizenzen && npm run api:typen",
     "typecheck": "npm run vorbereiten && tsc --noEmit",
     "test": "npm run vorbereiten && vitest run",
     "build": "npm run vorbereiten && tsc --noEmit && vite build",
