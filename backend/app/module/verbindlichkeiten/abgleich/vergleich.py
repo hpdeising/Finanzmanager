@@ -11,8 +11,9 @@ Mögliche Ursachen einer Abweichung:
 - Zinssatz: Basiszinssatz oder Satz der Zeile weichen ab.
 - Teilung der Abschnitte: Beginn, Ende oder Grund einer Zeile weichen ab, oder die Zahl der
   Zeilen; außerdem, wenn die andere Wahl für ``teilung`` den Wert der Aufstellung ergibt.
-- Tageszählung, Zahltag, Anrechnungsreihenfolge: wenn eine andere Wahl für ``tageszaehlung``,
-  ``zahltag`` oder die Reihenfolge der Gruppen den Wert der Aufstellung an dieser Position ergibt.
+- Tageszählung, Zinsbeginn, Zahltag, Anrechnungsreihenfolge: wenn eine andere Wahl für
+  ``tageszaehlung``, ``zinsbeginn``, ``zahltag`` oder die Reihenfolge der Gruppen den Wert der
+  Aufstellung an dieser Position ergibt.
 - Unbekannte Kosten: eine Kostenposition ohne erfassten Bestandteil; dann auch für Kosten und
   Gesamtbetrag.
 - Fehlende Zahlungen: Die Zahlungen der Aufstellung (Wertstellung und Betrag) sind andere als die
@@ -46,6 +47,7 @@ from app.module.verbindlichkeiten.domain import (
     Teilung,
     Zahltag,
     Zahlung,
+    Zinsbeginn,
 )
 
 _TEXT = {"bestandteil", "von", "bis", "grund", "zahlung", "gruppe"}
@@ -281,6 +283,9 @@ def _varianten(
     for zaehlung in Tageszaehlung:
         if zaehlung is not parameter.tageszaehlung:
             andere.append((Ursache.TAGESZAEHLUNG, replace(parameter, tageszaehlung=zaehlung)))
+    for zinsbeginn in Zinsbeginn:
+        if zinsbeginn is not parameter.zinsbeginn:
+            andere.append((Ursache.ZINSBEGINN, replace(parameter, zinsbeginn=zinsbeginn)))
     for zahltag in Zahltag:
         if zahltag is not parameter.zahltag:
             andere.append((Ursache.ZAHLTAG, replace(parameter, zahltag=zahltag)))

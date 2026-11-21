@@ -46,11 +46,30 @@ class Ursache(StrEnum):
 
     ZINSSATZ = "zinssatz"
     TAGESZAEHLUNG = "tageszaehlung"
+    ZINSBEGINN = "zinsbeginn"
     ZAHLTAG = "zahltag"
     TEILUNG = "teilung"
     ANRECHNUNGSREIHENFOLGE = "anrechnungsreihenfolge"
     UNBEKANNTE_KOSTEN = "unbekannte_kosten"
     FEHLENDE_ZAHLUNGEN = "fehlende_zahlungen"
+
+    @property
+    def anzeige(self) -> str:
+        """Bezeichnung wie in Kap. 5.3."""
+        return _ANZEIGE[self]
+
+
+_ANZEIGE = {
+    Ursache.ZINSSATZ: "Zinssatz",
+    Ursache.TAGESZAEHLUNG: "Tageszählung",
+    Ursache.ZINSBEGINN: "Zinsbeginn",
+    Ursache.ZAHLTAG: "Zahltag",
+    Ursache.TEILUNG: "Teilung der Abschnitte",
+    Ursache.ANRECHNUNGSREIHENFOLGE: "Anrechnungsreihenfolge",
+    Ursache.UNBEKANNTE_KOSTEN: "unbekannte Kosten",
+    Ursache.FEHLENDE_ZAHLUNGEN: "fehlende Zahlungen",
+}
+KEINE_URSACHE = "keine Ursache gefunden"
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,13 +122,21 @@ class Abweichung:
 
     ``laut_aufstellung`` ist leer, wenn das Programm eine Zeile mehr hat als die Aufstellung,
     ``programm`` ist leer, wenn es die Position im Programm nicht gibt. Sind die ``ursachen``
-    leer, erklärt keine der Ursachen aus Kap. 5.3 die Abweichung.
+    leer, erklärt keine der Ursachen aus Kap. 5.3 die Abweichung; angezeigt wird dann „keine
+    Ursache gefunden“.
     """
 
     position: Position
     laut_aufstellung: str | None
     programm: str | None
     ursachen: frozenset[Ursache]
+
+    @property
+    def ursachen_anzeige(self) -> tuple[str, ...]:
+        """Die Ursachen in der Reihenfolge von Kap. 5.3, sonst „keine Ursache gefunden“."""
+        if not self.ursachen:
+            return (KEINE_URSACHE,)
+        return tuple(u.anzeige for u in Ursache if u in self.ursachen)
 
 
 @dataclass(frozen=True, slots=True)
