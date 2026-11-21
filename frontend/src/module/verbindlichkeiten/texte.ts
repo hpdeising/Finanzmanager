@@ -68,6 +68,7 @@ export const EREIGNISTYP: Record<Schemas["Ereignistyp"], string> = {
   vollstreckungsmassnahme_aufgehoben: "Vollstreckungsmaßnahme aufgehoben",
   forderung_bestritten: "Forderung bestritten",
   bestreiten_beendet: "Bestreiten beendet",
+  sofortige_beschwerde: "Sofortige Beschwerde (gegen Kostenfestsetzung)",
 };
 
 export const FRISTART: Record<Schemas["Fristart"], string> = {
