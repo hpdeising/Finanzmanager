@@ -318,7 +318,7 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 
 In Meilenstein M1 entstehen davon nur `haushalt`, `konto`, `buchung` und `posting`.
 
-Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`, `einspruch`, `mahnverfahren_ohne_titel_beendet`, `letzte_verfahrenshandlung`, `verzug_eingetreten`. Die letzten vier dienen der Verjährung (Kap. 5.5): `einspruch` gegen den Vollstreckungsbescheid verhindert die berechnete Rechtskraft; `mahnverfahren_ohne_titel_beendet` und `letzte_verfahrenshandlung` beenden die Hemmung durch das Mahnverfahren; `verzug_eingetreten` beginnt die Hemmung bei Verbraucherdarlehen. Für das Statusmodell (Kap. 6) kommen dazu: `zustellung_kostenfestsetzungsbeschluss`, `akte_geschlossen`, `ratenplan_vereinbart`, `ratenplan_beendet`, `vollstreckungsmassnahme_begonnen`, `vollstreckungsmassnahme_aufgehoben`, `forderung_bestritten`, `bestreiten_beendet`.
+Ereignistypen in Release 1: `zustellung_mahnbescheid`, `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `rechtskraft`, `errichtung_titel`, `eintragungsanordnung`, `zahlung`, `vollstreckungsantrag`, `vollstreckungshandlung`, `anerkenntnis`, `glaeubigerwechsel`, `anrechnung_abgelehnt`, `ausgleich`, `quittung_erhalten`, `titel_erhalten`, `loeschung_schuldnerverzeichnis`, `erledigt_gemeldet_auskunftei`, `verjaehrung_eingewandt`, `einspruch`, `mahnverfahren_ohne_titel_beendet`, `letzte_verfahrenshandlung`, `verzug_eingetreten`. Die letzten vier dienen der Verjährung (Kap. 5.5): `einspruch` gegen den Vollstreckungsbescheid verhindert die berechnete Rechtskraft; `mahnverfahren_ohne_titel_beendet` und `letzte_verfahrenshandlung` beenden die Hemmung durch das Mahnverfahren; `verzug_eingetreten` beginnt die Hemmung bei Verbraucherdarlehen. Für das Statusmodell (Kap. 6) kommen dazu: `zustellung_kostenfestsetzungsbeschluss`, `akte_geschlossen`, `ratenplan_vereinbart`, `ratenplan_beendet`, `vollstreckungsmassnahme_begonnen`, `vollstreckungsmassnahme_aufgehoben`, `forderung_bestritten`, `bestreiten_beendet`. Für die Verjährung des Kostenfestsetzungsbeschlusses (Kap. 5.5) kommt `sofortige_beschwerde` dazu.
 
 ### 4.6 Erweiterbarkeit
 
@@ -467,6 +467,7 @@ Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Ta
 | Nicht titulierte Forderung | 3 Jahre | Schluss des Jahres der Entstehung und Kenntnis des Gläubigers | §§ 195, 199 Abs. 1 BGB |
 | Rechtskräftig festgestellt (Urteil, Vollstreckungsbescheid) | 30 Jahre | Rechtskraft | § 197 Abs. 1 Nr. 3, § 201 BGB; § 700 Abs. 1 ZPO |
 | Vollstreckbarer Vergleich, vollstreckbare Urkunde | 30 Jahre | Errichtung des Titels | § 197 Abs. 1 Nr. 4, § 201 BGB |
+| Kostenfestsetzungsbeschluss | 30 Jahre | Rechtskraft | § 197 Abs. 1 Nr. 3, § 201 BGB |
 | Kosten der Zwangsvollstreckung | 30 Jahre | Entstehung | § 197 Abs. 1 Nr. 6, § 201 BGB |
 | Titulierte, künftig fällig werdende wiederkehrende Leistungen (laufende Zinsen nach Titulierung) | 3 Jahre | Schluss des Jahres der Fälligkeit | § 197 Abs. 2, §§ 195, 199 BGB |
 | Verbraucherdarlehen: Zinsen nach Titulierung | 30 Jahre; § 197 Abs. 2 BGB gilt nicht | Rechtskraft bzw. Errichtung | § 497 Abs. 3 BGB |
@@ -484,11 +485,11 @@ Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Ta
 
 - **Gegenstände:** Die Verjährung wird je Bestandteil berechnet, Zinsen gesondert: Zinsen bis zur Titulierung verjähren wie der Titel, laufende Zinsen nach der Titulierung je Kalenderjahr ihrer Entstehung mit Ende am 31.12. des dritten Folgejahres (§ 197 Abs. 2 BGB), bei Verbraucherdarlehen in 30 Jahren ab Titulierung (§ 497 Abs. 3 BGB). Zinsen einer nicht titulierten Forderung verjähren je Kalenderjahr nach §§ 195, 199 BGB.
 - **Nicht titulierte Forderung:** Maßgeblich ist `fällig_am`. Die Kenntnis des Gläubigers gilt mit der Fälligkeit als gegeben; ist ein späterer Tag als `kenntnis_am` erfasst, gilt dieser. Fehlt die Fälligkeit, bleibt die Verjährung offen, und das System warnt.
-- **Titel:** Ein erfasstes Ereignis `rechtskraft` hat Vorrang. Sonst wird die Rechtskraft des Vollstreckungsbescheids aus Zustellung und Einspruchsfrist berechnet (§ 700 Abs. 1, § 339 Abs. 1 ZPO): rechtskräftig am Tag nach dem Ende der Einspruchsfrist, berechnet wie in Kap. 5.4. Ist ein `einspruch` erfasst und keine Rechtskraft, bleibt die Verjährung offen, ebenso bei einem Urteil ohne erfasste Rechtskraft; das System warnt. Bei Vergleich und vollstreckbarer Urkunde zählt `errichtung_titel`. Die Frist beginnt mit dem Tag nach dem Ereignis (§ 187 Abs. 1 BGB).
+- **Titel:** Ein erfasstes Ereignis `rechtskraft` hat Vorrang. Sonst wird die Rechtskraft des Vollstreckungsbescheids aus Zustellung und Einspruchsfrist berechnet (§ 700 Abs. 1, § 339 Abs. 1 ZPO): rechtskräftig am Tag nach dem Ende der Einspruchsfrist, berechnet wie in Kap. 5.4. Ist ein `einspruch` erfasst und keine Rechtskraft, bleibt die Verjährung offen, ebenso bei einem Urteil ohne erfasste Rechtskraft; das System warnt. Bei Vergleich und vollstreckbarer Urkunde zählt `errichtung_titel`. Ein Kostenfestsetzungsbeschluss zählt nur, wenn kein anderer Titel erfasst ist; seine Rechtskraft wird aus Zustellung und der Frist der sofortigen Beschwerde berechnet (zwei Wochen, Notfrist, § 104 Abs. 3, § 569 Abs. 1 ZPO), wenn keine `sofortige_beschwerde` erfasst ist; ist eine erfasst und keine Rechtskraft, bleibt die Verjährung offen, und das System warnt (Entscheidung vom 21.11.2026). Die Frist beginnt mit dem Tag nach dem Ereignis (§ 187 Abs. 1 BGB).
 - **Hemmung durch Mahnbescheid:** Sie beginnt mit der Zustellung des Mahnbescheids und endet mit der Rechtskraft des Vollstreckungsbescheids. Endet das Mahnverfahren ohne Titel (`mahnverfahren_ohne_titel_beendet`) oder gerät es in Stillstand (`letzte_verfahrenshandlung`, § 204 Abs. 2 Satz 3 BGB), endet die Hemmung sechs Monate danach. Ohne eines dieser Ereignisse dauert die Hemmung an; die Verjährung zeigt dann kein Ende, sondern den Hinweis „gehemmt“.
 - **Hemmung bei Verbraucherdarlehen:** ab dem Ereignis `verzug_eingetreten` bis zur Titulierung, höchstens zehn Jahre ab Entstehung des Bestandteils.
 - **Hemmung und Neubeginn zusammen:** Gehemmte Tage zählen nicht (§ 209 BGB); das Ende verschiebt sich um sie. Ein Neubeginn wirkt nur, solange die Verjährung läuft, also nach ihrem Beginn und vor ihrem Ende, und verkürzt sie nie.
-- **§ 193 BGB (P-01):** einstellbar, Voreinstellung: anwenden (E-36). Es zählen Wochenenden und Feiertage des Haushaltslandes, nach E-36 auch Feiertage, die nur in Teilen des Landes gelten. Liegt das Ende nach dem letzten Jahr von `feiertage.yaml`, verschieben nur Wochenenden, und das System weist darauf hin.
+- **§ 193 BGB (P-01):** einstellbar, Voreinstellung: anwenden (E-36). Es zählen Wochenenden und Feiertage des Haushaltslandes, nach E-36 auch Feiertage, die nur in Teilen des Landes gelten. Liegt das Ende nach dem letzten Jahr von `feiertage.yaml`, meldet das Programm einen Fehler, statt zu rechnen (Kap. 7).
 - **Art und Warnung:** Die Verjährung ist eine Information mit Warnung 30 Tage vorher (Kap. 5.4).
 
 **Pflichthinweis in der Oberfläche:** „Verjährung tritt nicht von selbst ein, sie muss als Einrede erhoben werden (§ 214 Abs. 1 BGB). Die Berechnung ist eine Näherung auf Grundlage der erfassten Ereignisse. Fehlt ein Ereignis, ist das Ergebnis falsch.“
@@ -497,7 +498,7 @@ Warnstufen: Notfristen 7, 3 und 1 Tag vor Ablauf; prozessuale Fristen 7 und 3 Ta
 
 ## 6 Statusmodell
 
-**Status (Lebenszyklus):** `offen` → `mahnverfahren` → `tituliert` → `ausgeglichen` → `nachwirkung` → `geschlossen`
+**Status (Lebenszyklus):** `offen` → `mahnverfahren` → `tituliert` → `nachwirkung` → `ausgeglichen` → `geschlossen`
 
 Der Status wird aus Ereignissen und der Restschuld berechnet und nie gespeichert (E-38). Es zählen Ereignisse mit Datum bis zum Stichtag.
 
@@ -506,12 +507,13 @@ Der Status wird aus Ereignissen und der Restschuld berechnet und nie gespeichert
 | Von | Nach | Auslöser |
 |---|---|---|
 | `offen` | `mahnverfahren` | Ereignis `zustellung_mahnbescheid` |
+| `mahnverfahren` | `offen` | Ereignis `mahnverfahren_ohne_titel_beendet`, solange kein Titel-Ereignis vorliegt; ein neuer `zustellung_mahnbescheid` führt wieder ins `mahnverfahren` |
 | `mahnverfahren` | `tituliert` | Ereignis `zustellung_vollstreckungsbescheid` |
 | `offen` | `tituliert` | Titel-Ereignis: `zustellung_vollstreckungsbescheid`, `zustellung_urteil`, `errichtung_titel` (Vergleich, vollstreckbare Urkunde), `zustellung_kostenfestsetzungsbeschluss` |
-| jeder außer `geschlossen` | `ausgeglichen` | Restschuld (Kap. 4.1) = 0,00 €, erreicht durch Zahlungen; Ausgleichstag ist die Wertstellung der letzten Zahlung, die auf einen Bestandteil angerechnet wurde. Eine Überzahlung ist auch ein Ausgleich. Ohne Zahlung, etwa bei einer Akte ohne Bestandteile, ist eine Restschuld von 0,00 € kein Ausgleich |
-| `ausgeglichen` | `nachwirkung` | automatisch; die Nachwirkungs-Aufgaben entstehen |
-| `nachwirkung` | `geschlossen` | Ereignis `akte_geschlossen`, das der Nutzer erfasst; wirksam frühestens, wenn die Restschuld 0,00 € ist und alle Nachwirkungs-Aufgaben erledigt sind, die keine Information sind. Sonst bleibt der Status, und das System warnt. Informationen bleiben nach dem Schließen sichtbar |
-| `ausgeglichen`, `nachwirkung`, `geschlossen` | Status aus den Ereignissen | Restschuld > 0,00 €, gleich aus welcher Ursache (E-37). Das System warnt, wenn ein `akte_geschlossen` erfasst ist |
+| jeder außer `geschlossen` | `nachwirkung` bzw. `ausgeglichen` | Restschuld (Kap. 4.1) = 0,00 €, erreicht durch Zahlungen; die Nachwirkungs-Aufgaben entstehen. Solange eine Aufgabe offen ist, die keine Information ist, ist die Akte in der `nachwirkung`, sonst direkt `ausgeglichen`; Ausgleichstag ist die Wertstellung der letzten Zahlung, die auf einen Bestandteil angerechnet wurde. Eine Überzahlung ist auch ein Ausgleich. Ohne Zahlung, etwa bei einer Akte ohne Bestandteile, ist eine Restschuld von 0,00 € kein Ausgleich |
+| `nachwirkung` | `ausgeglichen` | alle Nachwirkungs-Aufgaben erledigt, die keine Information sind; die Akte ist bereit zum Schließen (Entscheidung vom 21.11.2026) |
+| `ausgeglichen` | `geschlossen` | Ereignis `akte_geschlossen`, das der Nutzer erfasst; wirksam frühestens, wenn die Restschuld 0,00 € ist und alle Nachwirkungs-Aufgaben erledigt sind, die keine Information sind. Sonst bleibt der Status, und das System warnt. Informationen bleiben nach dem Schließen sichtbar |
+| `nachwirkung`, `ausgeglichen`, `geschlossen` | Status aus den Ereignissen | Restschuld > 0,00 €, gleich aus welcher Ursache (E-37). Das System warnt, wenn ein `akte_geschlossen` erfasst ist |
 
 **Merkmale aus Ereignissen:**
 
@@ -570,7 +572,7 @@ eintraege:
 ```
 
 Weitere Dateien in Release 1:
-- `feiertage.yaml`: landesweite gesetzliche Feiertage aller 16 Länder für 2000 bis 2040, einmalig erzeugt mit python-holidays aus den Feiertagsgesetzen der Länder. Die Bibliothek ist keine Abhängigkeit des Programms, die Datei ist die Quelle. Feiertage, die nur in Teilen eines Landes gelten, stehen gesondert unter `regionale_feiertage` (Kap. 5.4)
+- `feiertage.yaml`: landesweite gesetzliche Feiertage aller 16 Länder für 2000 bis 2080, einmalig erzeugt mit python-holidays aus den Feiertagsgesetzen der Länder. Die Bibliothek ist keine Abhängigkeit des Programms, die Datei ist die Quelle. Feiertage, die nur in Teilen eines Landes gelten, stehen gesondert unter `regionale_feiertage` (Kap. 5.4)
 - `vollstreckungsgerichte.yaml` (Schleswig-Holstein: Zentrales Vollstreckungsgericht beim Amtsgericht Schleswig)
 - `auskunfteien.yaml` (Löschfristen)
 

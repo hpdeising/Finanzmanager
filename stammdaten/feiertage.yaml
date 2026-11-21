@@ -6,9 +6,9 @@ quelle: >-
   Feiertagsgesetze der Länder; einmalig erzeugt mit python-holidays 0.109 (MIT),
   Kategorie public je Land (landesweit), Kategorie catholic je Land und Teilgebiet Augsburg
   (regional)
-geprueft_von: "noch offen: Abgleich durch den Maintainer im Review"
+geprueft_von: "Claude (Review-KI), Abgleich mit eigener Berechnung aus den Feiertagsgesetzen am 21.11.2026"
 gueltig_ab: 2000-01-01
-gueltig_bis: 2040-12-31
+gueltig_bis: 2080-12-31
 feiertage:
   - datum: 2000-01-01
     name: "Neujahr"
@@ -2239,6 +2239,2286 @@ feiertage:
   - datum: 2040-12-26
     name: "Zweiter Weihnachtstag"
     laender: [alle]
+  - datum: 2041-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2041-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2041-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2041-04-19
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2041-04-21
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2041-04-22
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2041-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2041-05-30
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2041-06-09
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2041-06-10
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2041-06-20
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2041-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2041-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2041-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2041-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2041-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2041-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2041-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2041-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2042-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2042-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2042-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2042-04-04
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2042-04-06
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2042-04-07
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2042-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2042-05-15
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2042-05-25
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2042-05-26
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2042-06-05
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2042-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2042-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2042-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2042-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2042-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2042-11-19
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2042-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2042-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2043-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2043-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2043-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2043-03-27
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2043-03-29
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2043-03-30
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2043-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2043-05-07
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2043-05-17
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2043-05-18
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2043-05-28
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2043-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2043-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2043-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2043-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2043-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2043-11-18
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2043-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2043-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2044-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2044-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2044-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2044-04-15
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2044-04-17
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2044-04-18
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2044-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2044-05-26
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2044-06-05
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2044-06-06
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2044-06-16
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2044-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2044-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2044-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2044-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2044-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2044-11-16
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2044-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2044-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2045-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2045-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2045-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2045-04-07
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2045-04-09
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2045-04-10
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2045-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2045-05-18
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2045-05-28
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2045-05-29
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2045-06-08
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2045-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2045-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2045-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2045-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2045-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2045-11-22
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2045-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2045-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2046-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2046-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2046-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2046-03-23
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2046-03-25
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2046-03-26
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2046-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2046-05-03
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2046-05-13
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2046-05-14
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2046-05-24
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2046-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2046-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2046-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2046-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2046-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2046-11-21
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2046-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2046-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2047-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2047-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2047-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2047-04-12
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2047-04-14
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2047-04-15
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2047-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2047-05-23
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2047-06-02
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2047-06-03
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2047-06-13
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2047-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2047-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2047-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2047-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2047-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2047-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2047-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2047-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2048-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2048-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2048-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2048-04-03
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2048-04-05
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2048-04-06
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2048-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2048-05-14
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2048-05-24
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2048-05-25
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2048-06-04
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2048-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2048-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2048-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2048-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2048-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2048-11-18
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2048-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2048-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2049-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2049-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2049-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2049-04-16
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2049-04-18
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2049-04-19
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2049-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2049-05-27
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2049-06-06
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2049-06-07
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2049-06-17
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2049-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2049-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2049-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2049-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2049-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2049-11-17
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2049-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2049-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2050-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2050-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2050-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2050-04-08
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2050-04-10
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2050-04-11
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2050-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2050-05-19
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2050-05-29
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2050-05-30
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2050-06-09
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2050-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2050-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2050-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2050-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2050-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2050-11-16
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2050-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2050-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2051-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2051-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2051-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2051-03-31
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2051-04-02
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2051-04-03
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2051-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2051-05-11
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2051-05-21
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2051-05-22
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2051-06-01
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2051-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2051-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2051-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2051-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2051-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2051-11-22
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2051-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2051-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2052-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2052-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2052-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2052-04-19
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2052-04-21
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2052-04-22
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2052-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2052-05-30
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2052-06-09
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2052-06-10
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2052-06-20
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2052-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2052-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2052-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2052-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2052-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2052-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2052-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2052-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2053-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2053-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2053-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2053-04-04
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2053-04-06
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2053-04-07
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2053-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2053-05-15
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2053-05-25
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2053-05-26
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2053-06-05
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2053-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2053-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2053-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2053-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2053-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2053-11-19
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2053-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2053-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2054-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2054-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2054-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2054-03-27
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2054-03-29
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2054-03-30
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2054-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2054-05-07
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2054-05-17
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2054-05-18
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2054-05-28
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2054-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2054-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2054-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2054-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2054-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2054-11-18
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2054-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2054-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2055-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2055-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2055-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2055-04-16
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2055-04-18
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2055-04-19
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2055-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2055-05-27
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2055-06-06
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2055-06-07
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2055-06-17
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2055-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2055-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2055-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2055-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2055-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2055-11-17
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2055-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2055-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2056-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2056-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2056-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2056-03-31
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2056-04-02
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2056-04-03
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2056-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2056-05-11
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2056-05-21
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2056-05-22
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2056-06-01
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2056-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2056-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2056-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2056-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2056-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2056-11-22
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2056-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2056-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2057-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2057-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2057-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2057-04-20
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2057-04-22
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2057-04-23
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2057-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2057-05-31
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2057-06-10
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2057-06-11
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2057-06-21
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2057-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2057-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2057-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2057-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2057-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2057-11-21
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2057-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2057-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2058-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2058-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2058-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2058-04-12
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2058-04-14
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2058-04-15
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2058-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2058-05-23
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2058-06-02
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2058-06-03
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2058-06-13
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2058-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2058-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2058-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2058-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2058-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2058-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2058-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2058-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2059-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2059-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2059-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2059-03-28
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2059-03-30
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2059-03-31
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2059-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2059-05-08
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2059-05-18
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2059-05-19
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2059-05-29
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2059-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2059-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2059-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2059-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2059-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2059-11-19
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2059-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2059-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2060-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2060-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2060-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2060-04-16
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2060-04-18
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2060-04-19
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2060-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2060-05-27
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2060-06-06
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2060-06-07
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2060-06-17
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2060-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2060-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2060-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2060-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2060-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2060-11-17
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2060-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2060-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2061-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2061-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2061-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2061-04-08
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2061-04-10
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2061-04-11
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2061-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2061-05-19
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2061-05-29
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2061-05-30
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2061-06-09
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2061-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2061-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2061-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2061-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2061-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2061-11-16
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2061-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2061-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2062-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2062-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2062-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2062-03-24
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2062-03-26
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2062-03-27
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2062-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2062-05-04
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2062-05-14
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2062-05-15
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2062-05-25
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2062-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2062-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2062-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2062-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2062-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2062-11-22
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2062-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2062-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2063-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2063-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2063-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2063-04-13
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2063-04-15
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2063-04-16
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2063-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2063-05-24
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2063-06-03
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2063-06-04
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2063-06-14
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2063-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2063-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2063-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2063-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2063-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2063-11-21
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2063-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2063-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2064-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2064-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2064-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2064-04-04
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2064-04-06
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2064-04-07
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2064-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2064-05-15
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2064-05-25
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2064-05-26
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2064-06-05
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2064-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2064-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2064-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2064-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2064-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2064-11-19
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2064-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2064-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2065-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2065-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2065-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2065-03-27
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2065-03-29
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2065-03-30
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2065-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2065-05-07
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2065-05-17
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2065-05-18
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2065-05-28
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2065-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2065-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2065-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2065-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2065-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2065-11-18
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2065-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2065-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2066-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2066-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2066-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2066-04-09
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2066-04-11
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2066-04-12
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2066-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2066-05-20
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2066-05-30
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2066-05-31
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2066-06-10
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2066-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2066-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2066-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2066-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2066-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2066-11-17
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2066-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2066-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2067-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2067-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2067-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2067-04-01
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2067-04-03
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2067-04-04
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2067-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2067-05-12
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2067-05-22
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2067-05-23
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2067-06-02
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2067-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2067-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2067-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2067-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2067-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2067-11-16
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2067-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2067-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2068-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2068-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2068-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2068-04-20
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2068-04-22
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2068-04-23
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2068-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2068-05-31
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2068-06-10
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2068-06-11
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2068-06-21
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2068-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2068-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2068-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2068-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2068-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2068-11-21
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2068-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2068-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2069-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2069-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2069-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2069-04-12
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2069-04-14
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2069-04-15
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2069-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2069-05-23
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2069-06-02
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2069-06-03
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2069-06-13
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2069-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2069-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2069-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2069-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2069-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2069-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2069-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2069-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2070-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2070-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2070-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2070-03-28
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2070-03-30
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2070-03-31
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2070-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2070-05-08
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2070-05-18
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2070-05-19
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2070-05-29
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2070-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2070-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2070-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2070-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2070-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2070-11-19
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2070-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2070-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2071-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2071-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2071-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2071-04-17
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2071-04-19
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2071-04-20
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2071-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2071-05-28
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2071-06-07
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2071-06-08
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2071-06-18
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2071-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2071-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2071-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2071-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2071-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2071-11-18
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2071-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2071-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2072-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2072-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2072-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2072-04-08
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2072-04-10
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2072-04-11
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2072-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2072-05-19
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2072-05-29
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2072-05-30
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2072-06-09
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2072-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2072-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2072-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2072-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2072-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2072-11-16
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2072-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2072-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2073-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2073-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2073-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2073-03-24
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2073-03-26
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2073-03-27
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2073-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2073-05-04
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2073-05-14
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2073-05-15
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2073-05-25
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2073-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2073-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2073-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2073-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2073-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2073-11-22
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2073-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2073-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2074-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2074-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2074-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2074-04-13
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2074-04-15
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2074-04-16
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2074-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2074-05-24
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2074-06-03
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2074-06-04
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2074-06-14
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2074-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2074-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2074-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2074-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2074-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2074-11-21
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2074-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2074-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2075-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2075-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2075-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2075-04-05
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2075-04-07
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2075-04-08
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2075-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2075-05-16
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2075-05-26
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2075-05-27
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2075-06-06
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2075-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2075-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2075-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2075-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2075-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2075-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2075-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2075-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2076-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2076-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2076-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2076-04-17
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2076-04-19
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2076-04-20
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2076-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2076-05-28
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2076-06-07
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2076-06-08
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2076-06-18
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2076-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2076-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2076-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2076-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2076-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2076-11-18
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2076-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2076-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2077-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2077-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2077-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2077-04-09
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2077-04-11
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2077-04-12
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2077-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2077-05-20
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2077-05-30
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2077-05-31
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2077-06-10
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2077-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2077-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2077-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2077-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2077-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2077-11-17
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2077-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2077-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2078-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2078-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2078-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2078-04-01
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2078-04-03
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2078-04-04
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2078-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2078-05-12
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2078-05-22
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2078-05-23
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2078-06-02
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2078-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2078-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2078-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2078-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2078-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2078-11-16
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2078-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2078-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2079-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2079-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2079-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2079-04-21
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2079-04-23
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2079-04-24
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2079-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2079-06-01
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2079-06-11
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2079-06-12
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2079-06-22
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2079-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2079-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2079-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2079-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2079-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2079-11-22
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2079-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2079-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
+  - datum: 2080-01-01
+    name: "Neujahr"
+    laender: [alle]
+  - datum: 2080-01-06
+    name: "Heilige Drei Könige"
+    laender: [BW, BY, ST]
+  - datum: 2080-03-08
+    name: "Frauentag"
+    laender: [BE, MV]
+  - datum: 2080-04-05
+    name: "Karfreitag"
+    laender: [alle]
+  - datum: 2080-04-07
+    name: "Ostersonntag"
+    laender: [BB]
+  - datum: 2080-04-08
+    name: "Ostermontag"
+    laender: [alle]
+  - datum: 2080-05-01
+    name: "Erster Mai"
+    laender: [alle]
+  - datum: 2080-05-16
+    name: "Christi Himmelfahrt"
+    laender: [alle]
+  - datum: 2080-05-26
+    name: "Pfingstsonntag"
+    laender: [BB]
+  - datum: 2080-05-27
+    name: "Pfingstmontag"
+    laender: [alle]
+  - datum: 2080-06-06
+    name: "Fronleichnam"
+    laender: [BW, BY, HE, NW, RP, SL]
+  - datum: 2080-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [SL]
+  - datum: 2080-09-20
+    name: "Weltkindertag"
+    laender: [TH]
+  - datum: 2080-10-03
+    name: "Tag der Deutschen Einheit"
+    laender: [alle]
+  - datum: 2080-10-31
+    name: "Reformationstag"
+    laender: [BB, HB, HH, MV, NI, SN, ST, SH, TH]
+  - datum: 2080-11-01
+    name: "Allerheiligen"
+    laender: [BW, BY, NW, RP, SL]
+  - datum: 2080-11-20
+    name: "Buß- und Bettag"
+    laender: [SN]
+  - datum: 2080-12-25
+    name: "Erster Weihnachtstag"
+    laender: [alle]
+  - datum: 2080-12-26
+    name: "Zweiter Weihnachtstag"
+    laender: [alle]
 regionale_feiertage:
   - datum: 2000-06-22
     name: "Fronleichnam"
@@ -2607,5 +4887,365 @@ regionale_feiertage:
     name: "Augsburger Hohes Friedensfest"
     laender: [BY]
   - datum: 2040-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2041-06-20
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2041-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2041-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2042-06-05
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2042-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2042-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2043-05-28
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2043-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2043-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2044-06-16
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2044-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2044-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2045-06-08
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2045-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2045-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2046-05-24
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2046-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2046-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2047-06-13
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2047-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2047-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2048-06-04
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2048-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2048-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2049-06-17
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2049-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2049-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2050-06-09
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2050-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2050-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2051-06-01
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2051-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2051-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2052-06-20
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2052-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2052-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2053-06-05
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2053-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2053-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2054-05-28
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2054-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2054-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2055-06-17
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2055-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2055-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2056-06-01
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2056-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2056-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2057-06-21
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2057-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2057-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2058-06-13
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2058-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2058-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2059-05-29
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2059-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2059-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2060-06-17
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2060-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2060-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2061-06-09
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2061-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2061-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2062-05-25
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2062-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2062-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2063-06-14
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2063-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2063-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2064-06-05
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2064-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2064-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2065-05-28
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2065-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2065-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2066-06-10
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2066-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2066-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2067-06-02
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2067-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2067-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2068-06-21
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2068-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2068-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2069-06-13
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2069-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2069-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2070-05-29
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2070-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2070-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2071-06-18
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2071-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2071-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2072-06-09
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2072-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2072-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2073-05-25
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2073-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2073-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2074-06-14
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2074-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2074-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2075-06-06
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2075-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2075-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2076-06-18
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2076-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2076-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2077-06-10
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2077-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2077-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2078-06-02
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2078-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2078-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2079-06-22
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2079-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2079-08-15
+    name: "Mariä Himmelfahrt"
+    laender: [BY]
+  - datum: 2080-06-06
+    name: "Fronleichnam"
+    laender: [SN, TH]
+  - datum: 2080-08-08
+    name: "Augsburger Hohes Friedensfest"
+    laender: [BY]
+  - datum: 2080-08-15
     name: "Mariä Himmelfahrt"
     laender: [BY]

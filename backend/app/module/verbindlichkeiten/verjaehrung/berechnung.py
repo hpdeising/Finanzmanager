@@ -65,6 +65,7 @@ class Verjaehrungsfall(StrEnum):
     NICHT_TITULIERT = "nicht_tituliert"
     RECHTSKRAEFTIG_FESTGESTELLT = "rechtskraeftig_festgestellt"
     VERGLEICH_URKUNDE = "vergleich_urkunde"
+    KOSTENFESTSETZUNGSBESCHLUSS = "kostenfestsetzungsbeschluss"
     KOSTEN_ZWANGSVOLLSTRECKUNG = "kosten_zwangsvollstreckung"
     LAUFENDE_ZINSEN = "laufende_zinsen"
     VERBRAUCHERDARLEHEN_ZINSEN = "verbraucherdarlehen_zinsen"
@@ -83,6 +84,7 @@ _NORM = {
     Verjaehrungsfall.NICHT_TITULIERT: "§§ 195, 199 Abs. 1 BGB",
     Verjaehrungsfall.RECHTSKRAEFTIG_FESTGESTELLT: "§ 197 Abs. 1 Nr. 3, § 201 BGB; § 700 Abs. 1 ZPO",
     Verjaehrungsfall.VERGLEICH_URKUNDE: "§ 197 Abs. 1 Nr. 4, § 201 BGB",
+    Verjaehrungsfall.KOSTENFESTSETZUNGSBESCHLUSS: "§ 197 Abs. 1 Nr. 3, § 201 BGB",
     Verjaehrungsfall.KOSTEN_ZWANGSVOLLSTRECKUNG: "§ 197 Abs. 1 Nr. 6, § 201 BGB",
     Verjaehrungsfall.LAUFENDE_ZINSEN: "§ 197 Abs. 2, §§ 195, 199 Abs. 1 BGB",
     Verjaehrungsfall.VERBRAUCHERDARLEHEN_ZINSEN: "§ 497 Abs. 3 BGB",
@@ -238,13 +240,32 @@ def _titel(
     Eine erfasste Rechtskraft hat Vorrang. Sonst wird beim Vollstreckungsbescheid die Rechtskraft
     aus Zustellung plus Einspruchsfrist berechnet, wenn kein Einspruch erfasst ist (§ 700 Abs. 1,
     § 339 Abs. 1 ZPO): rechtskräftig mit dem Tag nach dem Ende der Einspruchsfrist.
+
+    Der Kostenfestsetzungsbeschluss zählt nur, wenn kein anderer Titel erfasst ist. Seine
+    Rechtskraft wird aus Zustellung plus Frist der sofortigen Beschwerde berechnet (§ 104 Abs. 3,
+    § 569 Abs. 1 ZPO: zwei Wochen, Notfrist), wenn keine Beschwerde erfasst ist (Entscheidung vom
+    21.11.2026).
     """
 
     def erstes(typ: Ereignistyp) -> Ereignis | None:
         return next((e for e in erfasst if e.typ is typ), None)
 
+    kfb = erstes(Ereignistyp.ZUSTELLUNG_KOSTENFESTSETZUNGSBESCHLUSS)
+    nur_kfb = kfb is not None and not any(
+        erstes(t) is not None
+        for t in (
+            Ereignistyp.ZUSTELLUNG_VOLLSTRECKUNGSBESCHEID,
+            Ereignistyp.ZUSTELLUNG_URTEIL,
+            Ereignistyp.ERRICHTUNG_TITEL,
+        )
+    )
     if (rechtskraft := erstes(Ereignistyp.RECHTSKRAFT)) is not None:
-        return _Titel(rechtskraft.datum, Verjaehrungsfall.RECHTSKRAEFTIG_FESTGESTELLT)
+        fall = (
+            Verjaehrungsfall.KOSTENFESTSETZUNGSBESCHLUSS
+            if nur_kfb
+            else Verjaehrungsfall.RECHTSKRAEFTIG_FESTGESTELLT
+        )
+        return _Titel(rechtskraft.datum, fall)
     vb = erstes(Ereignistyp.ZUSTELLUNG_VOLLSTRECKUNGSBESCHEID)
     if vb is not None and vb.datum is not None:
         if erstes(Ereignistyp.EINSPRUCH) is not None:
@@ -263,6 +284,22 @@ def _titel(
     if erstes(Ereignistyp.ZUSTELLUNG_URTEIL) is not None:
         warnungen.append("Urteil erfasst, Rechtskraft fehlt: Verjährung offen.")
         return _Titel(None, None, unbekannt=True)
+    if kfb is not None and kfb.datum is not None:
+        if erstes(Ereignistyp.SOFORTIGE_BESCHWERDE) is not None:
+            warnungen.append("Sofortige Beschwerde erfasst, Rechtskraft fehlt: Verjährung offen.")
+            return _Titel(None, None, unbekannt=True)
+        ende = fristende(
+            kfb.datum,
+            Dauer(2, Einheit.WOCHEN),
+            Fristart.NOTFRIST,
+            kalender,
+            kfb.gericht_land or land,
+        )
+        return _Titel(
+            ende + EIN_TAG,
+            Verjaehrungsfall.KOSTENFESTSETZUNGSBESCHLUSS,
+            "Rechtskraft berechnet aus Zustellung und Frist der sofortigen Beschwerde.",
+        )
     return _Titel(None, None)
 
 
@@ -454,9 +491,7 @@ def _verjaehrung(
         if _ueberlappt(h, lauf.beginn, ende):
             hinweise.append(h.grund + ("" if h.bis else ", noch nicht beendet"))
     if ende is not None and einstellungen.p01_193_bgb:
-        ende, hinweis = _paragraf_193(ende, kalender, land)
-        if hinweis:
-            hinweise.append(hinweis)
+        ende = _paragraf_193(ende, kalender, land)
     return Verjaehrung(
         gegenstand,
         kennung,
@@ -506,25 +541,19 @@ def _ueberlappt(h: _Hemmung, beginn: date, ende: date | None) -> bool:
     return h.von <= (ende or date.max) and bis >= beginn
 
 
-def _paragraf_193(ende: date, kalender: Feiertagskalender, land: str) -> tuple[date, str | None]:
+def _paragraf_193(ende: date, kalender: Feiertagskalender, land: str) -> date:
     """§ 193 BGB: Ende an Samstag, Sonntag oder Feiertag am Leistungsort -> nächster Werktag.
 
-    Nach E-36 zählen hier auch Feiertage, die nur in Teilen des Landes gelten (später). Nach dem
-    Ende des Feiertagskalenders sind Feiertage unbekannt: Dann verschieben nur Wochenenden, mit
-    Hinweis.
+    Nach E-36 zählen hier auch Feiertage, die nur in Teilen des Landes gelten (später).
+
+    Raises:
+        StammdatenFehlenError: wenn das Ende nach dem Feiertagskalender liegt (Fehler statt
+            Schätzung, Entscheidung vom 21.11.2026).
     """
-    hinweis: str | None = None
-    while True:
-        if ende.weekday() >= SAMSTAG:
-            ende += EIN_TAG
-            continue
-        if ende > kalender.gueltig_bis:
-            hinweis = (
-                f"Feiertage nach dem {kalender.gueltig_bis.isoformat()} sind nicht in den "
-                "Stammdaten; nach § 193 BGB kann sich das Ende weiter verschieben."
-            )
-            return ende, hinweis
-        if kalender.ist_feiertag(ende, land) or kalender.regionaler_feiertag(ende, land):
-            ende += EIN_TAG
-            continue
-        return ende, hinweis
+    while (
+        ende.weekday() >= SAMSTAG
+        or kalender.ist_feiertag(ende, land)
+        or kalender.regionaler_feiertag(ende, land) is not None
+    ):
+        ende += EIN_TAG
+    return ende

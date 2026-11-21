@@ -138,6 +138,8 @@ class Ereignistyp(StrEnum):
     VOLLSTRECKUNGSMASSNAHME_AUFGEHOBEN = "vollstreckungsmassnahme_aufgehoben"
     FORDERUNG_BESTRITTEN = "forderung_bestritten"
     BESTREITEN_BEENDET = "bestreiten_beendet"
+    # Ergänzt am 21.11.2026 für die Verjährung des Kostenfestsetzungsbeschlusses (Kap. 5.5)
+    SOFORTIGE_BESCHWERDE = "sofortige_beschwerde"
 
     @property
     def ist_zustellung(self) -> bool:
