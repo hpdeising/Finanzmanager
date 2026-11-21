@@ -18,6 +18,15 @@ KERN_GELD = APP / "kern" / "geld"
 # Weitere Quelldateien, die keine Python-Dateien sind; die Vorlage vererbt ihre Kopfzeile
 # an jede neue Migration.
 WEITERE_QUELLDATEIEN = (BACKEND / "alembic.ini", MIGRATIONS / "script.py.mako")
+FRONTEND = BACKEND.parent / "frontend"
+# Kopfzeile je Dateiart der Oberfläche; erzeugte Dateien (schema.d.ts) sind ausgenommen.
+FRONTEND_KOPFZEILEN = {
+    ".ts": "// SPDX-License-Identifier: AGPL-3.0-or-later",
+    ".tsx": "// SPDX-License-Identifier: AGPL-3.0-or-later",
+    ".css": "/* SPDX-License-Identifier: AGPL-3.0-or-later */",
+    ".html": "<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->",
+}
+FRONTEND_ERZEUGT = frozenset({"schema.d.ts"})
 
 SPDX_KOPFZEILE = "# SPDX-License-Identifier: AGPL-3.0-or-later"
 VERBOTENE_PYTEST_AUFRUFE = frozenset({"skip", "skipif", "xfail", "importorskip"})
@@ -200,3 +209,25 @@ def test_spdx_kopfzeile_in_weiteren_quelldateien() -> None:
 def test_migrationen_werden_geprueft() -> None:
     """Sonst liefen die Prüfungen oben über migrations/ ins Leere."""
     assert python_dateien(MIGRATIONS), "backend/migrations/ enthält keine Python-Dateien"
+
+
+def frontend_quelldateien() -> list[Path]:
+    """Quelldateien der Oberfläche ohne Abhängigkeiten, Build und erzeugte Typen."""
+    dateien = [FRONTEND / "index.html", FRONTEND / "vite.config.ts"]
+    dateien += [
+        datei
+        for datei in sorted((FRONTEND / "src").rglob("*"))
+        if datei.suffix in FRONTEND_KOPFZEILEN and datei.name not in FRONTEND_ERZEUGT
+    ]
+    return dateien
+
+
+def test_spdx_kopfzeile_in_der_oberflaeche() -> None:
+    dateien = frontend_quelldateien()
+    assert len(dateien) > 2, "frontend/src enthält keine Quelldateien"
+    ohne = [
+        str(datei.relative_to(FRONTEND))
+        for datei in dateien
+        if lies(datei).splitlines()[:1] != [FRONTEND_KOPFZEILEN[datei.suffix]]
+    ]
+    assert ohne == [], f"Erste Zeile muss die SPDX-Kopfzeile sein: {ohne}"
