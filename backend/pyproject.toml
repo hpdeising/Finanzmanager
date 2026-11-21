@@ -8,13 +8,17 @@ license = "AGPL-3.0-or-later"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.0",
+    "fastapi>=0.165.0",
     "psycopg[binary]>=3.3.6",
+    "pydantic>=2.14.4",
     "pyyaml>=6.0.3",
     "sqlalchemy>=2.1.4",
+    "uvicorn>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx2>=2.16.2",
     "hypothesis>=6.169.0",
     "import-linter>=2.15",
     "pyright[nodejs]>=1.1.414",
