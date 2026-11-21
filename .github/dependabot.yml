@@ -28,6 +28,12 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    ignore:
+      # TypeScript 7 (native Neufassung) liefert die JavaScript-API nicht mehr mit, die
+      # openapi-typescript zum Erzeugen der API-Typen braucht (Peer typescript ^5). Aufheben,
+      # sobald openapi-typescript TypeScript 7 unterstützt.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       entwicklungswerkzeuge:
         dependency-type: "development"
