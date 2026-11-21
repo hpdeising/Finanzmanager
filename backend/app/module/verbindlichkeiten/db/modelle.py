@@ -22,11 +22,13 @@ from typing import Any, Final
 
 from sqlalchemy import (
     ARRAY,
+    BigInteger,
     Boolean,
     CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
+    Identity,
     Numeric,
     Text,
     UniqueConstraint,
@@ -173,6 +175,8 @@ class BestandteilZeile(Basis):
     entstanden_am: Mapped[date | None] = mapped_column(Date)
     faellig_am: Mapped[date | None] = mapped_column(Date)
     kenntnis_am: Mapped[date | None] = mapped_column(Date)
+    # Reihenfolge der Eingabe (E-35); vergibt die Datenbank (Migration 0004).
+    laufnummer: Mapped[int] = mapped_column(BigInteger, Identity(always=True))
 
 
 class ZinsregelZeile(Basis):

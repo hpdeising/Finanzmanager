@@ -310,7 +310,7 @@ Kern-Tabellen verweisen nur auf Kern-Tabellen; Tabellen eines Moduls dürfen auf
 | `akte_dokument` | Akte, Dokument |
 | `akte_teilungstag` | Akte, Tag; je Akte und Tag höchstens eine Zeile. Ein Teilungstag ist der erste Tag eines neuen Abschnitts (E-32, Kap. 5.2 Schritt 2). Er ist eine Rechenvorgabe der Akte, kein Ereignis; ändert er sich, ändert sich die Berechnung wie bei einem umgestellten Aktenparameter (Kap. 5.2 Schritt 7) |
 | `titel` | Art, Gericht, Aktenzeichen, erlassen am, zugestellt am, rechtskräftig am |
-| `bestandteil` | Akte, Art, Konto, Ursprungsbetrag, entstanden am, fällig am, Kenntnis des Gläubigers am (leer: mit der Fälligkeit gegeben, Kap. 5.5) |
+| `bestandteil` | Akte, Art, Konto, Ursprungsbetrag, entstanden am, fällig am, Kenntnis des Gläubigers am (leer: mit der Fälligkeit gegeben, Kap. 5.5), Laufnummer (Reihenfolge der Eingabe, E-35; vergibt die Datenbank, Migration 0004) |
 | `zinsregel` | Bestandteil, Typ, Aufschlag in Prozentpunkten, fester Satz, ab, bis, Quelle (Titel/Vertrag) |
 | `ereignis` | Akte, Typ, Datum, Details (JSON), Beleg; bei `zahlung` die zugehörige Buchung (Datum und Neubuchung: Prüfpunkt P-18) und die Angabe, ob sie per Rücklastschrift zurückgegeben wurde (P-17) |
 | `aufgabe` | Akte, Typ, fällig am, erledigt am |
@@ -421,7 +421,7 @@ Ablauf:
 - Die Anrechnung wird wie die Zinsen bei jeder Abfrage berechnet, aus den nicht stornierten Zahlungen auf dem Zahlungskonto mit ihrer Wertstellung. Gebucht wird sie erst mit einer Festschreibung, als Umbuchung vom Zahlungskonto auf die Bestandteile (E-21, Kap. 5.2 Schritt 7).
 - Angerechnet wird nur auf Bestandteile, die spätestens am Tag der Wertstellung der Zahlung entstanden sind; ein Bestandteil ohne Tag der Entstehung gilt als von Anfang an vorhanden. Bestandteile, die erst nach dem Stichtag entstehen, zählen nicht zur Restschuld.
 - Lässt sich ein Betrag nicht mehr anrechnen, weil die Restschuld null ist, wird er als Überzahlung angezeigt; die Festschreibung bucht ihn nicht auf Bestandteile um. Die Überzahlung ist ein Rechenergebnis, nicht der Saldo des Zahlungskontos (Kap. 4.1). Ob sie auf später entstehende Positionen angerechnet wird, klärt Prüfpunkt P-20.
-- Innerhalb einer Gruppe gilt: älteste Position zuerst. Kosten nach dem Tag ihrer Entstehung, Bestandteile ohne diesen Tag zuerst in der Reihenfolge der Eingabe; Zinsen nach dem letzten Tag ihres Abschnitts, auch über Bestandteile hinweg (E-35).
+- Innerhalb einer Gruppe gilt: älteste Position zuerst. Kosten nach dem Tag ihrer Entstehung, Bestandteile ohne diesen Tag zuerst in der Reihenfolge der Eingabe, also nach aufsteigender Laufnummer (Entscheidung vom 21.11.2026; die Kennung zählt nicht); Zinsen nach dem letzten Tag ihres Abschnitts, auch über Bestandteile hinweg (E-35).
 - Als Kosten der Rechtsverfolgung im Sinne von § 497 Abs. 3 BGB gelten alle Kostenbestandteile, auch die vorgerichtlichen.
 - **Mehrere Akten desselben Gläubigers:** Die Zahlung gilt für die Akte, die der Schuldner bei der Zahlung bestimmt, z. B. im Verwendungszweck (§ 366 Abs. 1 BGB). Fehlt eine Bestimmung, legt Release 1 die Zahlung zur manuellen Zuordnung vor. Die gesetzliche Reihenfolge des § 366 Abs. 2 BGB (fällig → geringere Sicherheit → lästiger → älter → verhältnismäßig) wird als Vorschlag angezeigt, nicht automatisch angewandt.
 - **Abweichende Bestimmung des Schuldners:** Lehnt der Gläubiger sie ab (§ 367 Abs. 2 BGB), wird das Ereignis `anrechnung_abgelehnt` erfasst, und es gilt wieder die gesetzliche Reihenfolge.

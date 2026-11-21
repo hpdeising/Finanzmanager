@@ -155,7 +155,7 @@ def _bestandteile(session: Session, akte_id: uuid.UUID) -> tuple[Bestandteil, ..
     zeilen = session.scalars(
         select(BestandteilZeile)
         .where(BestandteilZeile.akte_id == akte_id)
-        .order_by(BestandteilZeile.entstanden_am.asc().nulls_first(), BestandteilZeile.kennung)
+        .order_by(BestandteilZeile.entstanden_am.asc().nulls_first(), BestandteilZeile.laufnummer)
     ).all()
     regeln: dict[uuid.UUID, list[Zinsregel]] = {z.id: [] for z in zeilen}
     for regel in session.scalars(
