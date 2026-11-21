@@ -784,7 +784,8 @@
           "vollstreckungsmassnahme_begonnen",
           "vollstreckungsmassnahme_aufgehoben",
           "forderung_bestritten",
-          "bestreiten_beendet"
+          "bestreiten_beendet",
+          "sofortige_beschwerde"
         ],
         "title": "Ereignistyp",
         "type": "string"
@@ -1129,8 +1130,8 @@
           "offen",
           "mahnverfahren",
           "tituliert",
-          "ausgeglichen",
           "nachwirkung",
+          "ausgeglichen",
           "geschlossen"
         ],
         "title": "Status",
@@ -1347,6 +1348,7 @@
           "nicht_tituliert",
           "rechtskraeftig_festgestellt",
           "vergleich_urkunde",
+          "kostenfestsetzungsbeschluss",
           "kosten_zwangsvollstreckung",
           "laufende_zinsen",
           "verbraucherdarlehen_zinsen"

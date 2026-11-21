@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Eigenschaften des Statusmodells (Fachkonzept Kap. 6), mit zufälligen Fällen.
 
-- Nach dem Ausgleich ist die Akte in der Nachwirkung oder geschlossen, sonst nie (E-37).
+- Nach dem Ausgleich ist die Akte in der Nachwirkung, ausgeglichen oder geschlossen, sonst nie
+  (E-37); in der Nachwirkung genau dann, wenn eine Aufgabe offen ist.
 - Ohne Ausgleich gibt es keine Nachwirkungs-Aufgaben.
 """
 
@@ -43,6 +44,9 @@ def test_nachwirkung_genau_bei_ausgleich(
     )
     status = status_berechnen(ereignisse, STICHTAG, ergebnis)
     ausgeglichen = ergebnis.gesamt == 0 and bool(zahlungen)
-    assert (status.status in {Status.NACHWIRKUNG, Status.GESCHLOSSEN}) is ausgeglichen
+    nach_ausgleich = {Status.NACHWIRKUNG, Status.AUSGEGLICHEN, Status.GESCHLOSSEN}
+    assert (status.status in nach_ausgleich) is ausgeglichen
     assert bool(status.aufgaben) is ausgeglichen
-    assert status.status is not Status.AUSGEGLICHEN
+    if ausgeglichen:
+        offen = any(not a.information and a.erledigt_am is None for a in status.aufgaben)
+        assert (status.status is Status.NACHWIRKUNG) is offen

@@ -7,10 +7,13 @@ ein Ereignis ``zahlung``, dessen Buchung storniert ist, liefert der Aufrufer nic
 
 Ablauf:
 
-1. Status aus den Ereignissen: ``offen``, ``mahnverfahren`` ab Zustellung des Mahnbescheids,
-   ``tituliert`` ab einem Titel-Ereignis.
-2. Ist die Restschuld 0,00 € und wurde sie durch Zahlungen erreicht, ist die Akte ausgeglichen
-   und geht automatisch in die ``nachwirkung``; die Nachwirkungs-Aufgaben entstehen.
+1. Status aus den Ereignissen: ``offen``, ``mahnverfahren`` ab Zustellung des Mahnbescheids
+   und zurück nach ``offen``, wenn das Mahnverfahren ohne Titel endet, ``tituliert`` ab einem
+   Titel-Ereignis.
+2. Ist die Restschuld 0,00 € und wurde sie durch Zahlungen erreicht, entstehen die
+   Nachwirkungs-Aufgaben. Solange eine von ihnen offen ist, ist die Akte in der
+   ``nachwirkung``; sind alle erledigt, die keine Information sind, ist sie ``ausgeglichen``,
+   also bereit zum Schließen (Entscheidung vom 21.11.2026).
 3. ``geschlossen`` setzt der Nutzer mit dem Ereignis ``akte_geschlossen``, frühestens wenn die
    Restschuld 0,00 € ist und alle Nachwirkungs-Aufgaben erledigt sind. Informationen bleiben
    sichtbar.
@@ -52,8 +55,8 @@ class Status(StrEnum):
     OFFEN = "offen"
     MAHNVERFAHREN = "mahnverfahren"
     TITULIERT = "tituliert"
-    AUSGEGLICHEN = "ausgeglichen"
     NACHWIRKUNG = "nachwirkung"
+    AUSGEGLICHEN = "ausgeglichen"
     GESCHLOSSEN = "geschlossen"
 
 
@@ -159,12 +162,14 @@ def status_berechnen(
     if _vollstreckung_nach_ausgleich(erfasst, ausgeglichen_am, merkmale):
         hinweise.append(HINWEIS_VOLLSTRECKUNG_TROTZ_ERFUELLUNG)
 
-    status = Status.NACHWIRKUNG
+    status = Status.AUSGEGLICHEN if _darf_schliessen(aufgaben, stichtag) else Status.NACHWIRKUNG
     gueltig = [tag for tag in schliessen if tag >= ausgeglichen_am]
     if any(_darf_schliessen(aufgaben, tag) for tag in gueltig):
         status = Status.GESCHLOSSEN
     elif gueltig:
-        warnungen.append("Schließen nicht möglich: Nachwirkungs-Aufgaben sind noch offen.")
+        warnungen.append(
+            "Schließen nicht wirksam: Am Tag des Schließens waren Nachwirkungs-Aufgaben offen."
+        )
     return Statusergebnis(
         status, merkmale, aufgaben, ausgeglichen_am, tuple(hinweise), tuple(warnungen)
     )
@@ -172,11 +177,15 @@ def status_berechnen(
 
 def _grundstatus(erfasst: Sequence[Ereignis]) -> Status:
     """Status vor dem Ausgleich: ``tituliert`` mit einem Titel-Ereignis, sonst
-    ``mahnverfahren`` mit der Zustellung eines Mahnbescheids, sonst ``offen`` (Kap. 6)."""
-    typen = {e.typ for e in erfasst}
-    if typen & _TITEL:
+    ``mahnverfahren`` mit der Zustellung eines Mahnbescheids, sonst ``offen`` (Kap. 6).
+
+    Endet das Mahnverfahren ohne Titel, ist die Akte wieder ``offen``, bis ein neuer Mahnbescheid
+    zugestellt wird (Entscheidung vom 21.11.2026)."""
+    if any(e.typ in _TITEL for e in erfasst):
         return Status.TITULIERT
-    if Ereignistyp.ZUSTELLUNG_MAHNBESCHEID in typen:
+    if _zuletzt(
+        erfasst, Ereignistyp.ZUSTELLUNG_MAHNBESCHEID, Ereignistyp.MAHNVERFAHREN_OHNE_TITEL_BEENDET
+    ):
         return Status.MAHNVERFAHREN
     return Status.OFFEN
 
