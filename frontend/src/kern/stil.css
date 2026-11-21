@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 /* Ergänzungen zum KERN-Stylesheet für den Seitenrahmen; Komponenten kommen aus KERN. */
 body {
-  font-family: system-ui, sans-serif;
   margin: 0;
 }
 
