@@ -23,7 +23,7 @@ export function bildeApiNach(antworten: Antworten): void {
   );
 }
 
-/** Verstöße gegen WCAG 2.1 A/AA laut axe-core; Farbkontraste prüft jsdom nicht. */
+/** Verstöße gegen WCAG 2.1 A/AA laut axe-core; Farbkontraste prüft die Testumgebung nicht. */
 export async function barrieren(element: Element): Promise<string[]> {
   const ergebnis = await axe.run(element, {
     runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },

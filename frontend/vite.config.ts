@@ -14,7 +14,7 @@ export default defineConfig({
   },
   preview: { host: "127.0.0.1" },
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     include: ["src/**/*.test.{ts,tsx}"],
   },
 });

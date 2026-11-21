@@ -23,6 +23,7 @@ FRONTEND = BACKEND.parent / "frontend"
 FRONTEND_KOPFZEILEN = {
     ".ts": "// SPDX-License-Identifier: AGPL-3.0-or-later",
     ".tsx": "// SPDX-License-Identifier: AGPL-3.0-or-later",
+    ".mjs": "// SPDX-License-Identifier: AGPL-3.0-or-later",
     ".css": "/* SPDX-License-Identifier: AGPL-3.0-or-later */",
     ".html": "<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->",
 }
@@ -216,7 +217,8 @@ def frontend_quelldateien() -> list[Path]:
     dateien = [FRONTEND / "index.html", FRONTEND / "vite.config.ts"]
     dateien += [
         datei
-        for datei in sorted((FRONTEND / "src").rglob("*"))
+        for ordner in ("src", "scripts")
+        for datei in sorted((FRONTEND / ordner).rglob("*"))
         if datei.suffix in FRONTEND_KOPFZEILEN and datei.name not in FRONTEND_ERZEUGT
     ]
     return dateien

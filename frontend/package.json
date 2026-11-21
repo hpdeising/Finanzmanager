@@ -5,11 +5,13 @@
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
+    "kern": "node scripts/kern.mjs",
     "api:typen": "openapi-typescript openapi.json --default-non-nullable false -o src/kern/api/schema.d.ts",
-    "typecheck": "npm run api:typen && tsc --noEmit",
-    "test": "npm run api:typen && vitest run",
-    "build": "npm run api:typen && tsc --noEmit && vite build",
-    "dev": "npm run api:typen && vite"
+    "vorbereiten": "npm run kern && npm run api:typen",
+    "typecheck": "npm run vorbereiten && tsc --noEmit",
+    "test": "npm run vorbereiten && vitest run",
+    "build": "npm run vorbereiten && tsc --noEmit && vite build",
+    "dev": "npm run vorbereiten && vite"
   },
   "dependencies": {
     "@kern-ux/native": "2.9.0",
@@ -23,7 +25,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",
     "axe-core": "4.14.1",
-    "jsdom": "31.0.1",
+    "happy-dom": "21.0.4",
     "openapi-typescript": "7.13.0",
     "typescript": "5.9.3",
     "vite": "8.3.8",
