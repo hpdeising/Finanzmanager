@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { erlaubtNachSpdx, erlaubteFamilien, lizenzangabe, SPDX_FAMILIE } from "./lizenzpruefung.mjs";
 
 const BEISPIEL = new Set(["MIT", "BSD", "Apache-2.0", "PSF-2.0", "LGPL", "GPL-3.0", "MPL-2.0"]);
+const MIT_OFL_UND_0BSD = new Set([...BEISPIEL, "OFL-1.1", "0BSD"]);
 
 describe("erlaubteFamilien", () => {
   it("liest die Liste aus CLAUDE.md", () => {
@@ -42,6 +43,17 @@ describe("erlaubtNachSpdx", () => {
     ["", false],
   ])("%j → %s", (ausdruck, erwartet) => {
     expect(erlaubtNachSpdx(ausdruck, BEISPIEL)).toBe(erwartet);
+  });
+
+  it.each(["0BSD", "OFL-1.1"])("%s nur, wenn die Liste es nennt (Entscheidung vom 21.11.2026)", (k) => {
+    expect(erlaubtNachSpdx(k, BEISPIEL)).toBe(false);
+    expect(erlaubtNachSpdx(k, MIT_OFL_UND_0BSD)).toBe(true);
+  });
+
+  it("die Liste in CLAUDE.md nennt 0BSD und OFL-1.1", () => {
+    const erlaubt = erlaubteFamilien(readFileSync(new URL("../../CLAUDE.md", import.meta.url), "utf8"));
+    expect(erlaubt.has("0BSD")).toBe(true);
+    expect(erlaubt.has("OFL-1.1")).toBe(true);
   });
 
   it("EUPL-1.2 nur für KERN-UX (CLAUDE.md: KERN-UX nur unverändert)", () => {

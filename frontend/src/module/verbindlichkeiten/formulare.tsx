@@ -102,7 +102,7 @@ export function BestandteilFormular({ akteId, fertig }: { akteId: string; fertig
         kennung,
         art,
         betrag: text,
-        entstanden_am: entstanden,
+        entstanden_am: entstanden || null,
         faellig_am: faellig || null,
         zinsregeln,
       },
@@ -142,12 +142,11 @@ export function BestandteilFormular({ akteId, fertig }: { akteId: string; fertig
             onChange={(e) => setBetrag(e.target.value)}
           />
         </Feld>
-        <Feld id="b-entstanden" label="Entstanden am">
+        <Feld id="b-entstanden" label={<>Entstanden am {OPTIONAL}</>}>
           <input
             id="b-entstanden"
             type="date"
             className="kern-form-input__input"
-            required
             value={entstanden}
             onChange={(e) => setEntstanden(e.target.value)}
           />

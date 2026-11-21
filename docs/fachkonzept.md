@@ -165,7 +165,7 @@ Vorbereitet, nicht implementiert: Bankkonto (Aktiv), Depot (Aktiv), Sachwert (Ak
 | Vorgang | Art | Soll | Haben |
 |---|---|---|---|
 | Erfassung einer Altlast | `verbindlichkeiten.entstehung` | Eröffnung Altlasten | Hauptforderung (und ggf. Kosten, aufgelaufene Zinsen) |
-| Neue Kosten (z. B. Vollstreckung) | `verbindlichkeiten.kosten` | Kostenaufwand | Kosten Vollstreckung |
+| Neue Kosten (z. B. Vollstreckung) | `verbindlichkeiten.kosten` | Kostenaufwand | Kosten (vorgerichtlich, Verfahren, Vollstreckung) |
 | Zahlung | `verbindlichkeiten.zahlung` | Zahlungen | Externe Mittel bzw. später Bankkonto |
 | Festschreibung der Zinsen bis Stichtag | `verbindlichkeiten.zinslauf` | Zinsaufwand | Zinsen |
 | Festschreibung der Anrechnung bis Stichtag | `verbindlichkeiten.anrechnung` | Bestandteile laut Anrechnung (Kap. 5.3) | Zahlungen |
@@ -173,6 +173,7 @@ Vorbereitet, nicht implementiert: Bankkonto (Aktiv), Depot (Aktiv), Sachwert (Ak
 
 - Zinsen und Anrechnung werden nicht laufend gebucht, sondern nur bei einer Festschreibung (E-21, Kap. 5.2 Schritt 7). Eine Korrekturbuchung für einen festgeschriebenen Zeitraum hat die Art der Buchung, die sie korrigiert (`verbindlichkeiten.zinslauf` oder `verbindlichkeiten.anrechnung`); Soll und Haben richten sich je Konto nach dem Vorzeichen der Differenz.
 - Aufgelaufene Zinsen bei der Erfassung einer Altlast sind nur feste Beträge, die Titel oder Aufstellung ausweisen, und nur für Zeiträume, für die keine Zinsregel rechnet. Laufende Zinsen werden nie mit der Entstehung gebucht.
+- Neue Kosten oder Altlast (Entscheidung vom 21.11.2026): Ein Kosten-Bestandteil, dessen `entstanden_am` nach dem Tag der Eröffnung der Akte liegt, ist neue Kosten (`verbindlichkeiten.kosten`, Soll Kostenaufwand). Kosten vom Tag der Eröffnung oder davor und Kosten ohne `entstanden_am` gehören zur Erfassung der Altlast (`verbindlichkeiten.entstehung`, Soll Eröffnung Altlasten); ohne `entstanden_am` ist die Wertstellung der Tag der Eröffnung. Tag der Eröffnung ist der Kalendertag, an dem die Akte angelegt wurde, in der Zeitzone der Installation. Hauptforderung und Zinsen bucht immer die Erfassung der Altlast.
 - Verteilt der Schuldner eine Zahlung auf mehrere Akten, entsteht je Akte eine eigene Buchung auf deren Zahlungskonto.
 
 Buchungsarten folgen dem Schema `<modul>.<name>` (E-17). Der Kern kennt nur `kern.storno`; die übrigen Arten meldet das Modul mit seiner Umsetzung beim Kern an. In M1 prüft die Datenbank nur das Format, keine Liste.

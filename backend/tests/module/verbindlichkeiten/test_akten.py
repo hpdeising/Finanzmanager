@@ -6,7 +6,7 @@ Zinsen, Anrechnung, Fristen, Verjährung und Status brauchen. Alle Namen sind er
 """
 
 import uuid
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.kern.haushalt import lege_haushalt_an
 from app.kern.ledger import Buchung, Konto, Posting, StornoNichtMoeglichError, saldo
 from app.kern.stammdaten import lade_basiszinsreihe
+from app.kern.zeit import ZEITZONE
 from app.module.verbindlichkeiten.akten import (
     AkteUnbekanntError,
     EreignisUnbekanntError,
@@ -31,7 +32,7 @@ from app.module.verbindlichkeiten.akten import (
     storniere_zahlung,
 )
 from app.module.verbindlichkeiten.berechnung import berechne
-from app.module.verbindlichkeiten.db import AkteKonto, EreignisZeile
+from app.module.verbindlichkeiten.db import Akte, AkteKonto, EreignisZeile
 from app.module.verbindlichkeiten.domain import (
     Aktenparameter,
     Anrechnungsregel,
@@ -155,26 +156,84 @@ def test_zinskonto_je_verzinslicher_zinsregel(session: Session) -> None:
     assert len(konten_mit_rolle(session, haushalt_id, "verbindlichkeiten.zinsen")) == 2
 
 
-def test_neue_vollstreckungskosten_gegen_kostenaufwand(session: Session) -> None:
-    """Kap. 4.3: Neue Kosten (z. B. Vollstreckung), Soll Kostenaufwand."""
+def eroeffnungstag(session: Session, akte_id: uuid.UUID) -> date:
+    """Kalendertag, an dem die Akte angelegt wurde, in der Zeitzone der Installation."""
+    return session.get_one(Akte, akte_id).angelegt_am.astimezone(ZEITZONE).date()
+
+
+def gegenbuchung(session: Session, haushalt_id: uuid.UUID, rolle: str) -> Buchung:
+    (konto,) = konten_mit_rolle(session, haushalt_id, rolle)
+    (buchung,) = session.scalars(select(Buchung).join(Posting).where(Posting.konto_id == konto.id))
+    return buchung
+
+
+@pytest.mark.parametrize(
+    "art",
+    [
+        Bestandteilart.KOSTEN_VORGERICHTLICH,
+        Bestandteilart.KOSTEN_VERFAHREN,
+        Bestandteilart.KOSTEN_VOLLSTRECKUNG,
+    ],
+)
+def test_kosten_nach_eroeffnung_gegen_kostenaufwand(session: Session, art: Bestandteilart) -> None:
+    """Entscheidung vom 21.11.2026 (Kap. 4.3): Kosten, die nach Eröffnung der Akte entstehen,
+    sind neue Kosten: Soll Kostenaufwand, Art verbindlichkeiten.kosten."""
     haushalt_id, akte_id = neue_akte(session)
-    kosten = Bestandteil(
-        "gv_kosten", Bestandteilart.KOSTEN_VOLLSTRECKUNG, D("38.50"), (), T(2025, 3, 3)
-    )
+    tag = eroeffnungstag(session, akte_id) + timedelta(days=1)
+    kosten = Bestandteil("kosten", art, D("38.50"), (), tag)
     lege_bestandteil_an(session, akte_id=akte_id, bestandteil=kosten)
     (aufwand,) = konten_mit_rolle(session, haushalt_id, "verbindlichkeiten.kostenaufwand")
-    assert saldo(session, konto_id=aufwand.id, stichtag=T(2025, 3, 3)) == D("38.50")
-    (konto,) = konten_mit_rolle(session, haushalt_id, "verbindlichkeiten.kosten_vollstreckung")
-    (buchung,) = session.scalars(select(Buchung).join(Posting).where(Posting.konto_id == konto.id))
-    assert buchung.art == "verbindlichkeiten.kosten"
+    assert saldo(session, konto_id=aufwand.id, stichtag=tag) == D("38.50")
+    buchung = gegenbuchung(session, haushalt_id, f"verbindlichkeiten.{art.value}")
+    assert (buchung.art, buchung.wertstellung) == ("verbindlichkeiten.kosten", tag)
 
 
-def test_bestandteil_braucht_den_tag_der_entstehung(session: Session) -> None:
-    """Die Entstehungsbuchung braucht eine Wertstellung."""
-    _, akte_id = neue_akte(session)
-    ohne = Bestandteil("hauptforderung", Bestandteilart.HAUPTFORDERUNG, D("10.00"))
-    with pytest.raises(EingabeUngueltigError, match="entstanden_am"):
-        lege_bestandteil_an(session, akte_id=akte_id, bestandteil=ohne)
+@pytest.mark.parametrize("abstand", [0, -1, -400])
+def test_kosten_bis_zur_eroeffnung_gegen_eroeffnung(session: Session, abstand: int) -> None:
+    """Kosten vom Tag der Eröffnung oder davor gehören zur Altlast: Soll Eröffnung Altlasten."""
+    haushalt_id, akte_id = neue_akte(session)
+    tag = eroeffnungstag(session, akte_id) + timedelta(days=abstand)
+    kosten = Bestandteil("gv_kosten", Bestandteilart.KOSTEN_VOLLSTRECKUNG, D("38.50"), (), tag)
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=kosten)
+    (eroeffnung,) = konten_mit_rolle(session, haushalt_id, "verbindlichkeiten.eroeffnung")
+    assert saldo(session, konto_id=eroeffnung.id, stichtag=tag) == D("38.50")
+    buchung = gegenbuchung(session, haushalt_id, "verbindlichkeiten.kosten_vollstreckung")
+    assert buchung.art == "verbindlichkeiten.entstehung"
+
+
+def test_ohne_entstehungstag_gegen_eroeffnung_am_eroeffnungstag(session: Session) -> None:
+    """Ohne entstanden_am: Eröffnung Altlasten, gebucht am Tag der Eröffnung der Akte."""
+    haushalt_id, akte_id = neue_akte(session)
+    ohne = Bestandteil("gv_kosten", Bestandteilart.KOSTEN_VOLLSTRECKUNG, D("10.00"))
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=ohne)
+    buchung = gegenbuchung(session, haushalt_id, "verbindlichkeiten.kosten_vollstreckung")
+    assert (buchung.art, buchung.wertstellung) == (
+        "verbindlichkeiten.entstehung",
+        eroeffnungstag(session, akte_id),
+    )
+    inhalt = lade_akte(session, haushalt_id=haushalt_id, akte_id=akte_id)
+    assert inhalt.bestandteile == (ohne,)
+
+
+def test_hauptforderung_nach_eroeffnung_bleibt_altlast(session: Session) -> None:
+    """Die Entscheidung betrifft Kosten; Hauptforderung und Zinsen bucht die Erfassung."""
+    haushalt_id, akte_id = neue_akte(session)
+    tag = eroeffnungstag(session, akte_id) + timedelta(days=3)
+    hf = Bestandteil("hauptforderung", Bestandteilart.HAUPTFORDERUNG, D("10.00"), (), tag)
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=hf)
+    buchung = gegenbuchung(session, haushalt_id, "verbindlichkeiten.hauptforderung")
+    assert buchung.art == "verbindlichkeiten.entstehung"
+
+
+def test_ohne_entstehungstag_zuerst(session: Session) -> None:
+    """E-35: Bestandteile ohne entstanden_am kommen in ihrer Gruppe zuerst."""
+    haushalt_id, akte_id = neue_akte(session)
+    mit = Bestandteil("a_kosten", Bestandteilart.KOSTEN_VERFAHREN, D("5.00"), (), T(2024, 1, 2))
+    ohne = Bestandteil("z_kosten", Bestandteilart.KOSTEN_VERFAHREN, D("6.00"))
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=mit)
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=ohne)
+    inhalt = lade_akte(session, haushalt_id=haushalt_id, akte_id=akte_id)
+    assert [b.kennung for b in inhalt.bestandteile] == ["z_kosten", "a_kosten"]
 
 
 def test_kennung_je_akte_eindeutig(session: Session) -> None:
