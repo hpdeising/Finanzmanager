@@ -1,0 +1,2018 @@
+{
+  "components": {
+    "schemas": {
+      "AbschnittAusgabe": {
+        "properties": {
+          "basis": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Basis",
+            "type": "string"
+          },
+          "basiszins": {
+            "anyOf": [
+              {
+                "examples": [
+                  "125.30"
+                ],
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basiszins"
+          },
+          "bestandteil": {
+            "title": "Bestandteil",
+            "type": "string"
+          },
+          "bis": {
+            "format": "date",
+            "title": "Bis",
+            "type": "string"
+          },
+          "gruende": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gruende",
+            "type": "array"
+          },
+          "satz": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Satz",
+            "type": "string"
+          },
+          "tage": {
+            "title": "Tage",
+            "type": "integer"
+          },
+          "tagesbasis": {
+            "title": "Tagesbasis",
+            "type": "integer"
+          },
+          "von": {
+            "format": "date",
+            "title": "Von",
+            "type": "string"
+          },
+          "zins": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Zins",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bestandteil",
+          "von",
+          "bis",
+          "gruende",
+          "tage",
+          "tagesbasis",
+          "basis",
+          "basiszins",
+          "satz",
+          "zins"
+        ],
+        "title": "AbschnittAusgabe",
+        "type": "object"
+      },
+      "AkteDetail": {
+        "description": "Eine Akte mit allem, was zum Stichtag aus ihren Eingaben folgt.\n\nEin Teil, der sich nicht berechnen lässt (etwa ohne Bundesland oder Stammdaten), fehlt;\nder Grund steht in ``hinweise``.",
+        "properties": {
+          "aktenzeichen_glaeubiger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aktenzeichen Glaeubiger"
+          },
+          "berechnung": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Berechnung"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bestandteile": {
+            "items": {
+              "$ref": "#/components/schemas/BestandteilAusgabe"
+            },
+            "title": "Bestandteile",
+            "type": "array"
+          },
+          "ereignisse": {
+            "items": {
+              "$ref": "#/components/schemas/EreignisAusgabe"
+            },
+            "title": "Ereignisse",
+            "type": "array"
+          },
+          "fristen": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FristAusgabe"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fristen"
+          },
+          "glaeubiger_id": {
+            "format": "uuid",
+            "title": "Glaeubiger Id",
+            "type": "string"
+          },
+          "glaeubiger_name": {
+            "title": "Glaeubiger Name",
+            "type": "string"
+          },
+          "hinweise": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hinweise",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "parameter": {
+            "$ref": "#/components/schemas/Parameter"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StatusAusgabe"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stichtag": {
+            "format": "date",
+            "title": "Stichtag",
+            "type": "string"
+          },
+          "verbraucherdarlehen": {
+            "title": "Verbraucherdarlehen",
+            "type": "boolean"
+          },
+          "verjaehrung": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/VerjaehrungAusgabe"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verjaehrung"
+          },
+          "verjaehrung_pflichthinweis": {
+            "title": "Verjaehrung Pflichthinweis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "stichtag",
+          "glaeubiger_id",
+          "glaeubiger_name",
+          "aktenzeichen_glaeubiger",
+          "verbraucherdarlehen",
+          "parameter",
+          "bestandteile",
+          "ereignisse",
+          "berechnung",
+          "fristen",
+          "verjaehrung",
+          "verjaehrung_pflichthinweis",
+          "status",
+          "hinweise"
+        ],
+        "title": "AkteDetail",
+        "type": "object"
+      },
+      "AkteEingabe": {
+        "additionalProperties": false,
+        "properties": {
+          "aktenzeichen_glaeubiger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aktenzeichen Glaeubiger"
+          },
+          "glaeubiger_id": {
+            "format": "uuid",
+            "title": "Glaeubiger Id",
+            "type": "string"
+          },
+          "parameter": {
+            "$ref": "#/components/schemas/Parameter"
+          },
+          "verbraucherdarlehen": {
+            "default": false,
+            "title": "Verbraucherdarlehen",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "glaeubiger_id"
+        ],
+        "title": "AkteEingabe",
+        "type": "object"
+      },
+      "AktenZeile": {
+        "properties": {
+          "aktenzeichen_glaeubiger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aktenzeichen Glaeubiger"
+          },
+          "angelegt_am": {
+            "format": "date-time",
+            "title": "Angelegt Am",
+            "type": "string"
+          },
+          "glaeubiger_name": {
+            "title": "Glaeubiger Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "restschuld": {
+            "anyOf": [
+              {
+                "examples": [
+                  "125.30"
+                ],
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restschuld"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "glaeubiger_name",
+          "aktenzeichen_glaeubiger",
+          "angelegt_am",
+          "status",
+          "restschuld"
+        ],
+        "title": "AktenZeile",
+        "type": "object"
+      },
+      "Angelegt": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "Angelegt",
+        "type": "object"
+      },
+      "Anrechnungsregel": {
+        "description": "Aktenparameter ``anrechnung`` (Kap. 5.3).",
+        "enum": [
+          "bgb_367",
+          "bgb_497",
+          "individuell"
+        ],
+        "title": "Anrechnungsregel",
+        "type": "string"
+      },
+      "AufgabeAusgabe": {
+        "properties": {
+          "erledigt_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erledigt Am"
+          },
+          "faellig_ab": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Faellig Ab"
+          },
+          "information": {
+            "title": "Information",
+            "type": "boolean"
+          },
+          "norm": {
+            "title": "Norm",
+            "type": "string"
+          },
+          "typ": {
+            "$ref": "#/components/schemas/Aufgabentyp"
+          }
+        },
+        "required": [
+          "typ",
+          "norm",
+          "faellig_ab",
+          "erledigt_am",
+          "information"
+        ],
+        "title": "AufgabeAusgabe",
+        "type": "object"
+      },
+      "Aufgabentyp": {
+        "description": "Nachwirkungs-Aufgaben bei Ausgleich (Kap. 6), in der Reihenfolge des Fachkonzepts.",
+        "enum": [
+          "quittung_anfordern",
+          "titel_herausverlangen",
+          "vorzeitige_loeschung",
+          "auskunftei_pruefen",
+          "auskunftei_loeschdatum_ueberwachen"
+        ],
+        "title": "Aufgabentyp",
+        "type": "string"
+      },
+      "Berechnung": {
+        "description": "Zinsen und Anrechnung zum Stichtag (Kap. 5.2, 5.3); Restschuld nach Kap. 4.1.",
+        "properties": {
+          "abschnitte": {
+            "items": {
+              "$ref": "#/components/schemas/AbschnittAusgabe"
+            },
+            "title": "Abschnitte",
+            "type": "array"
+          },
+          "hauptforderung": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Hauptforderung",
+            "type": "string"
+          },
+          "kosten": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Kosten",
+            "type": "string"
+          },
+          "restschuld": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Restschuld",
+            "type": "string"
+          },
+          "ueberzahlung": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Ueberzahlung",
+            "type": "string"
+          },
+          "zinsen": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Zinsen",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hauptforderung",
+          "zinsen",
+          "kosten",
+          "restschuld",
+          "ueberzahlung",
+          "abschnitte"
+        ],
+        "title": "Berechnung",
+        "type": "object"
+      },
+      "BestandteilAusgabe": {
+        "properties": {
+          "art": {
+            "$ref": "#/components/schemas/Bestandteilart"
+          },
+          "betrag": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Betrag",
+            "type": "string"
+          },
+          "entstanden_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entstanden Am"
+          },
+          "faellig_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Faellig Am"
+          },
+          "kenntnis_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kenntnis Am"
+          },
+          "kennung": {
+            "title": "Kennung",
+            "type": "string"
+          },
+          "zinsregeln": {
+            "items": {
+              "$ref": "#/components/schemas/ZinsregelSchema"
+            },
+            "title": "Zinsregeln",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kennung",
+          "art",
+          "betrag",
+          "entstanden_am",
+          "faellig_am",
+          "kenntnis_am",
+          "zinsregeln"
+        ],
+        "title": "BestandteilAusgabe",
+        "type": "object"
+      },
+      "BestandteilEingabe": {
+        "additionalProperties": false,
+        "properties": {
+          "art": {
+            "$ref": "#/components/schemas/Bestandteilart"
+          },
+          "betrag": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Betrag",
+            "type": "string"
+          },
+          "entstanden_am": {
+            "format": "date",
+            "title": "Entstanden Am",
+            "type": "string"
+          },
+          "faellig_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Faellig Am"
+          },
+          "kenntnis_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kenntnis Am"
+          },
+          "kennung": {
+            "minLength": 1,
+            "title": "Kennung",
+            "type": "string"
+          },
+          "zinsregeln": {
+            "items": {
+              "$ref": "#/components/schemas/ZinsregelSchema"
+            },
+            "title": "Zinsregeln",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kennung",
+          "art",
+          "betrag",
+          "entstanden_am"
+        ],
+        "title": "BestandteilEingabe",
+        "type": "object"
+      },
+      "Bestandteilart": {
+        "description": "Art eines Bestandteils (Kap. 3, Kontenrahmen Kap. 4.2).",
+        "enum": [
+          "hauptforderung",
+          "zinsen",
+          "kosten_vorgerichtlich",
+          "kosten_verfahren",
+          "kosten_vollstreckung"
+        ],
+        "title": "Bestandteilart",
+        "type": "string"
+      },
+      "EreignisAusgabe": {
+        "properties": {
+          "bekanntgabe_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bekanntgabe Am"
+          },
+          "betrag": {
+            "anyOf": [
+              {
+                "examples": [
+                  "125.30"
+                ],
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Betrag"
+          },
+          "datum": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datum"
+          },
+          "gericht_land": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gericht Land"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "storniert": {
+            "title": "Storniert",
+            "type": "boolean"
+          },
+          "typ": {
+            "$ref": "#/components/schemas/Ereignistyp"
+          },
+          "versaeumnisurteil": {
+            "title": "Versaeumnisurteil",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "typ",
+          "datum",
+          "versaeumnisurteil",
+          "bekanntgabe_am",
+          "gericht_land",
+          "betrag",
+          "storniert"
+        ],
+        "title": "EreignisAusgabe",
+        "type": "object"
+      },
+      "EreignisEingabe": {
+        "additionalProperties": false,
+        "description": "Ereignis ohne Buchung; Zahlungen über ``/zahlungen``.",
+        "properties": {
+          "bekanntgabe_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bekanntgabe Am"
+          },
+          "datum": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datum"
+          },
+          "gericht_land": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gericht Land"
+          },
+          "typ": {
+            "$ref": "#/components/schemas/Ereignistyp"
+          },
+          "versaeumnisurteil": {
+            "default": false,
+            "title": "Versaeumnisurteil",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "typ",
+          "datum"
+        ],
+        "title": "EreignisEingabe",
+        "type": "object"
+      },
+      "Ereignistyp": {
+        "description": "Ereignistypen in Release 1 (Kap. 4.5).",
+        "enum": [
+          "zustellung_mahnbescheid",
+          "zustellung_vollstreckungsbescheid",
+          "zustellung_urteil",
+          "rechtskraft",
+          "errichtung_titel",
+          "eintragungsanordnung",
+          "zahlung",
+          "vollstreckungsantrag",
+          "vollstreckungshandlung",
+          "anerkenntnis",
+          "glaeubigerwechsel",
+          "anrechnung_abgelehnt",
+          "ausgleich",
+          "quittung_erhalten",
+          "titel_erhalten",
+          "loeschung_schuldnerverzeichnis",
+          "erledigt_gemeldet_auskunftei",
+          "verjaehrung_eingewandt",
+          "einspruch",
+          "mahnverfahren_ohne_titel_beendet",
+          "letzte_verfahrenshandlung",
+          "verzug_eingetreten",
+          "zustellung_kostenfestsetzungsbeschluss",
+          "akte_geschlossen",
+          "ratenplan_vereinbart",
+          "ratenplan_beendet",
+          "vollstreckungsmassnahme_begonnen",
+          "vollstreckungsmassnahme_aufgehoben",
+          "forderung_bestritten",
+          "bestreiten_beendet"
+        ],
+        "title": "Ereignistyp",
+        "type": "string"
+      },
+      "FristAusgabe": {
+        "properties": {
+          "art": {
+            "$ref": "#/components/schemas/Fristart"
+          },
+          "ausloeser": {
+            "$ref": "#/components/schemas/Ereignistyp"
+          },
+          "ende": {
+            "format": "date",
+            "title": "Ende",
+            "type": "string"
+          },
+          "hinweis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hinweis"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "norm": {
+            "title": "Norm",
+            "type": "string"
+          },
+          "warnstufen": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Warnstufen",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "norm",
+          "ausloeser",
+          "ende",
+          "art",
+          "warnstufen",
+          "hinweis"
+        ],
+        "title": "FristAusgabe",
+        "type": "object"
+      },
+      "Fristart": {
+        "description": "Art einer Frist (Kap. 5.4).",
+        "enum": [
+          "notfrist",
+          "prozessual",
+          "materiell",
+          "information",
+          "aufgabe"
+        ],
+        "title": "Fristart",
+        "type": "string"
+      },
+      "GlaeubigerAusgabe": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "GlaeubigerAusgabe",
+        "type": "object"
+      },
+      "GlaeubigerEingabe": {
+        "additionalProperties": false,
+        "properties": {
+          "anschrift": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anschrift"
+          },
+          "iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iban"
+          },
+          "kontakt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kontakt"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "vertreter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vertreter"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "GlaeubigerEingabe",
+        "type": "object"
+      },
+      "Gruppe": {
+        "description": "Gruppe, auf die eine Zahlung angerechnet wird (Kap. 5.3).",
+        "enum": [
+          "kosten",
+          "zinsen",
+          "hauptforderung"
+        ],
+        "title": "Gruppe",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HaushaltAusgabe": {
+        "properties": {
+          "betriebsart": {
+            "enum": [
+              "einzel",
+              "haushalt_gemeinsam",
+              "haushalt_getrennt"
+            ],
+            "title": "Betriebsart",
+            "type": "string"
+          },
+          "bundesland": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bundesland"
+          }
+        },
+        "required": [
+          "betriebsart",
+          "bundesland"
+        ],
+        "title": "HaushaltAusgabe",
+        "type": "object"
+      },
+      "HaushaltEingabe": {
+        "additionalProperties": false,
+        "properties": {
+          "betriebsart": {
+            "default": "einzel",
+            "enum": [
+              "einzel",
+              "haushalt_gemeinsam",
+              "haushalt_getrennt"
+            ],
+            "title": "Betriebsart",
+            "type": "string"
+          },
+          "bundesland": {
+            "title": "Bundesland",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundesland"
+        ],
+        "title": "HaushaltEingabe",
+        "type": "object"
+      },
+      "Info": {
+        "properties": {
+          "lizenz": {
+            "const": "AGPL-3.0-or-later",
+            "title": "Lizenz",
+            "type": "string"
+          },
+          "quellcode": {
+            "title": "Quellcode",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "lizenz",
+          "quellcode"
+        ],
+        "title": "Info",
+        "type": "object"
+      },
+      "Merkmal": {
+        "description": "Merkmale unabhängig vom Status (Kap. 6), abgeleitet aus Ereignissen.",
+        "enum": [
+          "ratenplan_aktiv",
+          "vollstreckung_aktiv",
+          "bestritten",
+          "schuldnerverzeichnis_eingetragen",
+          "verjaehrung_eingewandt"
+        ],
+        "title": "Merkmal",
+        "type": "string"
+      },
+      "Parameter": {
+        "additionalProperties": false,
+        "description": "Aktenparameter (Kap. 5.1) mit den Voreinstellungen des Fachkonzepts.",
+        "properties": {
+          "anrechnung": {
+            "$ref": "#/components/schemas/Anrechnungsregel",
+            "default": "bgb_367"
+          },
+          "reihenfolge": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Gruppe"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reihenfolge"
+          },
+          "tageszaehlung": {
+            "$ref": "#/components/schemas/Tageszaehlung",
+            "default": "act_365"
+          },
+          "teilung": {
+            "$ref": "#/components/schemas/Teilung",
+            "default": "kalender"
+          },
+          "teilungstage": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Teilungstage",
+            "type": "array"
+          },
+          "zahltag": {
+            "$ref": "#/components/schemas/Zahltag",
+            "default": "alter_betrag"
+          },
+          "zinsbeginn": {
+            "$ref": "#/components/schemas/Zinsbeginn",
+            "default": "genannter_tag"
+          }
+        },
+        "title": "Parameter",
+        "type": "object"
+      },
+      "Status": {
+        "description": "Lebenszyklus einer Akte (Kap. 6), in seiner Reihenfolge.",
+        "enum": [
+          "offen",
+          "mahnverfahren",
+          "tituliert",
+          "ausgeglichen",
+          "nachwirkung",
+          "geschlossen"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "StatusAusgabe": {
+        "properties": {
+          "aufgaben": {
+            "items": {
+              "$ref": "#/components/schemas/AufgabeAusgabe"
+            },
+            "title": "Aufgaben",
+            "type": "array"
+          },
+          "ausgeglichen_am": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ausgeglichen Am"
+          },
+          "hinweise": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hinweise",
+            "type": "array"
+          },
+          "merkmale": {
+            "items": {
+              "$ref": "#/components/schemas/Merkmal"
+            },
+            "title": "Merkmale",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "warnungen": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnungen",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "merkmale",
+          "aufgaben",
+          "ausgeglichen_am",
+          "hinweise",
+          "warnungen"
+        ],
+        "title": "StatusAusgabe",
+        "type": "object"
+      },
+      "Tageszaehlung": {
+        "description": "Aktenparameter ``tageszaehlung`` (Kap. 5.1, E-22, E-31, E-34).",
+        "enum": [
+          "act_365",
+          "act_act",
+          "act_360",
+          "30_360"
+        ],
+        "title": "Tageszaehlung",
+        "type": "string"
+      },
+      "Teilung": {
+        "description": "Aktenparameter ``teilung`` (Kap. 5.1, E-32).",
+        "enum": [
+          "kalender",
+          "satzwechsel"
+        ],
+        "title": "Teilung",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "VerjaehrungAusgabe": {
+        "properties": {
+          "beginn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beginn"
+          },
+          "bestandteil": {
+            "title": "Bestandteil",
+            "type": "string"
+          },
+          "ende": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ende"
+          },
+          "fall": {
+            "$ref": "#/components/schemas/Verjaehrungsfall"
+          },
+          "gegenstand": {
+            "title": "Gegenstand",
+            "type": "string"
+          },
+          "hemmungstage": {
+            "title": "Hemmungstage",
+            "type": "integer"
+          },
+          "hinweise": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hinweise",
+            "type": "array"
+          },
+          "neubeginn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Neubeginn"
+          },
+          "norm": {
+            "title": "Norm",
+            "type": "string"
+          },
+          "warnstufen": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Warnstufen",
+            "type": "array"
+          }
+        },
+        "required": [
+          "gegenstand",
+          "bestandteil",
+          "fall",
+          "norm",
+          "beginn",
+          "ende",
+          "hemmungstage",
+          "neubeginn",
+          "warnstufen",
+          "hinweise"
+        ],
+        "title": "VerjaehrungAusgabe",
+        "type": "object"
+      },
+      "Verjaehrungsfall": {
+        "description": "Fall der Tabelle in Kap. 5.5.",
+        "enum": [
+          "nicht_tituliert",
+          "rechtskraeftig_festgestellt",
+          "vergleich_urkunde",
+          "kosten_zwangsvollstreckung",
+          "laufende_zinsen",
+          "verbraucherdarlehen_zinsen"
+        ],
+        "title": "Verjaehrungsfall",
+        "type": "string"
+      },
+      "Zahltag": {
+        "description": "Aktenparameter ``zahltag`` (Kap. 5.1, E-30).",
+        "enum": [
+          "alter_betrag",
+          "verminderter_betrag"
+        ],
+        "title": "Zahltag",
+        "type": "string"
+      },
+      "ZahlungEingabe": {
+        "additionalProperties": false,
+        "properties": {
+          "betrag": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Betrag",
+            "type": "string"
+          },
+          "datum": {
+            "format": "date",
+            "title": "Datum",
+            "type": "string"
+          }
+        },
+        "required": [
+          "datum",
+          "betrag"
+        ],
+        "title": "ZahlungEingabe",
+        "type": "object"
+      },
+      "Zinsbeginn": {
+        "description": "Aktenparameter ``zinsbeginn`` (Kap. 5.1, E-24).",
+        "enum": [
+          "genannter_tag",
+          "folgetag"
+        ],
+        "title": "Zinsbeginn",
+        "type": "string"
+      },
+      "ZinsregelSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "ab": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ab"
+          },
+          "aufschlag": {
+            "anyOf": [
+              {
+                "examples": [
+                  "125.30"
+                ],
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aufschlag"
+          },
+          "bis": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bis"
+          },
+          "satz": {
+            "anyOf": [
+              {
+                "examples": [
+                  "125.30"
+                ],
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Satz"
+          },
+          "typ": {
+            "$ref": "#/components/schemas/Zinsregeltyp"
+          }
+        },
+        "required": [
+          "typ"
+        ],
+        "title": "ZinsregelSchema",
+        "type": "object"
+      },
+      "Zinsregeltyp": {
+        "description": "Typ einer Zinsregel (Kap. 5.2, Tabelle).",
+        "enum": [
+          "gesetzlich_288_1",
+          "gesetzlich_288_2",
+          "kostenfestsetzung",
+          "basiszins_plus",
+          "fest",
+          "keine"
+        ],
+        "title": "Zinsregeltyp",
+        "type": "string"
+      }
+    }
+  },
+  "info": {
+    "title": "Finanzmanager",
+    "version": "0.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/haushalt": {
+      "get": {
+        "operationId": "lies_haushalt_api_haushalt_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HaushaltAusgabe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Lies Haushalt",
+        "tags": [
+          "kern"
+        ]
+      },
+      "post": {
+        "description": "Haushalt einrichten; es gibt genau einen je Installation (Fachkonzept 3).",
+        "operationId": "richte_haushalt_ein_api_haushalt_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HaushaltEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HaushaltAusgabe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Richte Haushalt Ein",
+        "tags": [
+          "kern"
+        ]
+      }
+    },
+    "/api/info": {
+      "get": {
+        "description": "Version, Lizenz und Link auf den Quellcode der laufenden Version (AGPL-3.0 § 13).",
+        "operationId": "info_api_info_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Info"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Info",
+        "tags": [
+          "kern"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten": {
+      "get": {
+        "description": "Akten des Haushalts mit Status und Restschuld zum Stichtag.",
+        "operationId": "liste_akten_api_verbindlichkeiten_akten_get",
+        "parameters": [
+          {
+            "description": "Stichtag; ohne Angabe heute",
+            "in": "query",
+            "name": "stichtag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Stichtag; ohne Angabe heute",
+              "title": "Stichtag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AktenZeile"
+                  },
+                  "title": "Response Liste Akten Api Verbindlichkeiten Akten Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Liste Akten",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      },
+      "post": {
+        "operationId": "neue_akte_api_verbindlichkeiten_akten_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AkteEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Angelegt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Neue Akte",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten/{akte_id}": {
+      "get": {
+        "description": "Akte mit Berechnung, Fristen, Verjährung und Status zum Stichtag.",
+        "operationId": "lies_akte_api_verbindlichkeiten_akten__akte_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akte_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Akte Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Stichtag; ohne Angabe heute",
+            "in": "query",
+            "name": "stichtag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Stichtag; ohne Angabe heute",
+              "title": "Stichtag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AkteDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lies Akte",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten/{akte_id}/bestandteile": {
+      "post": {
+        "operationId": "neuer_bestandteil_api_verbindlichkeiten_akten__akte_id__bestandteile_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akte_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Akte Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BestandteilEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Angelegt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Neuer Bestandteil",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten/{akte_id}/ereignisse": {
+      "post": {
+        "operationId": "neues_ereignis_api_verbindlichkeiten_akten__akte_id__ereignisse_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akte_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Akte Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EreignisEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Angelegt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Neues Ereignis",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten/{akte_id}/ereignisse/{ereignis_id}": {
+      "delete": {
+        "operationId": "entferne_ereignis_api_verbindlichkeiten_akten__akte_id__ereignisse__ereignis_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akte_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Akte Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ereignis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ereignis Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Entferne Ereignis",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten/{akte_id}/zahlungen": {
+      "post": {
+        "operationId": "neue_zahlung_api_verbindlichkeiten_akten__akte_id__zahlungen_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akte_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Akte Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ZahlungEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Angelegt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Neue Zahlung",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/akten/{akte_id}/zahlungen/{ereignis_id}/storno": {
+      "post": {
+        "description": "Falsch erfasste Zahlung stornieren (Kap. 4.1); sie gilt danach als nie geschehen.",
+        "operationId": "storno_api_verbindlichkeiten_akten__akte_id__zahlungen__ereignis_id__storno_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "akte_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Akte Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ereignis_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ereignis Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Storno",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    },
+    "/api/verbindlichkeiten/glaeubiger": {
+      "get": {
+        "operationId": "liste_glaeubiger_api_verbindlichkeiten_glaeubiger_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GlaeubigerAusgabe"
+                  },
+                  "title": "Response Liste Glaeubiger Api Verbindlichkeiten Glaeubiger Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liste Glaeubiger",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      },
+      "post": {
+        "operationId": "neuer_glaeubiger_api_verbindlichkeiten_glaeubiger_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GlaeubigerEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Angelegt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Neuer Glaeubiger",
+        "tags": [
+          "verbindlichkeiten"
+        ]
+      }
+    }
+  }
+}
