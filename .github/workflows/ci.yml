@@ -104,3 +104,36 @@ jobs:
               rolle = verbindung.execute(text("SELECT current_user")).scalar_one()
           assert rolle == "finanzmanager_app", rolle
           EOF
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Node einrichten
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      # Die Typen entstehen aus frontend/openapi.json; das Backend prüft, dass die Datei aktuell ist.
+      - name: Typprüfung (TypeScript strict)
+        run: npm run typecheck
+
+      - name: Tests (mit Prüfung auf Barrieren)
+        run: npm test
+
+      - name: Build
+        run: npm run build

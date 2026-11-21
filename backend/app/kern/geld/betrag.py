@@ -121,6 +121,27 @@ def als_text(wert: Decimal) -> str:
     return format(wert, "f")
 
 
+def ohne_nullen(wert: Decimal) -> Decimal:
+    """Abschließende Nullen nach dem Komma entfernen; der Wert bleibt exakt gleich.
+
+    ``1000.0000`` aus einer Spalte ``NUMERIC(19,4)`` wird ``1000``, ``35.6600`` wird ``35.66``.
+    Zusammen mit ``als_text`` ergibt das ``"1000.00"`` und ``"35.66"``.
+
+    Raises:
+        ValueError: bei NaN oder Unendlich.
+    """
+    _pruefe_endlich(wert)
+    with localcontext(prec=RECHENGENAUIGKEIT):
+        gekuerzt = wert.normalize()
+    if gekuerzt != wert:  # nur bei mehr Stellen als RECHENGENAUIGKEIT
+        msg = "Der Betrag hat mehr Stellen als die Rechengenauigkeit."
+        raise ValueError(msg)
+    exponent = gekuerzt.as_tuple().exponent
+    if isinstance(exponent, int) and exponent > 0:
+        gekuerzt = gekuerzt.quantize(Decimal(1))  # 1E+3 -> 1000, nur Nullen, rundet nie
+    return gekuerzt
+
+
 def speicherbar(wert: object) -> Decimal:
     """Betrag, den eine Spalte ``NUMERIC(19,4)`` exakt aufnimmt; nichts wird gerundet.
 

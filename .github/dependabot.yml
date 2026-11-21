@@ -24,11 +24,18 @@ updates:
       prefix: "chore"
       include: "scope"
 
-  # Aktivieren, sobald frontend/ bzw. Docker-Dateien existieren (M5, M9):
-  # - package-ecosystem: "npm"
-  #   directory: "/frontend"
-  #   schedule:
-  #     interval: "weekly"
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      entwicklungswerkzeuge:
+        dependency-type: "development"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Aktivieren, sobald Docker-Dateien existieren (M9):
   # - package-ecosystem: "docker"
   #   directory: "/"
   #   schedule:

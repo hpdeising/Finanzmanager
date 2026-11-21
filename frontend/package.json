@@ -1,0 +1,35 @@
+{
+  "name": "finanzmanager-oberflaeche",
+  "private": true,
+  "version": "0.0.0",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "kern": "node scripts/kern.mjs",
+    "lizenzen": "node scripts/lizenzen.mjs",
+    "api:typen": "openapi-typescript openapi.json --default-non-nullable false -o src/kern/api/schema.d.ts",
+    "vorbereiten": "npm run kern && npm run lizenzen && npm run api:typen",
+    "typecheck": "npm run vorbereiten && tsc --noEmit",
+    "test": "npm run vorbereiten && vitest run",
+    "build": "npm run vorbereiten && tsc --noEmit && vite build",
+    "dev": "npm run vorbereiten && vite"
+  },
+  "dependencies": {
+    "@kern-ux/native": "2.9.0",
+    "openapi-fetch": "0.17.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "axe-core": "4.14.1",
+    "happy-dom": "21.0.4",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  }
+}

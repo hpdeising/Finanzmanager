@@ -33,3 +33,11 @@ frontend/dist/
 *.swp
 .DS_Store
 Thumbs.db
+
+# Aus frontend/openapi.json erzeugt, nie von Hand geschrieben (CLAUDE.md, Stack)
+frontend/src/kern/api/schema.d.ts
+# KERN-UX, beim Build unverändert aus node_modules kopiert (frontend/scripts/kern.mjs)
+frontend/public/kern/
+# Beim Build geprüft und erzeugt (frontend/scripts/lizenzen.mjs)
+frontend/src/kern/lizenzen/drittanbieter.json
+frontend/public/THIRD-PARTY-LICENSES

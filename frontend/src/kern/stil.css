@@ -1,0 +1,46 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* Ergänzungen zum KERN-Stylesheet für den Seitenrahmen; Komponenten kommen aus KERN. */
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0;
+}
+
+.fm-kopf {
+  border-bottom: 1px solid currentColor;
+  padding: 1rem 0;
+}
+
+.fm-navigation {
+  display: flex;
+  gap: 1.5rem;
+  align-items: baseline;
+}
+
+.fm-marke {
+  font-weight: 700;
+}
+
+.fm-inhalt {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.fm-fuss {
+  border-top: 1px solid currentColor;
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+.fm-formular {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  align-items: end;
+}
+
+.fm-lizenztext {
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+  max-height: 24rem;
+  overflow: auto;
+}
