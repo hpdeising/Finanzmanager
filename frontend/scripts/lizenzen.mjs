@@ -49,6 +49,20 @@ for (const [pfad, eintrag] of Object.entries(lock.packages)) {
   }
 }
 
+// Fira Sans liegt in @kern-ux/native, steht aber unter einer eigenen Lizenz (OFL-1.1); das Paket
+// liefert ihren Text nicht mit (lizenzen/fira-sans/HERKUNFT.md).
+const kern = JSON.parse(
+  readFileSync(join(FRONTEND, "node_modules", "@kern-ux", "native", "package.json"), "utf8"),
+);
+if (!erlaubtNachSpdx("OFL-1.1", erlaubt)) {
+  verstoesse.push("Fira Sans (in @kern-ux/native): OFL-1.1");
+}
+hinweise.push({
+  name: "Fira Sans (Schrift in @kern-ux/native)",
+  version: `aus @kern-ux/native ${kern.version}`,
+  lizenz: "OFL-1.1",
+  text: readFileSync(join(FRONTEND, "lizenzen", "fira-sans", "OFL.txt"), "utf8"),
+});
 if (verstoesse.length > 0) {
   process.stderr.write(`Lizenzen nicht in CLAUDE.md erlaubt:\n${verstoesse.join("\n")}\n`);
   process.exit(1);
