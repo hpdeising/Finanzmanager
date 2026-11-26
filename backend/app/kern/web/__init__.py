@@ -8,6 +8,7 @@ from app.kern.web.abhaengigkeiten import (
     StammdatenAbh,
     installierter_haushalt,
 )
+from app.kern.web.importe import router as import_router
 from app.kern.web.router import router
 from app.kern.web.typen import Betragstext, Dezimaltext
 
@@ -18,6 +19,7 @@ __all__ = [
     "Sitzung",
     "Stammdaten",
     "StammdatenAbh",
+    "import_router",
     "installierter_haushalt",
     "router",
 ]

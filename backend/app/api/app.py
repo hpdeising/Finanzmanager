@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.kern.db import erzeuge_engine, sitzungsfabrik
 from app.kern.stammdaten import lade_basiszinsreihe, lade_feiertagskalender
-from app.kern.web import Stammdaten
+from app.kern.web import Stammdaten, import_router
 from app.kern.web import router as kern_router
 from app.kern.web.router import laufende_version
 from app.module.verbindlichkeiten.api import router as verbindlichkeiten_router
@@ -31,5 +31,6 @@ def erzeuge_app(sitzungen: sessionmaker[Session] | None = None) -> FastAPI:
         basiszinsreihe=lade_basiszinsreihe(), feiertage=lade_feiertagskalender()
     )
     app.include_router(kern_router)
+    app.include_router(import_router)
     app.include_router(verbindlichkeiten_router)
     return app

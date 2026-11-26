@@ -15,6 +15,7 @@ from sqlalchemy import Connection
 from app.kern.db import Basis, erzeuge_engine
 from app.kern.db.bootstrap import MIGRATION_URL_VARIABLE
 from app.kern.haushalt import Haushalt
+from app.kern.import_.modelle import CsvProfilZeile, ImportLauf, ImportZeile, ImportZeileBuchung
 from app.kern.ledger import Buchung, Konto, Posting
 from app.module.verbindlichkeiten.db import (
     Akte,
@@ -33,6 +34,10 @@ MODELLE = (
     Konto,
     Buchung,
     Posting,
+    CsvProfilZeile,
+    ImportLauf,
+    ImportZeile,
+    ImportZeileBuchung,
     Glaeubiger,
     Akte,
     AkteKonto,
