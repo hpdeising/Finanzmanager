@@ -621,6 +621,237 @@
         "title": "Bestandteilart",
         "type": "string"
       },
+      "CsvProfilAusgabe": {
+        "properties": {
+          "datumsformat": {
+            "default": "%d.%m.%Y",
+            "title": "Datumsformat",
+            "type": "string"
+          },
+          "dezimaltrennzeichen": {
+            "default": ",",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Dezimaltrennzeichen",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kodierung": {
+            "default": "utf-8",
+            "title": "Kodierung",
+            "type": "string"
+          },
+          "kopfzeilen_ueberspringen": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Kopfzeilen Ueberspringen",
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "spalte_betrag": {
+            "minLength": 1,
+            "title": "Spalte Betrag",
+            "type": "string"
+          },
+          "spalte_buchungstag": {
+            "minLength": 1,
+            "title": "Spalte Buchungstag",
+            "type": "string"
+          },
+          "spalte_gegen_iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spalte Gegen Iban"
+          },
+          "spalte_gegen_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spalte Gegen Name"
+          },
+          "spalte_valuta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spalte Valuta"
+          },
+          "spalten_verwendungszweck": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Spalten Verwendungszweck",
+            "type": "array"
+          },
+          "tausendertrennzeichen": {
+            "anyOf": [
+              {
+                "maxLength": 1,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": ".",
+            "title": "Tausendertrennzeichen"
+          },
+          "trennzeichen": {
+            "default": ";",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Trennzeichen",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "spalte_buchungstag",
+          "spalte_betrag",
+          "spalten_verwendungszweck",
+          "id"
+        ],
+        "title": "CsvProfilAusgabe",
+        "type": "object"
+      },
+      "CsvProfilEingabe": {
+        "additionalProperties": false,
+        "properties": {
+          "datumsformat": {
+            "default": "%d.%m.%Y",
+            "title": "Datumsformat",
+            "type": "string"
+          },
+          "dezimaltrennzeichen": {
+            "default": ",",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Dezimaltrennzeichen",
+            "type": "string"
+          },
+          "kodierung": {
+            "default": "utf-8",
+            "title": "Kodierung",
+            "type": "string"
+          },
+          "kopfzeilen_ueberspringen": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Kopfzeilen Ueberspringen",
+            "type": "integer"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "spalte_betrag": {
+            "minLength": 1,
+            "title": "Spalte Betrag",
+            "type": "string"
+          },
+          "spalte_buchungstag": {
+            "minLength": 1,
+            "title": "Spalte Buchungstag",
+            "type": "string"
+          },
+          "spalte_gegen_iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spalte Gegen Iban"
+          },
+          "spalte_gegen_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spalte Gegen Name"
+          },
+          "spalte_valuta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spalte Valuta"
+          },
+          "spalten_verwendungszweck": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Spalten Verwendungszweck",
+            "type": "array"
+          },
+          "tausendertrennzeichen": {
+            "anyOf": [
+              {
+                "maxLength": 1,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": ".",
+            "title": "Tausendertrennzeichen"
+          },
+          "trennzeichen": {
+            "default": ";",
+            "maxLength": 1,
+            "minLength": 1,
+            "title": "Trennzeichen",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "spalte_buchungstag",
+          "spalte_betrag",
+          "spalten_verwendungszweck"
+        ],
+        "title": "CsvProfilEingabe",
+        "type": "object"
+      },
       "EreignisAusgabe": {
         "properties": {
           "bekanntgabe_am": {
@@ -795,6 +1026,14 @@
           "erinnerung"
         ],
         "title": "Ereignistyp",
+        "type": "string"
+      },
+      "Format": {
+        "enum": [
+          "csv",
+          "camt053"
+        ],
+        "title": "Format",
         "type": "string"
       },
       "FristAusgabe": {
@@ -1039,6 +1278,130 @@
           "quellcode"
         ],
         "title": "Info",
+        "type": "object"
+      },
+      "LaufAusgabe": {
+        "properties": {
+          "abgeschlossen_am": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abgeschlossen Am"
+          },
+          "angelegt_am": {
+            "format": "date-time",
+            "title": "Angelegt Am",
+            "type": "string"
+          },
+          "format": {
+            "$ref": "#/components/schemas/Format"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "profil_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profil Name"
+          },
+          "umsaetze_gelesen": {
+            "title": "Umsaetze Gelesen",
+            "type": "integer"
+          },
+          "wertstellung_aus": {
+            "$ref": "#/components/schemas/WertstellungAus"
+          },
+          "zeilen": {
+            "items": {
+              "$ref": "#/components/schemas/ZeileAusgabe"
+            },
+            "title": "Zeilen",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "format",
+          "profil_name",
+          "wertstellung_aus",
+          "umsaetze_gelesen",
+          "angelegt_am",
+          "abgeschlossen_am",
+          "zeilen"
+        ],
+        "title": "LaufAusgabe",
+        "type": "object"
+      },
+      "LaufKopf": {
+        "properties": {
+          "abgeschlossen_am": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abgeschlossen Am"
+          },
+          "angelegt_am": {
+            "format": "date-time",
+            "title": "Angelegt Am",
+            "type": "string"
+          },
+          "format": {
+            "$ref": "#/components/schemas/Format"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "profil_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profil Name"
+          },
+          "umsaetze_gelesen": {
+            "title": "Umsaetze Gelesen",
+            "type": "integer"
+          },
+          "wertstellung_aus": {
+            "$ref": "#/components/schemas/WertstellungAus"
+          }
+        },
+        "required": [
+          "id",
+          "format",
+          "profil_name",
+          "wertstellung_aus",
+          "umsaetze_gelesen",
+          "angelegt_am",
+          "abgeschlossen_am"
+        ],
+        "title": "LaufKopf",
         "type": "object"
       },
       "Lizenz": {
@@ -1363,6 +1726,15 @@
         "title": "Verjaehrungsfall",
         "type": "string"
       },
+      "WertstellungAus": {
+        "description": "Prüfpunkt P-16: Welches Datum des Auszugs die Wertstellung wird.\n\nDas Fachkonzept legt keine Voreinstellung fest; die Wahl ist deshalb Pflicht.",
+        "enum": [
+          "buchungstag",
+          "valuta"
+        ],
+        "title": "WertstellungAus",
+        "type": "string"
+      },
       "Zahltag": {
         "description": "Aktenparameter ``zahltag`` (Kap. 5.1, E-30).",
         "enum": [
@@ -1395,6 +1767,106 @@
         ],
         "title": "ZahlungEingabe",
         "type": "object"
+      },
+      "ZeileAusgabe": {
+        "description": "Zahlungskandidat (Kap. 8): eine Belastung; ``datum`` ist die Wertstellung nach P-16.",
+        "properties": {
+          "betrag": {
+            "examples": [
+              "125.30"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Betrag",
+            "type": "string"
+          },
+          "buchungstag": {
+            "format": "date",
+            "title": "Buchungstag",
+            "type": "string"
+          },
+          "datum": {
+            "format": "date",
+            "title": "Datum",
+            "type": "string"
+          },
+          "duplikat": {
+            "title": "Duplikat",
+            "type": "boolean"
+          },
+          "gegen_iban": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gegen Iban"
+          },
+          "gegen_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gegen Name"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Zeilenstatus"
+          },
+          "valuta": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valuta"
+          },
+          "verwendungszweck": {
+            "title": "Verwendungszweck",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "datum",
+          "buchungstag",
+          "valuta",
+          "betrag",
+          "gegen_name",
+          "gegen_iban",
+          "verwendungszweck",
+          "status",
+          "duplikat"
+        ],
+        "title": "ZeileAusgabe",
+        "type": "object"
+      },
+      "Zeilenstatus": {
+        "enum": [
+          "offen",
+          "gebucht"
+        ],
+        "title": "Zeilenstatus",
+        "type": "string"
       },
       "Zinsbeginn": {
         "description": "Aktenparameter ``zinsbeginn`` (Kap. 5.1, E-24).",
@@ -1551,6 +2023,299 @@
         "summary": "Richte Haushalt Ein",
         "tags": [
           "kern"
+        ]
+      }
+    },
+    "/api/import/csv-profile": {
+      "get": {
+        "operationId": "liste_profile_api_import_csv_profile_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CsvProfilAusgabe"
+                  },
+                  "title": "Response Liste Profile Api Import Csv Profile Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liste Profile",
+        "tags": [
+          "import"
+        ]
+      },
+      "post": {
+        "operationId": "lege_profil_an_api_import_csv_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CsvProfilEingabe"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CsvProfilAusgabe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lege Profil An",
+        "tags": [
+          "import"
+        ]
+      }
+    },
+    "/api/import/csv-profile/{profil_id}": {
+      "delete": {
+        "operationId": "entferne_profil_api_import_csv_profile__profil_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profil_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profil Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Entferne Profil",
+        "tags": [
+          "import"
+        ]
+      }
+    },
+    "/api/import/laeufe": {
+      "get": {
+        "operationId": "liste_laeufe_api_import_laeufe_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LaufKopf"
+                  },
+                  "title": "Response Liste Laeufe Api Import Laeufe Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liste Laeufe",
+        "tags": [
+          "import"
+        ]
+      },
+      "post": {
+        "description": "Datei hochladen: Zahlungskandidaten und Duplikate erkennen (Kap. 8, Schritte 1 bis 3).\n\nGespeichert werden nur Belastungen, die keine Rückbuchung sind; die Datei selbst nicht.",
+        "operationId": "lade_hoch_api_import_laeufe_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dateiformat",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Format"
+            }
+          },
+          {
+            "description": "Einstellung zu P-16",
+            "in": "query",
+            "name": "wertstellung_aus",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/WertstellungAus",
+              "description": "Einstellung zu P-16"
+            }
+          },
+          {
+            "description": "Nur bei CSV",
+            "in": "query",
+            "name": "profil_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Nur bei CSV",
+              "title": "Profil Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "contentMediaType": "application/octet-stream",
+                "title": "Daten",
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaufAusgabe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lade Hoch",
+        "tags": [
+          "import"
+        ]
+      }
+    },
+    "/api/import/laeufe/{lauf_id}": {
+      "get": {
+        "operationId": "lies_lauf_api_import_laeufe__lauf_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lauf_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lauf Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaufAusgabe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Lies Lauf",
+        "tags": [
+          "import"
+        ]
+      }
+    },
+    "/api/import/laeufe/{lauf_id}/abschluss": {
+      "post": {
+        "description": "Lauf abschließen; Zeilen ohne Buchung werden verworfen (Kap. 8, Datenminimierung).",
+        "operationId": "schliesse_lauf_ab_api_import_laeufe__lauf_id__abschluss_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lauf_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Lauf Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaufAusgabe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Schliesse Lauf Ab",
+        "tags": [
+          "import"
         ]
       }
     },
