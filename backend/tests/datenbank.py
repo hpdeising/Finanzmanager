@@ -34,7 +34,7 @@ from app.kern.db.bootstrap import APP_ROLE, OWNER_ROLE, richte_datenbank_ein
 
 BACKEND: Final = Path(__file__).resolve().parent.parent
 # Neueste Migration; die Katalogtests prüfen den Stand nach ``alembic upgrade head``.
-HEAD: Final = "0004"
+HEAD: Final = "0005"
 TEST_ADMIN_URL_VARIABLE: Final = "FINANZMANAGER_TEST_ADMIN_DATABASE_URL"
 PRAEFIX: Final = "fm_test_"
 MINDESTVERSION: Final = 160000
