@@ -236,6 +236,25 @@ def test_ohne_entstehungstag_zuerst(session: Session) -> None:
     assert [b.kennung for b in inhalt.bestandteile] == ["z_kosten", "a_kosten"]
 
 
+def test_anrechnung_folgt_der_reihenfolge_der_eingabe(session: Session) -> None:
+    """E-35 (Entscheidung vom 21.11.2026): Ohne entstanden_am zählt die Reihenfolge der Eingabe,
+    die aufsteigende Laufnummer, nicht die Kennung. Die Kennungen stehen absichtlich gegen das
+    Alphabet: zuerst erfasst wird „z_zuerst“."""
+    haushalt_id, akte_id = neue_akte(session)
+    zuerst = Bestandteil("z_zuerst", Bestandteilart.KOSTEN_VERFAHREN, D("10.00"))
+    danach = Bestandteil("a_danach", Bestandteilart.KOSTEN_VERFAHREN, D("10.00"))
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=zuerst)
+    lege_bestandteil_an(session, akte_id=akte_id, bestandteil=danach)
+    erfasse_zahlung(session, akte_id=akte_id, zahlung=Zahlung(T(2025, 2, 3), D("10.00")))
+    inhalt = lade_akte(session, haushalt_id=haushalt_id, akte_id=akte_id)
+    assert [b.kennung for b in inhalt.bestandteile] == ["z_zuerst", "a_danach"]
+    ergebnis = berechne(
+        inhalt.parameter, inhalt.bestandteile, inhalt.zahlungen, T(2025, 6, 30), REIHE
+    )
+    (zeile,) = [z for z in ergebnis.anrechnungen if z.angerechnet > 0]
+    assert (zeile.bestandteil, zeile.angerechnet) == ("z_zuerst", D("10.00"))
+
+
 def test_kennung_je_akte_eindeutig(session: Session) -> None:
     _, akte_id = neue_akte(session)
     lege_bestandteil_an(session, akte_id=akte_id, bestandteil=HF)
